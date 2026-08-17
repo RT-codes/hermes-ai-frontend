@@ -10,6 +10,8 @@ export type AppearanceSettings = {
   workspaceMargin: number
   cornerCut: number
   computeHudPosition: 'top-right' | 'bottom-right'
+  brainHudColor: string
+  brainHudOpacity: number
 }
 
 type AppearanceContextValue = {
@@ -28,6 +30,8 @@ const defaults: AppearanceSettings = {
   workspaceMargin: 24,
   cornerCut: 18,
   computeHudPosition: 'bottom-right',
+  brainHudColor: '#02070c',
+  brainHudOpacity: 0.72,
 }
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null)
@@ -56,6 +60,7 @@ function applySettings(settings: AppearanceSettings) {
   const root = document.documentElement
   const accentRgb = hexToRgb(settings.accentColor)
   const panelRgb = hexToRgb(settings.panelColor)
+  const brainHudRgb = hexToRgb(settings.brainHudColor)
 
   root.style.setProperty('--cyan', settings.accentColor)
   root.style.setProperty('--accent-rgb', accentRgb)
@@ -70,6 +75,8 @@ function applySettings(settings: AppearanceSettings) {
   root.style.setProperty('--blur-panel', `${settings.panelBlur}px`)
   root.style.setProperty('--space-page', `${settings.workspaceMargin}px`)
   root.style.setProperty('--hud-cut', `${settings.cornerCut}px`)
+  root.style.setProperty('--brain-hud-rgb', brainHudRgb)
+  root.style.setProperty('--brain-hud-opacity', `${settings.brainHudOpacity}`)
 }
 
 export function AppearanceProvider({ children }: { children: ReactNode }) {
