@@ -26,7 +26,7 @@ export function BrainHudPanel({ title, meta, className = '', children, ariaLabel
 
   useLayoutEffect(() => {
     measure()
-  }, [centerPoint])
+  })
 
   useEffect(() => {
     const panel = panelRef.current
