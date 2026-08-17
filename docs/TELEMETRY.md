@@ -19,11 +19,11 @@ The telemetry endpoint is implemented in `vite.config.ts`. It does not call Herm
 
 ## Brain HUD layout
 
-Local Compute, Activity and System are now fixed Brain-view HUDs rather than draggable floating panels.
+Local Compute, Activity and System are fixed Brain-view HUDs rather than draggable floating panels.
 
-All three share the same glass treatment, 1px accent border and blur. Each panel draws a connector to the visualization center published through `BrainSceneContext`.
+All three share the same 1px accent frame and blur treatment. Their fill color and opacity are now controlled independently from the regular panel/sidebar appearance through the **Brain HUD color** and **Brain HUD opacity** settings.
 
-The endpoint is therefore dynamic rather than hard-coded: when the current 3D scene is panned, the connector dot follows the scene center. The same context is intended to be driven by the future Three.js/React Three Fiber camera and real graph/brain renderer.
+Each panel draws a connector to the visualization center published through `BrainSceneContext`. The endpoint is therefore dynamic rather than hard-coded: when the current 3D scene is panned, the connector dot follows the scene center. The same context is intended to be driven by the future Three.js/React Three Fiber camera and real graph/brain renderer.
 
 The Local Compute panel can be placed at either `top-right` or `bottom-right` from Appearance settings. Activity and System automatically occupy the opposite right-side position.
 
@@ -72,7 +72,9 @@ Hindsight is reached through the server-side `/hindsight-api` Vite proxy.
 
 ## 3D scene scaffold
 
-The current Brain view contains a temporary glowing cyan cube in a native CSS 3D scene. It supports rotation, pan, zoom and reset. The cube is not the final brain visualization; it establishes the interaction model and dynamic center anchor before the real 3D graph renderer is introduced.
+The current Brain view contains a temporary glowing cyan **3x3 Rubik-style wireframe cube** in a native CSS 3D scene. It supports rotation, pan, zoom and reset.
+
+Only that temporary marker is rendered as a wireframe. The scene grid and HUD interfaces retain their normal styling. The wireframe cube is not the final brain visualization; it establishes the interaction model and dynamic center anchor before the real 3D graph renderer is introduced.
 
 ## Security boundary
 
