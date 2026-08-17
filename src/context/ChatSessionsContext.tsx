@@ -23,6 +23,7 @@ type ChatSessionsContextValue = {
   selectSession: (sessionId: string) => void
   closeTab: (sessionId: string) => void
   closeAllTabs: () => void
+  deleteSession: (sessionId: string) => void
   sendMessage: (sessionId: string, content: string) => Promise<void>
 }
 
@@ -42,13 +43,7 @@ function createFreshSession(index = 1): ChatSession {
   return {
     id,
     title: index === 1 ? 'New chat' : `New chat ${index}`,
-    messages: [
-      {
-        id: `welcome-${id}`,
-        role: 'assistant',
-        content: 'Hermes is ready.',
-      },
-    ],
+    messages: [{ id: `welcome-${id}`, role: 'assistant', content: 'Hermes is ready.' }],
     connectionState: 'idle',
     error: null,
     createdAt: now,
@@ -59,47 +54,18 @@ function createFreshSession(index = 1): ChatSession {
 function loadStoredState(): StoredChatState {
   const fallback = createFreshSession()
   const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) {
-    return {
-      sessions: [fallback],
-      openTabIds: [fallback.id],
-      activeSessionId: fallback.id,
-    }
-  }
+
+  if (!raw) return { sessions: [fallback], openTabIds: [], activeSessionId: null }
 
   try {
     const parsed = JSON.parse(raw) as StoredChatState
     const sessions = Array.isArray(parsed.sessions)
-      ? parsed.sessions.map((session) => ({
-          ...session,
-          connectionState: 'idle' as HermesConnectionState,
-          error: null,
-        }))
+      ? parsed.sessions.map((session) => ({ ...session, connectionState: 'idle' as HermesConnectionState, error: null }))
       : []
 
-    if (!sessions.length) {
-      return {
-        sessions: [fallback],
-        openTabIds: [fallback.id],
-        activeSessionId: fallback.id,
-      }
-    }
-
-    const knownIds = new Set(sessions.map((session) => session.id))
-    const openTabIds = Array.isArray(parsed.openTabIds)
-      ? parsed.openTabIds.filter((id) => knownIds.has(id))
-      : []
-    const activeSessionId = parsed.activeSessionId && openTabIds.includes(parsed.activeSessionId)
-      ? parsed.activeSessionId
-      : openTabIds.at(-1) ?? null
-
-    return { sessions, openTabIds, activeSessionId }
+    return { sessions, openTabIds: [], activeSessionId: null }
   } catch {
-    return {
-      sessions: [fallback],
-      openTabIds: [fallback.id],
-      activeSessionId: fallback.id,
-    }
+    return { sessions: [fallback], openTabIds: [], activeSessionId: null }
   }
 }
 
@@ -116,10 +82,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(initial.activeSessionId)
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ sessions, openTabIds, activeSessionId } satisfies StoredChatState),
-    )
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessions, openTabIds, activeSessionId } satisfies StoredChatState))
   }, [activeSessionId, openTabIds, sessions])
 
   const activeSession = sessions.find((session) => session.id === activeSessionId) ?? null
@@ -159,6 +122,15 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     setActiveSessionId(null)
   }
 
+  function deleteSession(sessionId: string) {
+    setSessions((current) => current.filter((session) => session.id !== sessionId))
+    setOpenTabIds((current) => {
+      const next = current.filter((id) => id !== sessionId)
+      if (activeSessionId === sessionId) setActiveSessionId(next.at(-1) ?? null)
+      return next
+    })
+  }
+
   function patchSession(sessionId: string, patch: (session: ChatSession) => ChatSession) {
     setSessions((current) => current.map((session) => session.id === sessionId ? patch(session) : session))
   }
@@ -168,17 +140,9 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     const session = sessions.find((item) => item.id === sessionId)
     if (!trimmed || !session || session.connectionState === 'connecting' || session.connectionState === 'streaming') return
 
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: trimmed,
-    }
+    const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: trimmed }
     const assistantId = crypto.randomUUID()
-    const assistantMessage: ChatMessage = {
-      id: assistantId,
-      role: 'assistant',
-      content: '',
-    }
+    const assistantMessage: ChatMessage = { id: assistantId, role: 'assistant', content: '' }
     const requestMessages = [...session.messages, userMessage].filter((message) => !message.id.startsWith('welcome-'))
     const nextTitle = session.title.startsWith('New chat') ? titleFromMessage(trimmed) : session.title
 
@@ -199,19 +163,13 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
           patchSession(sessionId, (current) => ({
             ...current,
             connectionState: 'streaming',
-            messages: current.messages.map((message) =>
-              message.id === assistantId ? { ...message, content: message.content + delta } : message,
-            ),
+            messages: current.messages.map((message) => message.id === assistantId ? { ...message, content: message.content + delta } : message),
             updatedAt: Date.now(),
           }))
         },
       })
 
-      patchSession(sessionId, (current) => ({
-        ...current,
-        connectionState: 'idle',
-        updatedAt: Date.now(),
-      }))
+      patchSession(sessionId, (current) => ({ ...current, connectionState: 'idle', updatedAt: Date.now() }))
     } catch (caughtError) {
       const error = caughtError instanceof Error ? caughtError.message : 'Unable to reach Hermes'
       patchSession(sessionId, (current) => ({
@@ -234,6 +192,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     selectSession,
     closeTab,
     closeAllTabs,
+    deleteSession,
     sendMessage,
   }
 
