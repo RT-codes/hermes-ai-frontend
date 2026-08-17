@@ -14,11 +14,13 @@ type BrainGraphProps = {
 type GraphNode = NodeObject<BrainGraphNode>
 type GraphLink = LinkObject<BrainGraphNode, BrainGraphLink>
 
-const CORE_ID = 'core'
-
-function endpointId(endpoint: GraphLink['source']) {
+function endpointId(endpoint: unknown) {
   if (typeof endpoint === 'string' || typeof endpoint === 'number') return String(endpoint)
-  return endpoint?.id == null ? '' : String(endpoint.id)
+  if (endpoint && typeof endpoint === 'object' && 'id' in endpoint) {
+    const id = (endpoint as { id?: string | number }).id
+    return id == null ? '' : String(id)
+  }
+  return ''
 }
 
 function isDirectLink(link: GraphLink, nodeId: string | null) {
