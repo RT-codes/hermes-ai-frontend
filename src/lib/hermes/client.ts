@@ -2,6 +2,7 @@ import type { ChatMessage } from './types'
 
 type StreamHermesChatOptions = {
   messages: ChatMessage[]
+  sessionId: string
   onDelta: (delta: string) => void
   signal?: AbortSignal
 }
@@ -14,11 +15,12 @@ type HermesChunk = {
   }>
 }
 
-export async function streamHermesChat({ messages, onDelta, signal }: StreamHermesChatOptions) {
+export async function streamHermesChat({ messages, sessionId, onDelta, signal }: StreamHermesChatOptions) {
   const response = await fetch('/hermes-api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-Hermes-Session-Id': sessionId,
       'X-Hermes-Session-Key': 'household',
     },
     body: JSON.stringify({
