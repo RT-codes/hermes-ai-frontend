@@ -1,19 +1,16 @@
 .brain-stage--3d {
-  perspective: 1100px;
-  pointer-events: auto;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
+  user-select: none;
 }
-
-.brain-stage--3d:active { cursor: grabbing; }
 
 .brain-scene-grid {
   position: absolute;
+  z-index: 0;
   inset: 15% 12% 10% calc(var(--sidebar-width) + 4rem);
   pointer-events: none;
-  opacity: 0.22;
+  opacity: 0.16;
   transform: perspective(900px) rotateX(68deg) translateY(22%);
   transform-origin: center 70%;
   background-image:
@@ -23,22 +20,129 @@
   mask-image: radial-gradient(ellipse at center, black 5%, transparent 70%);
 }
 
-.brain-scene-object {
+.brain-graph {
   position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+}
+
+.brain-graph canvas {
+  display: block;
+}
+
+.brain-graph .scene-tooltip {
+  max-width: 240px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.36);
+  padding: 0.45rem 0.55rem;
+  color: var(--text-primary);
+  background: rgb(var(--brain-hud-rgb) / 0.9);
+  box-shadow: 0 0 24px rgb(var(--accent-rgb) / 0.12);
+  backdrop-filter: blur(10px);
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
+.brain-graph .scene-tooltip strong {
+  color: var(--cyan-soft);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.brain-graph .scene-tooltip span {
+  color: var(--text-muted);
+}
+
+.brain-graph__phase-label,
+.brain-graph__selection-label,
+.brain-graph__test-add {
+  position: absolute;
+  z-index: 8;
+  bottom: 3.25rem;
+  min-height: 26px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  color: var(--text-faint);
+  background: rgb(var(--brain-hud-rgb) / 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font: inherit;
+  font-size: 0.52rem;
+  letter-spacing: 0.11em;
+}
+
+.brain-graph__phase-label {
+  left: calc(var(--sidebar-width) + 2.2rem);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 0.6rem;
+  pointer-events: none;
+}
+
+.brain-graph__phase-label strong {
+  color: var(--cyan-soft);
+  font-weight: 500;
+}
+
+.brain-graph__test-add {
+  left: calc(var(--sidebar-width) + 18.5rem);
+  padding: 0 0.65rem;
+  cursor: pointer;
+}
+
+.brain-graph__test-add:hover {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+  color: var(--cyan-soft);
+  background: rgb(var(--accent-rgb) / 0.08);
+}
+
+.brain-graph__selection-label {
+  left: calc(var(--sidebar-width) + 29.25rem);
+  display: flex;
+  align-items: center;
+  max-width: 300px;
+  overflow: hidden;
+  padding: 0 0.65rem;
+  color: var(--cyan-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/*
+ * The DOM Rubik core remains as a temporary thinking indicator while the new
+ * WebGL graph owns navigation. It follows the projected graph origin so it can
+ * stay visually centered in the living graph even after orbit/pan/zoom.
+ */
+.brain-scene-core {
+  position: absolute;
+  z-index: 6;
   left: 50%;
   top: 50%;
   width: 116px;
   height: 116px;
-  margin: -58px 0 0 -58px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
   transform-style: preserve-3d;
-  will-change: transform;
 }
 
-/*
- * Keep glow effects OUTSIDE the preserve-3d cube hierarchy. CSS filter on an
- * ancestor forces descendants into a flattened compositing plane, which was
- * why the previous 3x3x3 cubies visually collapsed into a single surface.
- */
+.brain-scene-core__scale {
+  width: 100%;
+  height: 100%;
+  opacity: 0.46;
+  transform: scale(0.72);
+  transform-style: preserve-3d;
+  transition:
+    opacity 260ms ease,
+    transform 320ms cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+.brain-scene-core.is-thinking .brain-scene-core__scale {
+  opacity: 0.96;
+  transform: scale(1.08);
+}
+
+/* Keep glow effects outside the preserve-3d cubie hierarchy. */
 .brain-cube-glow {
   position: absolute;
   left: 50%;
@@ -48,13 +152,17 @@
   margin: -32px;
   border-radius: 50%;
   pointer-events: none;
-  background: rgb(var(--accent-rgb) / 0.28);
-  box-shadow: 0 0 72px 22px rgb(var(--accent-rgb) / 0.34);
+  opacity: 0.28;
+  background: rgb(var(--accent-rgb) / 0.2);
+  box-shadow: 0 0 58px 16px rgb(var(--accent-rgb) / 0.24);
   filter: blur(22px);
   animation: brain-cube-glow-breathe 3.8s ease-in-out infinite alternate;
+  transition: opacity 240ms ease, box-shadow 240ms ease;
 }
 
 .brain-cube-glow.is-thinking {
+  opacity: 0.9;
+  box-shadow: 0 0 84px 28px rgb(var(--accent-rgb) / 0.46);
   animation-duration: 1.25s;
 }
 
@@ -62,6 +170,7 @@
   position: relative;
   width: 116px;
   height: 116px;
+  transform: rotateX(-24deg) rotateY(38deg);
   transform-style: preserve-3d;
 }
 
@@ -76,11 +185,6 @@
   will-change: transform;
 }
 
-/*
- * Temporary scene marker: 27 separate wireframe cubies arranged as a true
- * 3x3x3 block. The cubie center is positioned at the cube center first; each
- * translate3d then offsets it along X/Y/Z by one grid step.
- */
 .brain-cubie {
   position: absolute;
   left: 50%;
@@ -113,6 +217,7 @@
 
 .brain-scene-help {
   position: absolute;
+  z-index: 9;
   left: calc(var(--sidebar-width) + 2.2rem);
   bottom: 1.35rem;
   display: flex;
@@ -220,8 +325,8 @@
 }
 
 @keyframes brain-cube-glow-breathe {
-  from { opacity: 0.58; transform: scale(0.88); }
-  to { opacity: 1; transform: scale(1.12); }
+  from { transform: scale(0.88); }
+  to { transform: scale(1.12); }
 }
 
 @media (max-width: 1100px) {
@@ -230,10 +335,15 @@
     width: 300px;
   }
 
+  .brain-graph__selection-label { display: none; }
+  .brain-graph__test-add { left: calc(var(--sidebar-width) + 17.5rem); }
   .brain-scene-help { display: none; }
 }
 
 @media (max-width: 760px) {
   .brain-hud-stack,
-  .brain-hud-connector { display: none; }
+  .brain-hud-connector,
+  .brain-graph__phase-label,
+  .brain-graph__selection-label,
+  .brain-graph__test-add { display: none; }
 }
