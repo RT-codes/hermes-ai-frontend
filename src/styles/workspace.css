@@ -1,13 +1,40 @@
+.hermes-home {
+  background:
+    radial-gradient(circle at 48% 35%, rgb(var(--accent-rgb) / 0.16), transparent 34%),
+    var(--bg);
+}
+
+.hermes-home::before {
+  background-image:
+    linear-gradient(rgb(var(--accent-rgb) / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--accent-rgb) / 0.025) 1px, transparent 1px);
+}
+
+.floating-panel::before,
+.floating-panel::after {
+  box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.45);
+}
+
 .workspace-stage {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
+  padding: calc(var(--space-page) + 4rem) var(--space-page) var(--space-page) calc(var(--sidebar-width) + var(--space-page) + 2rem);
   pointer-events: none;
+  transition: padding-left 180ms ease;
+}
+
+.workspace-stage--interactive {
+  pointer-events: auto;
+}
+
+.sidebar-is-collapsed .workspace-stage {
+  padding-left: calc(var(--sidebar-width-collapsed) + var(--space-page) + 2rem);
 }
 
 .workspace-placeholder {
-  width: min(42rem, calc(100vw - var(--sidebar-width) - 8rem));
+  width: min(42rem, 100%);
   padding: 2rem;
   text-align: center;
   opacity: 0.72;
@@ -21,7 +48,8 @@
   text-transform: uppercase;
 }
 
-.workspace-placeholder h2 {
+.workspace-placeholder h2,
+.workspace-card h2 {
   margin: 0.55rem 0 0;
   color: var(--text-primary);
   font-size: clamp(2.2rem, 5vw, 4.8rem);
@@ -39,26 +67,301 @@
 .workspace-placeholder__status {
   display: inline-block;
   padding: 0.45rem 0.7rem;
-  border: 1px solid rgb(53 217 255 / 0.14);
-  background: rgb(53 217 255 / 0.035);
+  border: 1px solid rgb(var(--accent-rgb) / 0.14);
+  background: rgb(var(--accent-rgb) / 0.035);
 }
 
-.sidebar__mark {
+.workspace-card {
+  width: min(52rem, 100%);
+  max-height: min(72vh, 48rem);
+  overflow: auto;
+  padding: 2rem;
+  border: 1px solid var(--glass-border);
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.05), transparent 28%),
+    var(--glass-soft);
+  backdrop-filter: blur(var(--blur-panel));
+  clip-path: polygon(0 0, calc(100% - var(--hud-cut)) 0, 100% var(--hud-cut), 100% 100%, var(--hud-cut) 100%, 0 calc(100% - var(--hud-cut)));
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.3);
+}
+
+.workspace-card--wide {
+  width: min(60rem, 100%);
+}
+
+.workspace-card--settings {
+  width: min(56rem, 100%);
+}
+
+.workspace-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1.35rem;
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.12);
+}
+
+.workspace-card__heading h2 {
+  font-size: clamp(1.9rem, 4vw, 3.4rem);
+}
+
+.workspace-card__heading p {
+  max-width: 38rem;
+  margin: 0.75rem 0 0;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.workspace-action {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--cyan-dim);
+  color: var(--cyan-soft);
+  background: var(--cyan-faint);
+  font: inherit;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+
+.workspace-action:hover {
+  color: var(--text-primary);
+  box-shadow: 0 0 18px rgb(var(--accent-rgb) / 0.12);
+}
+
+.workspace-action--quiet {
+  color: var(--text-faint);
+  background: transparent;
+}
+
+.chat-session-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1.2rem;
+}
+
+.chat-session-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: center;
+  width: 100%;
+  min-height: 64px;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.11);
+  color: var(--text-muted);
+  background: rgb(var(--panel-rgb) / 0.28);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.chat-session-card:hover {
+  border-color: var(--cyan-dim);
+  background: var(--cyan-faint);
+  transform: translateX(3px);
+}
+
+.chat-session-card__state {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--status-idle);
+}
+
+.chat-session-card__state--connecting,
+.chat-session-card__state--streaming {
+  background: var(--cyan);
+  box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.55);
+}
+
+.chat-session-card__state--error {
+  background: #ff6f8f;
+}
+
+.chat-session-card__copy {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+}
+
+.chat-session-card__copy strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-session-card__copy span,
+.chat-session-card__meta {
+  color: var(--text-faint);
+  font-size: 0.62rem;
+}
+
+.chat-session-card__meta {
+  display: grid;
+  gap: 0.28rem;
+  justify-items: end;
+}
+
+.chat-session-card__meta small {
+  color: var(--cyan-soft);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+}
+
+.appearance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+}
+
+.appearance-control {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.8fr) minmax(10rem, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+  min-height: 54px;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.1);
+  background: rgb(var(--panel-rgb) / 0.24);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.appearance-control output {
+  min-width: 3.6rem;
+  color: var(--cyan-soft);
+  font-size: 0.62rem;
+  text-align: right;
+}
+
+.appearance-control input[type='range'] {
+  width: 100%;
+  accent-color: var(--cyan);
+}
+
+.appearance-control input[type='color'] {
+  width: 100%;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--cyan-dim);
+  background: transparent;
+  cursor: pointer;
+}
+
+/* The old broad .sidebar__brand span rule in layout.css must not override the grid mark. */
+.sidebar__brand .sidebar__mark {
+  display: grid;
+  place-items: center;
+  padding: 0 0 1px;
   line-height: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: center;
 }
 
-.sidebar__mark > span {
+.sidebar__brand-copy strong,
+.sidebar__brand-copy span {
   display: block;
-  line-height: 1;
-  transform: translateY(-1px);
 }
 
 .sidebar__item:focus-visible,
-.sidebar__toggle:focus-visible {
+.sidebar__toggle:focus-visible,
+.quick-new-chat:focus-visible {
   outline: 1px solid var(--cyan);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
-.sidebar-is-collapsed .workspace-placeholder {
-  width: min(42rem, calc(100vw - var(--sidebar-width-collapsed) - 8rem));
+.quick-new-chat {
+  position: absolute;
+  top: 6.9rem;
+  left: calc(var(--sidebar-width) + 1.35rem);
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--cyan-dim);
+  color: var(--cyan-soft);
+  background: rgb(var(--panel-rgb) / 0.76);
+  backdrop-filter: blur(var(--blur-panel));
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  cursor: pointer;
+  transition: left 180ms ease, color 160ms ease, transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.sidebar-is-collapsed .quick-new-chat {
+  left: calc(var(--sidebar-width-collapsed) + 1.35rem);
+}
+
+.quick-new-chat::before,
+.quick-new-chat::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 360ms ease;
+}
+
+.quick-new-chat::after {
+  inset: -10px;
+  border-color: rgb(var(--accent-rgb) / 0.09);
+}
+
+.quick-new-chat span {
+  display: block;
+  font-size: 1.45rem;
+  line-height: 1;
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.quick-new-chat:hover {
+  color: white;
+  background: rgb(var(--accent-rgb) / 0.16);
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 0 28px rgb(var(--accent-rgb) / 0.24), inset 0 0 18px rgb(var(--accent-rgb) / 0.08);
+}
+
+.quick-new-chat:hover::before,
+.quick-new-chat:hover::after {
+  opacity: 1;
+  transform: rotate(45deg) scale(1.04);
+}
+
+.quick-new-chat:hover::after {
+  transform: rotate(-45deg) scale(1.08);
+}
+
+.quick-new-chat:hover span {
+  transform: rotate(90deg) scale(1.08);
+}
+
+@media (max-width: 1100px) {
+  .appearance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace-card__heading {
+    display: grid;
+  }
+
+  .appearance-control {
+    grid-template-columns: 1fr auto;
+  }
+
+  .appearance-control input[type='range'],
+  .appearance-control input[type='color'] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }
