@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { defineConfig, loadEnv } from 'vite'
+import type { Plugin, ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const execFileAsync = promisify(execFile)
@@ -126,10 +127,10 @@ async function collectTelemetry() {
   return payload
 }
 
-function localTelemetryPlugin() {
+function localTelemetryPlugin(): Plugin {
   return {
     name: 'hermes-local-telemetry',
-    configureServer(server: { middlewares: { use: (path: string, handler: (req: { method?: string }, res: { statusCode: number; setHeader: (name: string, value: string) => void; end: (body?: string) => void }, next: () => void) => void) => void } }) {
+    configureServer(server: ViteDevServer) {
       server.middlewares.use('/system-api/telemetry', async (req, res, next) => {
         if (req.method !== 'GET') {
           next()
