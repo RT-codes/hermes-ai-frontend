@@ -5,7 +5,7 @@
 
 .activity-status-list {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.45rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -14,10 +14,11 @@
 .activity-status-list li {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.58rem;
   min-width: 0;
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
+  line-height: 1.35;
 }
 
 .activity-dot.busy {
@@ -33,20 +34,20 @@
 
 .system-runtime-list {
   display: grid;
-  gap: 0.58rem;
+  gap: 0.42rem;
 }
 
 .system-runtime-list > div {
   display: grid;
-  grid-template-columns: minmax(5rem, 0.65fr) minmax(0, 1.35fr);
-  gap: 0.65rem;
-  align-items: center;
+  grid-template-columns: minmax(4.6rem, 0.55fr) minmax(0, 1.45fr);
+  gap: 0.55rem;
+  align-items: baseline;
 }
 
 .system-runtime-list span {
   color: var(--text-faint);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
+  font-size: 0.54rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -54,7 +55,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--text-muted);
-  font-size: 0.66rem;
+  font-size: 0.59rem;
   font-weight: 500;
   text-align: right;
   text-overflow: ellipsis;
@@ -69,100 +70,37 @@
   color: #ff6f8f;
 }
 
-.hardware-hud {
-  position: absolute;
-  z-index: 24;
-  right: 2rem;
-  bottom: 2rem;
-  width: min(340px, calc(100vw - var(--sidebar-width) - 5rem));
-  padding: 0.25rem 0 0;
-  color: var(--text-muted);
-  pointer-events: none;
-  text-shadow: 0 1px 8px rgb(0 0 0 / 0.85);
-}
-
-.hardware-hud::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: -1rem -0.9rem -0.8rem -1.25rem;
-  background: linear-gradient(90deg, transparent, rgb(var(--panel-rgb) / 0.38) 24%, rgb(var(--panel-rgb) / 0.58));
-  clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%, 0 18%);
-  backdrop-filter: blur(8px);
-  mask-image: linear-gradient(90deg, transparent 0, black 24%);
-}
-
-.hardware-hud__connector {
-  position: absolute;
-  right: calc(100% + 0.55rem);
-  top: 2.4rem;
-  width: 118px;
-  height: 1px;
-  background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.18), var(--cyan-dim));
-  transform: rotate(-17deg);
-  transform-origin: right center;
-}
-
-.hardware-hud__connector span {
-  position: absolute;
-  left: -4px;
-  top: -4px;
-  width: 9px;
-  height: 9px;
-  border: 1px solid var(--cyan-dim);
-  border-radius: 50%;
-  background: var(--bg);
-  box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.24);
-}
-
-.hardware-hud__header,
-.hardware-hud__identity,
-.hardware-hud__footer {
-  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.14);
-}
-
-.hardware-hud__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 0.55rem;
-}
-
-.hardware-hud__header span {
-  color: var(--cyan-soft);
-  font-size: 0.62rem;
-  letter-spacing: 0.2em;
-}
-
-.hardware-hud__header small {
+.brain-hud-panel__header small {
   color: var(--text-faint);
-  font-size: 0.52rem;
+  font-size: 0.5rem;
+  font-weight: 400;
   letter-spacing: 0.12em;
 }
 
 .hardware-hud__identity {
   display: grid;
-  gap: 0.25rem;
-  padding: 0.7rem 0;
+  gap: 0.22rem;
+  padding: 0.2rem 0 0.65rem;
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.14);
 }
 
 .hardware-hud__identity strong {
   color: var(--text-primary);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 500;
 }
 
 .hardware-hud__identity span,
 .hardware-hud__footer {
   color: var(--text-faint);
-  font-size: 0.58rem;
+  font-size: 0.55rem;
 }
 
 .hardware-hud__metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.38rem 1rem;
-  padding: 0.65rem 0;
+  gap: 0.34rem 0.9rem;
+  padding: 0.58rem 0;
   border-bottom: 1px solid rgb(var(--accent-rgb) / 0.14);
 }
 
@@ -170,45 +108,44 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .hardware-hud__metrics span,
 .telemetry-graph-row > span {
   color: var(--text-faint);
-  font-size: 0.54rem;
+  font-size: 0.51rem;
   letter-spacing: 0.12em;
 }
 
 .hardware-hud__metrics strong,
 .telemetry-graph-row > strong {
   color: var(--cyan-soft);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .hardware-hud__graphs {
   display: grid;
-  gap: 0.35rem;
-  padding: 0.6rem 0;
+  gap: 0.28rem;
+  padding: 0.5rem 0;
   border-bottom: 1px solid rgb(var(--accent-rgb) / 0.14);
 }
 
 .telemetry-graph-row {
   display: grid;
-  grid-template-columns: 2.6rem minmax(0, 1fr) 2.4rem;
-  gap: 0.55rem;
+  grid-template-columns: 2.5rem minmax(0, 1fr) 2.25rem;
+  gap: 0.48rem;
   align-items: center;
 }
 
 .telemetry-sparkline {
   width: 100%;
-  height: 28px;
+  height: 24px;
   overflow: visible;
   border-bottom: 1px solid rgb(var(--accent-rgb) / 0.08);
-  background:
-    linear-gradient(rgb(var(--accent-rgb) / 0.035) 1px, transparent 1px) 0 50% / 100% 50%;
+  background: linear-gradient(rgb(var(--accent-rgb) / 0.035) 1px, transparent 1px) 0 50% / 100% 50%;
 }
 
 .telemetry-sparkline polyline {
@@ -222,8 +159,7 @@
 }
 
 .hardware-hud__footer {
-  padding-top: 0.55rem;
-  border-bottom: 0;
+  padding-top: 0.48rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -232,22 +168,4 @@
 @keyframes telemetry-pulse {
   from { opacity: 0.55; }
   to { opacity: 1; }
-}
-
-@media (max-width: 1100px) {
-  .hardware-hud {
-    right: 1.25rem;
-    bottom: 1.25rem;
-    width: 300px;
-  }
-
-  .hardware-hud__connector {
-    width: 76px;
-  }
-}
-
-@media (max-width: 760px) {
-  .hardware-hud {
-    display: none;
-  }
 }
