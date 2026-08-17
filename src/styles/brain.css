@@ -45,23 +45,45 @@
 .brain-cube::before {
   content: '';
   position: absolute;
-  inset: 25%;
+  inset: 32%;
   border-radius: 50%;
-  background: rgb(var(--accent-rgb) / 0.52);
-  filter: blur(22px);
-  box-shadow: 0 0 54px rgb(var(--accent-rgb) / 0.55);
+  background: rgb(var(--accent-rgb) / 0.34);
+  filter: blur(24px);
+  box-shadow: 0 0 64px rgb(var(--accent-rgb) / 0.5);
+  transform: translateZ(0);
 }
 
+/*
+ * Temporary 3D scene marker: a transparent 3x3 Rubik-style wireframe cube.
+ * Only the placeholder object uses wireframe treatment; the rest of the Brain
+ * workspace keeps the normal HUD/glass styling.
+ */
 .brain-cube__face {
   position: absolute;
   inset: 0;
-  border: 1px solid rgb(var(--accent-rgb) / 0.74);
+  border: 1px solid rgb(var(--accent-rgb) / 0.92);
   background:
-    linear-gradient(135deg, rgb(var(--accent-rgb) / 0.27), rgb(var(--accent-rgb) / 0.07)),
-    rgb(var(--panel-rgb) / 0.22);
+    linear-gradient(to right,
+      transparent calc(33.333% - 0.5px),
+      rgb(var(--accent-rgb) / 0.72) calc(33.333% - 0.5px),
+      rgb(var(--accent-rgb) / 0.72) calc(33.333% + 0.5px),
+      transparent calc(33.333% + 0.5px),
+      transparent calc(66.666% - 0.5px),
+      rgb(var(--accent-rgb) / 0.72) calc(66.666% - 0.5px),
+      rgb(var(--accent-rgb) / 0.72) calc(66.666% + 0.5px),
+      transparent calc(66.666% + 0.5px)),
+    linear-gradient(to bottom,
+      transparent calc(33.333% - 0.5px),
+      rgb(var(--accent-rgb) / 0.72) calc(33.333% - 0.5px),
+      rgb(var(--accent-rgb) / 0.72) calc(33.333% + 0.5px),
+      transparent calc(33.333% + 0.5px),
+      transparent calc(66.666% - 0.5px),
+      rgb(var(--accent-rgb) / 0.72) calc(66.666% - 0.5px),
+      rgb(var(--accent-rgb) / 0.72) calc(66.666% + 0.5px),
+      transparent calc(66.666% + 0.5px));
   box-shadow:
-    inset 0 0 24px rgb(var(--accent-rgb) / 0.18),
-    0 0 22px rgb(var(--accent-rgb) / 0.2);
+    inset 0 0 10px rgb(var(--accent-rgb) / 0.045),
+    0 0 12px rgb(var(--accent-rgb) / 0.34);
   backface-visibility: visible;
 }
 
@@ -120,8 +142,8 @@
   inset: 1px;
   clip-path: inherit;
   background:
-    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.045) 28%, rgb(var(--panel-rgb) / 0.56)),
-    rgb(var(--panel-rgb) / 0.48);
+    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.035) 28%, rgb(var(--brain-hud-rgb) / calc(var(--brain-hud-opacity) * 0.9))),
+    rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity));
   backdrop-filter: blur(var(--blur-panel)) saturate(128%);
   -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
 }
@@ -182,7 +204,7 @@
 
 @keyframes brain-cube-breathe {
   from { filter: brightness(0.9) drop-shadow(0 0 10px rgb(var(--accent-rgb) / 0.2)); }
-  to { filter: brightness(1.15) drop-shadow(0 0 28px rgb(var(--accent-rgb) / 0.4)); }
+  to { filter: brightness(1.15) drop-shadow(0 0 28px rgb(var(--accent-rgb) / 0.42)); }
 }
 
 @media (max-width: 1100px) {
