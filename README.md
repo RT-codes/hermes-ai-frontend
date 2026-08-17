@@ -20,11 +20,11 @@ The frontend now includes:
 - a floating chat console that stays above Brain-view HUD content while remaining below the fixed sidebar;
 - local development lifecycle integration through `hermesctl`.
 
-The wireframe cube is intentionally temporary. It establishes the camera/interaction space and shared screen-space center anchor that the future 3D brain/knowledge visualization can reuse.
+## Preview
 
-## Screenshot
+<img width="1600" height="809" alt="image" src="https://github.com/user-attachments/assets/e1d31801-cfd3-41b8-8de2-9cc398994665" />
 
-> Screenshot coming soon.
+https://github.com/user-attachments/assets/baa775ab-5ab0-41ee-a449-8d3b1c1066d0
 
 <!-- Add the main project screenshot here once the UI stabilizes.
 
