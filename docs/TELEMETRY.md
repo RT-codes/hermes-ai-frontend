@@ -12,10 +12,20 @@ Browser
       -> nvidia-smi for GPU, VRAM, utilization, and GPU temperature
   -> JSON snapshot
   -> shared SystemTelemetryProvider
-  -> HardwareTelemetryHud + System panel
+  -> Local Compute + System HUD
 ```
 
-The telemetry endpoint is implemented in `vite.config.ts` and exists on the local Vite server. It does not call Hermes, does not use the LLM, and consumes no model tokens.
+The telemetry endpoint is implemented in `vite.config.ts`. It does not call Hermes, does not use the LLM, and consumes no model tokens.
+
+## Brain HUD layout
+
+Local Compute, Activity and System are now fixed Brain-view HUDs rather than draggable floating panels.
+
+All three share the same glass treatment, 1px accent border and blur. Each panel draws a connector to the visualization center published through `BrainSceneContext`.
+
+The endpoint is therefore dynamic rather than hard-coded: when the current 3D scene is panned, the connector dot follows the scene center. The same context is intended to be driven by the future Three.js/React Three Fiber camera and real graph/brain renderer.
+
+The Local Compute panel can be placed at either `top-right` or `bottom-right` from Appearance settings. Activity and System automatically occupy the opposite right-side position.
 
 ## Polling and overhead
 
@@ -24,18 +34,19 @@ The telemetry endpoint is implemented in `vite.config.ts` and exists on the loca
 - Polling pauses while the page is hidden.
 - GPU sampling uses NVIDIA `nvidia-smi` selective queries.
 - Host CPU/RAM and Ollama process/model state are collected from Windows through a short non-interactive PowerShell call.
-- The UI keeps the most recent 48 samples for the compact VRAM/GPU/CPU sparklines.
+- The UI keeps the most recent 48 samples for compact VRAM/GPU/CPU sparklines.
 
-This is intentionally a semi-realtime observability layer, not a high-frequency profiler.
+This is a semi-realtime observability layer, not a high-frequency profiler.
 
 ## Metrics
 
-Current HUD metrics:
+Current telemetry includes:
 
 - GPU name
 - GPU utilization
 - VRAM used / total and percentage
 - GPU temperature
+- CPU name when available
 - CPU utilization
 - Windows physical RAM used / total
 - currently loaded Ollama model
@@ -46,17 +57,22 @@ Current HUD metrics:
 
 CPU package temperature is deliberately shown as `SENSOR N/A` unless a trustworthy sensor source is added later. Windows ACPI thermal-zone values are not assumed to represent the actual CPU package temperature.
 
-## Runtime health panels
+## Runtime health HUDs
 
-The top status pill and the floating Activity/System panels now poll real local endpoints instead of showing fixed placeholder labels:
+The top status pill plus Activity/System HUDs use real local state rather than fixed placeholders:
 
-- Hermes `/health`
-- Hermes `/v1/models`
-- Hindsight `/docs`
-- local telemetry endpoint
+- System / Hermes `/health`
+- Hermes version
+- Memory / Hindsight `/docs`
+- Ollama loaded-model state
+- GPU, VRAM, CPU and RAM information
 - browser chat session activity/errors
 
 Hindsight is reached through the server-side `/hindsight-api` Vite proxy.
+
+## 3D scene scaffold
+
+The current Brain view contains a temporary glowing cyan cube in a native CSS 3D scene. It supports rotation, pan, zoom and reset. The cube is not the final brain visualization; it establishes the interaction model and dynamic center anchor before the real 3D graph renderer is introduced.
 
 ## Security boundary
 
@@ -67,4 +83,4 @@ Hindsight is reached through the server-side `/hindsight-api` Vite proxy.
 
 ## Production note
 
-The current telemetry route is a Vite development-server middleware. When Hermes Home moves from Vite dev hosting to the planned LAN production service, this collector should move into that local backend/reverse-proxy process rather than being reimplemented in browser code.
+The current telemetry route is Vite development-server middleware. When Hermes Home moves from Vite dev hosting to the planned LAN production service, this collector should move into that local backend/reverse-proxy process rather than being reimplemented in browser code.
