@@ -1,75 +1,90 @@
-# React + TypeScript + Vite
+# Hermes Home
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Hermes Home is the custom household-facing frontend for the **Hermes Home AI Stack**.
 
-Currently, two official plugins are available:
+It is a separate React + TypeScript + Vite application designed to provide a polished local control center for chatting with Hermes, viewing system activity, managing workspaces, and eventually exploring an interactive 3D memory/skills/tool graph.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Screenshot
 
-## React Compiler
+> Screenshot coming soon.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+<!-- Add the main project screenshot here once the UI stabilizes.
 
-## Expanding the ESLint configuration
+![Hermes Home control center](./docs/images/hermes-home.png)
+-->
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## What this frontend is for
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Hermes Home is intentionally **not** a full Hermes admin dashboard or an Open WebUI-style model/MCP management suite.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Its job is to be the clean household interface on top of the local stack:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- chat with the local Hermes agent;
+- manage multiple conversations;
+- surface useful system/activity feedback;
+- provide customizable floating HUD panels and workspaces;
+- expose future memory, skill, tool and automation views;
+- host the future interactive 3D Hermes brain;
+- run on the home LAN as part of the stack managed by `hermesctl`.
 
+## Stack
+
+- React
+- TypeScript
+- Vite
+- Custom CSS/design tokens
+- Three.js / React Three Fiber planned for the 3D brain
+- React Flow planned where structured 2D graph inspection is useful
+
+## Connection boundary
+
+The frontend is designed to talk to Hermes through its OpenAI-compatible API server rather than coupling itself to the built-in Hermes dashboard.
+
+```text
+Browser
+  |
+  v
+Hermes Home
+  |
+  v
+server-side frontend proxy
+  |
+  v
+Hermes API :8642
+  |
+  +-- Ollama / Qwen
+  +-- Hindsight memory
+  +-- skills / tools
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The Hermes API key should remain server-side and must not be shipped in browser JavaScript.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Development
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev -- --host
 ```
+
+Build check:
+
+```bash
+npm run build
+```
+
+## Project documentation
+
+See **[docs/HERMES_HOME.md](./docs/HERMES_HOME.md)** for the detailed frontend architecture, chat/session model, UI structure, appearance system, Hermes connection, LAN direction and planned `hermesctl` integration.
+
+## Repository
+
+<https://github.com/RT-codes/hermes-ai-frontend>
+
+## Current roadmap
+
+1. Foundation and custom HUD workspace.
+2. Functional multi-chat UX, navigation and appearance controls.
+3. Validate real streaming chat against the local Hermes runtime.
+4. Add Hermes Home to LAN access and `hermesctl` lifecycle management.
+5. Build the interactive 3D synaptic brain.
+6. Feed real memory, skill, tool and activity data into the visualization.
