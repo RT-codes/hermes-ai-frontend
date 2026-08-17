@@ -6,6 +6,8 @@ import { TopBar } from './components/TopBar/TopBar'
 import { WorkspaceStage, type WorkspaceView } from './components/WorkspaceStage/WorkspaceStage'
 import { HouseholdProvider } from './context/HouseholdContext'
 import './styles/layout.css'
+import './styles/chat.css'
+import './styles/workspace.css'
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
