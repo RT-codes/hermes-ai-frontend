@@ -1,30 +1,37 @@
 import { useState } from 'react'
-import { BrainStage } from './components/BrainStage/BrainStage'
+import { ChatPanel } from './components/ChatPanel/ChatPanel'
 import { FloatingPanel } from './components/FloatingPanel/FloatingPanel'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { TopBar } from './components/TopBar/TopBar'
+import { WorkspaceStage, type WorkspaceView } from './components/WorkspaceStage/WorkspaceStage'
 import { HouseholdProvider } from './context/HouseholdContext'
 import './styles/layout.css'
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [activeView, setActiveView] = useState<WorkspaceView>('brain')
 
   return (
     <HouseholdProvider>
       <main className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
-        <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((value) => !value)} />
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          activeView={activeView}
+          onToggle={() => setSidebarCollapsed((value) => !value)}
+          onViewChange={setActiveView}
+        />
         <TopBar />
-        <BrainStage />
+        <WorkspaceStage activeView={activeView} />
 
         <FloatingPanel
           id="chat"
           title="CHAT"
           className="chat-panel"
-          defaultRect={{ x: 280, y: 610, width: 480, height: 280 }}
-          minWidth={320}
-          minHeight={190}
+          defaultRect={{ x: 280, y: 610, width: 520, height: 320 }}
+          minWidth={340}
+          minHeight={240}
         >
-          <p>Hermes is ready.</p>
+          <ChatPanel />
         </FloatingPanel>
 
         <FloatingPanel
