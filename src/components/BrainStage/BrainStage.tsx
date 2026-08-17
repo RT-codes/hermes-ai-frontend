@@ -1,15 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PointerEvent, WheelEvent } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAppearance } from '../../context/AppearanceContext'
 import { useBrainScene } from '../../context/BrainSceneContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
-
-type Interaction = {
-  mode: 'rotate' | 'pan'
-  pointerId: number
-  x: number
-  y: number
-}
+import { BrainGraph } from '../BrainGraph/BrainGraph'
 
 type Axis = 'x' | 'y' | 'z'
 
@@ -19,7 +12,8 @@ type LayerTurn = {
   degrees: number
 }
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+type Point = { x: number; y: number }
+
 const cubieCoordinates = [-1, 0, 1] as const
 const axes: Axis[] = ['x', 'y', 'z']
 
@@ -37,38 +31,29 @@ function turnTransform(turn: LayerTurn | null, layer: number) {
 }
 
 export function BrainStage() {
-  const stageRef = useRef<HTMLElement | null>(null)
-  const interaction = useRef<Interaction | null>(null)
   const { setCenterPoint } = useBrainScene()
   const { settings } = useAppearance()
   const { sessions } = useChatSessions()
-  const [rotation, setRotation] = useState({ x: -24, y: 38 })
-  const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(1)
   const [turn, setTurn] = useState<LayerTurn | null>(null)
+  const [corePoint, setCorePoint] = useState<Point | null>(null)
 
   const isThinking = sessions.some(
     (session) => session.connectionState === 'connecting' || session.connectionState === 'streaming',
   )
 
-  const publishCenter = useCallback(() => {
-    const stage = stageRef.current
-    if (!stage) return
-    const rect = stage.getBoundingClientRect()
-    setCenterPoint({
-      x: rect.left + rect.width / 2 + pan.x,
-      y: rect.top + rect.height / 2 + pan.y,
+  const handleCorePointChange = useCallback((point: Point) => {
+    setCorePoint((current) => {
+      if (current && Math.abs(current.x - point.x) < 0.5 && Math.abs(current.y - point.y) < 0.5) return current
+      return point
     })
-  }, [pan.x, pan.y, setCenterPoint])
 
-  useEffect(() => {
-    publishCenter()
-    window.addEventListener('resize', publishCenter)
-    return () => {
-      window.removeEventListener('resize', publishCenter)
-      setCenterPoint(null)
-    }
-  }, [publishCenter, setCenterPoint])
+    const stage = document.querySelector<HTMLElement>('.brain-stage--3d')
+    const rect = stage?.getBoundingClientRect()
+    if (!rect) return
+    setCenterPoint({ x: rect.left + point.x, y: rect.top + point.y })
+  }, [setCenterPoint])
+
+  useEffect(() => () => setCenterPoint(null), [setCenterPoint])
 
   useEffect(() => {
     if (!isThinking) {
@@ -94,9 +79,6 @@ export function BrainStage() {
         const nextTurn: LayerTurn = { axis, layer, degrees: 0 }
 
         setTurn(nextTurn)
-
-        // Two frames ensure the browser paints the 0deg layer before transitioning
-        // it to a quarter turn.
         frameOne = window.requestAnimationFrame(() => {
           frameTwo = window.requestAnimationFrame(() => {
             if (!cancelled) setTurn({ ...nextTurn, degrees: targetDegrees })
@@ -105,9 +87,6 @@ export function BrainStage() {
 
         finishTimer = window.setTimeout(() => {
           if (cancelled) return
-          // The cubies are visually identical wireframes. After a 90-degree turn,
-          // returning the layer transform to its canonical grouping is visually
-          // continuous while keeping the scaffold state intentionally lightweight.
           setTurn(null)
           scheduleTurn()
         }, settings.rubikTurnSpeedMs + 90)
@@ -125,114 +104,62 @@ export function BrainStage() {
     }
   }, [isThinking, settings.rubikTurnSpeedMs])
 
-  function handlePointerDown(event: PointerEvent<HTMLElement>) {
-    const mode = event.shiftKey || event.button === 1 || event.button === 2 ? 'pan' : 'rotate'
-    interaction.current = { mode, pointerId: event.pointerId, x: event.clientX, y: event.clientY }
-    event.currentTarget.setPointerCapture(event.pointerId)
-  }
-
-  function handlePointerMove(event: PointerEvent<HTMLElement>) {
-    const active = interaction.current
-    if (!active || active.pointerId !== event.pointerId) return
-
-    const dx = event.clientX - active.x
-    const dy = event.clientY - active.y
-    active.x = event.clientX
-    active.y = event.clientY
-
-    if (active.mode === 'pan') {
-      setPan((current) => ({ x: current.x + dx, y: current.y + dy }))
-      return
-    }
-
-    setRotation((current) => ({
-      x: clamp(current.x - dy * 0.35, -80, 80),
-      y: current.y + dx * 0.45,
-    }))
-  }
-
-  function endInteraction(event: PointerEvent<HTMLElement>) {
-    if (interaction.current?.pointerId === event.pointerId) interaction.current = null
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
-  }
-
-  function handleWheel(event: WheelEvent<HTMLElement>) {
-    event.preventDefault()
-    setZoom((current) => clamp(current - event.deltaY * 0.001, 0.65, 1.7))
-  }
-
-  function resetView() {
-    setRotation({ x: -24, y: 38 })
-    setPan({ x: 0, y: 0 })
-    setZoom(1)
-  }
-
   const groupingAxis = turn?.axis ?? 'z'
 
   return (
-    <section
-      ref={stageRef}
-      className="brain-stage brain-stage--3d"
-      aria-label="Interactive 3D brain workspace scaffold"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={endInteraction}
-      onPointerCancel={endInteraction}
-      onWheel={handleWheel}
-      onContextMenu={(event) => event.preventDefault()}
-      onDoubleClick={resetView}
-    >
+    <section className="brain-stage brain-stage--3d" aria-label="Interactive 3D Hermes memory graph foundation">
       <div className="brain-scene-grid" aria-hidden="true" />
+      <BrainGraph onCorePointChange={handleCorePointChange} />
 
       <div
-        className="brain-scene-object"
-        style={{
-          transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-        }}
+        className={`brain-scene-core ${isThinking ? 'is-thinking' : ''}`}
+        style={corePoint ? { left: `${corePoint.x}px`, top: `${corePoint.y}px` } : undefined}
         aria-hidden="true"
       >
         <span className={`brain-cube-glow ${isThinking ? 'is-thinking' : ''}`} />
 
-        <div className={`brain-cube ${isThinking ? 'is-thinking' : ''}`}>
-          {cubieCoordinates.map((layer) => (
-            <span
-              className="brain-cube-layer"
-              key={`${groupingAxis}:${layer}`}
-              style={{
-                transform: turnTransform(turn, layer),
-                transitionDuration: `${settings.rubikTurnSpeedMs}ms`,
-              }}
-            >
-              {cubieCoordinates.flatMap((z) =>
-                cubieCoordinates.flatMap((y) =>
-                  cubieCoordinates
-                    .filter((x) => coordinateForAxis(groupingAxis, x, y, z) === layer)
-                    .map((x) => (
-                      <span
-                        className="brain-cubie"
-                        key={`${x}:${y}:${z}`}
-                        style={{ transform: `translate3d(${x * 38}px, ${y * 38}px, ${z * 38}px)` }}
-                      >
-                        <i className="brain-cubie__face brain-cubie__face--front" />
-                        <i className="brain-cubie__face brain-cubie__face--back" />
-                        <i className="brain-cubie__face brain-cubie__face--right" />
-                        <i className="brain-cubie__face brain-cubie__face--left" />
-                        <i className="brain-cubie__face brain-cubie__face--top" />
-                        <i className="brain-cubie__face brain-cubie__face--bottom" />
-                      </span>
-                    )),
-                ),
-              )}
-            </span>
-          ))}
+        <div className="brain-scene-core__scale">
+          <div className={`brain-cube ${isThinking ? 'is-thinking' : ''}`}>
+            {cubieCoordinates.map((layer) => (
+              <span
+                className="brain-cube-layer"
+                key={`${groupingAxis}:${layer}`}
+                style={{
+                  transform: turnTransform(turn, layer),
+                  transitionDuration: `${settings.rubikTurnSpeedMs}ms`,
+                }}
+              >
+                {cubieCoordinates.flatMap((z) =>
+                  cubieCoordinates.flatMap((y) =>
+                    cubieCoordinates
+                      .filter((x) => coordinateForAxis(groupingAxis, x, y, z) === layer)
+                      .map((x) => (
+                        <span
+                          className="brain-cubie"
+                          key={`${x}:${y}:${z}`}
+                          style={{ transform: `translate3d(${x * 38}px, ${y * 38}px, ${z * 38}px)` }}
+                        >
+                          <i className="brain-cubie__face brain-cubie__face--front" />
+                          <i className="brain-cubie__face brain-cubie__face--back" />
+                          <i className="brain-cubie__face brain-cubie__face--right" />
+                          <i className="brain-cubie__face brain-cubie__face--left" />
+                          <i className="brain-cubie__face brain-cubie__face--top" />
+                          <i className="brain-cubie__face brain-cubie__face--bottom" />
+                        </span>
+                      )),
+                  ),
+                )}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="brain-scene-help">
-        <span>DRAG · ROTATE</span>
-        <span>SHIFT / RIGHT DRAG · PAN</span>
+        <span>DRAG · ORBIT</span>
+        <span>RIGHT DRAG · PAN</span>
         <span>WHEEL · ZOOM</span>
-        <span>DOUBLE CLICK · RESET</span>
+        <span>CLICK NODE · HIGHLIGHT</span>
       </div>
     </section>
   )
