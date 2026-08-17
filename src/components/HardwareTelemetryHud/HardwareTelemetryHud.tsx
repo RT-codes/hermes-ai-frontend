@@ -1,4 +1,5 @@
 import { useSystemTelemetry } from '../../context/SystemTelemetryContext'
+import { BrainHudPanel } from '../BrainHudPanel/BrainHudPanel'
 
 function clamp(value: number) {
   return Math.min(100, Math.max(0, value))
@@ -42,14 +43,7 @@ export function HardwareTelemetryHud() {
   const modelGpuPercent = model && model.size > 0 ? Math.round((model.sizeVram / model.size) * 100) : null
 
   return (
-    <aside className="hardware-hud" aria-label="Live hardware telemetry">
-      <div className="hardware-hud__connector"><span /></div>
-
-      <div className="hardware-hud__header">
-        <span>LOCAL COMPUTE</span>
-        <small>{error ? 'DEGRADED' : 'LIVE · 3S'}</small>
-      </div>
-
+    <BrainHudPanel title="LOCAL COMPUTE" meta={error ? 'DEGRADED' : 'LIVE · 3S'} ariaLabel="Live hardware telemetry">
       <div className="hardware-hud__identity">
         <strong>{gpu?.name ?? 'GPU telemetry unavailable'}</strong>
         <span>{model ? `${model.name} · ${modelGpuPercent ?? 0}% model bytes in VRAM` : 'No Ollama model currently loaded'}</span>
@@ -82,9 +76,11 @@ export function HardwareTelemetryHud() {
         </div>
       </div>
 
-      <div className="hardware-hud__footer">
-        {host?.cpuName ? host.cpuName.replace(/\s+/g, ' ').trim() : 'Host CPU unavailable'}
-      </div>
-    </aside>
+      {host?.cpuName && (
+        <div className="hardware-hud__footer">
+          {host.cpuName.replace(/\s+/g, ' ').trim()}
+        </div>
+      )}
+    </BrainHudPanel>
   )
 }
