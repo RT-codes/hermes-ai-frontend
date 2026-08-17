@@ -18,7 +18,8 @@ export function ChatPanel() {
 
   if (!activeSession || !activeSessionId) return null
 
-  const input = drafts[activeSessionId] ?? ''
+  const sessionId = activeSessionId
+  const input = drafts[sessionId] ?? ''
   const isBusy = activeSession.connectionState === 'connecting' || activeSession.connectionState === 'streaming'
   const statusLabel = activeSession.connectionState === 'connecting'
     ? 'Connecting'
@@ -36,8 +37,8 @@ export function ChatPanel() {
     const content = input.trim()
     if (!content || isBusy) return
 
-    setDrafts((current) => ({ ...current, [activeSessionId]: '' }))
-    await sendMessage(activeSessionId, content)
+    setDrafts((current) => ({ ...current, [sessionId]: '' }))
+    await sendMessage(sessionId, content)
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -62,12 +63,12 @@ export function ChatPanel() {
       <div className="chat-tabs" role="tablist" aria-label="Open Hermes chats">
         <div className="chat-tabs__scroll">
           {openSessions.map((session) => (
-            <div className={`chat-tab ${session.id === activeSessionId ? 'is-active' : ''}`} key={session.id}>
+            <div className={`chat-tab ${session.id === sessionId ? 'is-active' : ''}`} key={session.id}>
               <button
                 className="chat-tab__select"
                 type="button"
                 role="tab"
-                aria-selected={session.id === activeSessionId}
+                aria-selected={session.id === sessionId}
                 onClick={() => selectSession(session.id)}
               >
                 <span className={`chat-tab__state chat-tab__state--${session.connectionState}`} />
@@ -116,7 +117,7 @@ export function ChatPanel() {
       <form className="chat-composer" onSubmit={handleSubmit}>
         <textarea
           value={input}
-          onChange={(event) => setDrafts((current) => ({ ...current, [activeSessionId]: event.target.value }))}
+          onChange={(event) => setDrafts((current) => ({ ...current, [sessionId]: event.target.value }))}
           onKeyDown={handleKeyDown}
           placeholder={`Message ${activeSession.title}…`}
           rows={1}
