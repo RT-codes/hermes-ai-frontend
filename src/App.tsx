@@ -31,7 +31,7 @@ function App() {
           id="activity"
           title="ACTIVITY"
           className="activity-panel"
-          defaultRect={{ x: 1120, y: 120, width: 300, height: 230 }}
+          defaultRect={{ x: 1020, y: 120, width: 300, height: 230 }}
           minWidth={240}
           minHeight={180}
         >
@@ -46,7 +46,7 @@ function App() {
           id="system"
           title="SYSTEM"
           className="system-panel"
-          defaultRect={{ x: 1120, y: 690, width: 300, height: 190 }}
+          defaultRect={{ x: 1020, y: 690, width: 300, height: 190 }}
           minWidth={230}
           minHeight={160}
         >
