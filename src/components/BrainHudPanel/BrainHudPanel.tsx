@@ -6,12 +6,13 @@ type Point = { x: number; y: number }
 
 type BrainHudPanelProps = {
   title: string
+  meta?: ReactNode
   className?: string
   children: ReactNode
   ariaLabel?: string
 }
 
-export function BrainHudPanel({ title, className = '', children, ariaLabel }: BrainHudPanelProps) {
+export function BrainHudPanel({ title, meta, className = '', children, ariaLabel }: BrainHudPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
   const { centerPoint } = useBrainScene()
   const [startPoint, setStartPoint] = useState<Point | null>(null)
@@ -54,6 +55,7 @@ export function BrainHudPanel({ title, className = '', children, ariaLabel }: Br
         <div className="brain-hud-panel__surface" />
         <header className="brain-hud-panel__header">
           <span>{title}</span>
+          {meta && <small>{meta}</small>}
         </header>
         <div className="brain-hud-panel__content">{children}</div>
       </section>
