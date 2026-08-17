@@ -143,6 +143,18 @@ function SettingsWorkspace() {
             <output>{Math.round(settings.panelOpacity * 100)}%</output>
           </label>
 
+          <label className="appearance-control appearance-control--color">
+            <span>Brain HUD color</span>
+            <input type="color" value={settings.brainHudColor} onChange={(event) => updateSetting('brainHudColor', event.target.value)} />
+            <output>{settings.brainHudColor.toUpperCase()}</output>
+          </label>
+
+          <label className="appearance-control">
+            <span>Brain HUD opacity</span>
+            <input type="range" min="0.25" max="0.96" step="0.01" value={settings.brainHudOpacity} onChange={(event) => updateSetting('brainHudOpacity', Number(event.target.value))} />
+            <output>{Math.round(settings.brainHudOpacity * 100)}%</output>
+          </label>
+
           <label className="appearance-control">
             <span>Panel blur</span>
             <input type="range" min="0" max="42" step="1" value={settings.panelBlur} onChange={(event) => updateSetting('panelBlur', Number(event.target.value))} />
