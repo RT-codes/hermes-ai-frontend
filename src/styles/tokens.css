@@ -1,0 +1,24 @@
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #f4f7fb;
+  background: #05070b;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --bg: #05070b;
+  --text-primary: #f4f7fb;
+  --text-muted: #8793a5;
+
+  --glass: rgb(12 18 28 / 0.55);
+  --glass-soft: rgb(12 18 28 / 0.5);
+  --glass-border: rgb(255 255 255 / 0.08);
+
+  --status-online: #66f0a8;
+  --status-idle: #48505e;
+
+  --radius-panel: 22px;
+  --blur-panel: 24px;
+
+  --space-page: 2rem;
+}
