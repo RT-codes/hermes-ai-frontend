@@ -1,0 +1,239 @@
+.brain-stage--3d {
+  perspective: 1100px;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+.brain-stage--3d:active { cursor: grabbing; }
+
+.brain-scene-grid {
+  position: absolute;
+  inset: 15% 12% 10% calc(var(--sidebar-width) + 4rem);
+  pointer-events: none;
+  opacity: 0.22;
+  transform: perspective(900px) rotateX(68deg) translateY(22%);
+  transform-origin: center 70%;
+  background-image:
+    linear-gradient(rgb(var(--accent-rgb) / 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--accent-rgb) / 0.14) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at center, black 5%, transparent 70%);
+}
+
+.brain-scene-object {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 116px;
+  height: 116px;
+  margin: -58px 0 0 -58px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/*
+ * Keep glow effects OUTSIDE the preserve-3d cube hierarchy. CSS filter on an
+ * ancestor forces descendants into a flattened compositing plane, which was
+ * why the previous 3x3x3 cubies visually collapsed into a single surface.
+ */
+.brain-cube-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  margin: -32px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgb(var(--accent-rgb) / 0.28);
+  box-shadow: 0 0 72px 22px rgb(var(--accent-rgb) / 0.34);
+  filter: blur(22px);
+  animation: brain-cube-glow-breathe 3.8s ease-in-out infinite alternate;
+}
+
+.brain-cube-glow.is-thinking {
+  animation-duration: 1.25s;
+}
+
+.brain-cube {
+  position: relative;
+  width: 116px;
+  height: 116px;
+  transform-style: preserve-3d;
+}
+
+.brain-cube-layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50% 0;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.22, 0.78, 0.25, 1);
+  will-change: transform;
+}
+
+/*
+ * Temporary scene marker: 27 separate wireframe cubies arranged as a true
+ * 3x3x3 block. The cubie center is positioned at the cube center first; each
+ * translate3d then offsets it along X/Y/Z by one grid step.
+ */
+.brain-cubie {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  display: block;
+  transform-style: preserve-3d;
+}
+
+.brain-cubie__face {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border: 1px solid rgb(var(--accent-rgb) / 0.82);
+  background: rgb(var(--accent-rgb) / 0.006);
+  box-shadow:
+    inset 0 0 5px rgb(var(--accent-rgb) / 0.035),
+    0 0 7px rgb(var(--accent-rgb) / 0.18);
+  backface-visibility: visible;
+}
+
+.brain-cubie__face--front { transform: translateZ(16px); }
+.brain-cubie__face--back { transform: rotateY(180deg) translateZ(16px); }
+.brain-cubie__face--right { transform: rotateY(90deg) translateZ(16px); }
+.brain-cubie__face--left { transform: rotateY(-90deg) translateZ(16px); }
+.brain-cubie__face--top { transform: rotateX(90deg) translateZ(16px); }
+.brain-cubie__face--bottom { transform: rotateX(-90deg) translateZ(16px); }
+
+.brain-scene-help {
+  position: absolute;
+  left: calc(var(--sidebar-width) + 2.2rem);
+  bottom: 1.35rem;
+  display: flex;
+  gap: 1rem;
+  color: var(--text-faint);
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+}
+
+.brain-hud-stack {
+  position: absolute;
+  z-index: 24;
+  right: 2rem;
+  display: grid;
+  width: min(340px, calc(100vw - var(--sidebar-width) - 5rem));
+  gap: 0.85rem;
+  pointer-events: none;
+}
+
+.brain-hud-stack--top { top: 7.2rem; }
+.brain-hud-stack--bottom { bottom: 2rem; }
+
+.brain-hud-panel {
+  position: relative;
+  min-width: 0;
+  color: var(--text-muted);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.85);
+  filter: drop-shadow(0 14px 26px rgb(0 0 0 / 0.24));
+  isolation: isolate;
+}
+
+.brain-hud-panel__surface {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: var(--glass-border);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.brain-hud-panel__surface::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  clip-path: inherit;
+  background:
+    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.035) 28%, rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity-soft))),
+    rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity));
+  backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+}
+
+.brain-hud-panel__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  padding: 0.7rem 0.85rem 0.35rem;
+  color: var(--cyan-soft);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+}
+
+.brain-hud-panel__content {
+  position: relative;
+  z-index: 1;
+  padding: 0.35rem 0.85rem 0.85rem;
+}
+
+.brain-hud-connector {
+  position: fixed;
+  z-index: 22;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.brain-hud-connector line {
+  stroke: var(--cyan-dim);
+  stroke-width: 1;
+  filter: drop-shadow(0 0 4px rgb(var(--accent-rgb) / 0.3));
+}
+
+.brain-hud-connector circle {
+  fill: var(--bg);
+  stroke: var(--cyan-soft);
+  stroke-width: 1;
+  filter: drop-shadow(0 0 6px rgb(var(--accent-rgb) / 0.48));
+}
+
+.appearance-control select {
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid var(--cyan-dim);
+  outline: none;
+  padding: 0 0.55rem;
+  color: var(--text-primary);
+  background: rgb(var(--panel-rgb) / 0.6);
+  font: inherit;
+  font-size: 0.68rem;
+}
+
+@keyframes brain-cube-glow-breathe {
+  from { opacity: 0.58; transform: scale(0.88); }
+  to { opacity: 1; transform: scale(1.12); }
+}
+
+@media (max-width: 1100px) {
+  .brain-hud-stack {
+    right: 1.25rem;
+    width: 300px;
+  }
+
+  .brain-scene-help { display: none; }
+}
+
+@media (max-width: 760px) {
+  .brain-hud-stack,
+  .brain-hud-connector { display: none; }
+}

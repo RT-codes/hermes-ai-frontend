@@ -23,9 +23,7 @@
   scrollbar-width: none;
 }
 
-.chat-tabs__scroll::-webkit-scrollbar {
-  display: none;
-}
+.chat-tabs__scroll::-webkit-scrollbar { display: none; }
 
 .chat-tab {
   display: flex;
@@ -34,10 +32,7 @@
   max-width: 13rem;
   border: 1px solid rgb(var(--accent-rgb) / 0.12);
   background: rgb(var(--panel-rgb) / 0.36);
-  transition:
-    border-color 130ms ease,
-    background 130ms ease,
-    box-shadow 130ms ease;
+  transition: border-color 130ms ease, background 130ms ease, box-shadow 130ms ease;
 }
 
 .chat-tab.is-active {
@@ -88,9 +83,7 @@
   box-shadow: 0 0 9px rgb(var(--accent-rgb) / 0.55);
 }
 
-.chat-tab__state--error {
-  background: #ff6f8f;
-}
+.chat-tab__state--error { background: #ff6f8f; }
 
 .chat-tab__close {
   width: 1.65rem;
@@ -187,9 +180,7 @@
   white-space: pre-wrap;
 }
 
-.chat-message--user p {
-  color: var(--cyan-soft);
-}
+.chat-message--user p { color: var(--cyan-soft); }
 
 .chat-error {
   padding: 0.6rem 0.75rem;
@@ -241,4 +232,18 @@
 .chat-composer button:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+/* Chat stays above brain/HUD content, but below the fixed sidebar (z-index 60). */
+.floating-panel.chat-panel {
+  z-index: 55 !important;
+}
+
+/* Keep the existing chat styling while guaranteeing the same live glass blur as the telemetry HUD. */
+.chat-panel .floating-panel__surface::after {
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.065), transparent 34%),
+    rgb(var(--panel-rgb) / var(--chat-panel-opacity, 0.72));
+  backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
 }

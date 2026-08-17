@@ -1,20 +1,31 @@
 import { useState } from 'react'
+import { ActivityPanel } from './components/ActivityPanel/ActivityPanel'
+import { BrainHudPanel } from './components/BrainHudPanel/BrainHudPanel'
 import { ChatPanel } from './components/ChatPanel/ChatPanel'
 import { FloatingPanel } from './components/FloatingPanel/FloatingPanel'
+import { HardwareTelemetryHud } from './components/HardwareTelemetryHud/HardwareTelemetryHud'
 import { Sidebar } from './components/Sidebar/Sidebar'
+import { SystemPanel } from './components/SystemPanel/SystemPanel'
 import { TopBar } from './components/TopBar/TopBar'
 import { WorkspaceStage, type WorkspaceView } from './components/WorkspaceStage/WorkspaceStage'
-import { AppearanceProvider } from './context/AppearanceContext'
+import { AppearanceProvider, useAppearance } from './context/AppearanceContext'
+import { BrainSceneProvider } from './context/BrainSceneContext'
 import { ChatSessionsProvider, useChatSessions } from './context/ChatSessionsContext'
 import { HouseholdProvider } from './context/HouseholdContext'
+import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
+import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
 import './styles/layout.css'
 import './styles/chat.css'
 import './styles/workspace.css'
+import './styles/telemetry.css'
+import './styles/brain.css'
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeView, setActiveView] = useState<WorkspaceView>('brain')
   const { openTabIds, createSession } = useChatSessions()
+  const { settings } = useAppearance()
+  const computeAtTop = settings.computeHudPosition === 'top-right'
 
   return (
     <main className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
@@ -38,6 +49,23 @@ function HermesHome() {
       <TopBar />
       <WorkspaceStage activeView={activeView} />
 
+      {activeView === 'brain' && (
+        <>
+          <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--top' : 'brain-hud-stack--bottom'}`}>
+            <HardwareTelemetryHud />
+          </div>
+
+          <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--bottom' : 'brain-hud-stack--top'}`}>
+            <BrainHudPanel title="ACTIVITY">
+              <ActivityPanel />
+            </BrainHudPanel>
+            <BrainHudPanel title="SYSTEM">
+              <SystemPanel />
+            </BrainHudPanel>
+          </div>
+        </>
+      )}
+
       {openTabIds.length > 0 && (
         <FloatingPanel
           id="chat"
@@ -50,36 +78,6 @@ function HermesHome() {
           <ChatPanel />
         </FloatingPanel>
       )}
-
-      <FloatingPanel
-        id="activity"
-        title="ACTIVITY"
-        className="activity-panel"
-        defaultRect={{ x: 1020, y: 120, width: 300, height: 230 }}
-        minWidth={240}
-        minHeight={180}
-      >
-        <ul>
-          <li><span className="activity-dot active" /> Hermes ready</li>
-          <li><span className="activity-dot" /> Memory idle</li>
-          <li><span className="activity-dot" /> Tools idle</li>
-        </ul>
-      </FloatingPanel>
-
-      <FloatingPanel
-        id="system"
-        title="SYSTEM"
-        className="system-panel"
-        defaultRect={{ x: 1020, y: 690, width: 300, height: 190 }}
-        minWidth={230}
-        minHeight={160}
-      >
-        <div className="system-list">
-          <span>Qwen</span>
-          <span>Hindsight</span>
-          <span>Ollama</span>
-        </div>
-      </FloatingPanel>
     </main>
   )
 }
@@ -89,7 +87,13 @@ function App() {
     <HouseholdProvider>
       <AppearanceProvider>
         <ChatSessionsProvider>
-          <HermesHome />
+          <RuntimeStatusProvider>
+            <SystemTelemetryProvider>
+              <BrainSceneProvider>
+                <HermesHome />
+              </BrainSceneProvider>
+            </SystemTelemetryProvider>
+          </RuntimeStatusProvider>
         </ChatSessionsProvider>
       </AppearanceProvider>
     </HouseholdProvider>

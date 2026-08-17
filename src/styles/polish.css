@@ -75,9 +75,7 @@ body .quick-new-chat:hover::after {
   cursor: default;
 }
 
-.workspace-stage .chat-session-card:hover {
-  transform: none;
-}
+.workspace-stage .chat-session-card:hover { transform: none; }
 
 .chat-session-card__open {
   display: grid;
@@ -119,9 +117,7 @@ body .quick-new-chat:hover::after {
   color: var(--text-primary);
 }
 
-.chat-session-card__actions .chat-session-card__delete {
-  color: #ff8ba4;
-}
+.chat-session-card__actions .chat-session-card__delete { color: #ff8ba4; }
 
 .chat-session-card__actions button:disabled {
   opacity: 0.35;
@@ -137,11 +133,6 @@ body .quick-new-chat:hover::after {
 }
 
 @media (max-width: 760px) {
-  .workspace-stage .chat-session-card {
-    grid-template-columns: 1fr;
-  }
-
-  .chat-session-card__actions {
-    justify-content: flex-end;
-  }
+  .workspace-stage .chat-session-card { grid-template-columns: 1fr; }
+  .chat-session-card__actions { justify-content: flex-end; }
 }

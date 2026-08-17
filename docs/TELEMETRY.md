@@ -1,0 +1,88 @@
+# Hermes Home Runtime Telemetry
+
+Hermes Home exposes lightweight local runtime information to the browser during development so the Brain view can show useful system state without exposing shell access or hardware commands directly to frontend JavaScript.
+
+## Data path
+
+```text
+Browser
+  -> GET /system-api/telemetry every ~3 seconds
+  -> Vite local middleware
+      -> Windows PowerShell/CIM for CPU + physical RAM + Ollama /api/ps
+      -> nvidia-smi for GPU, VRAM, utilization, and GPU temperature
+  -> JSON snapshot
+  -> shared SystemTelemetryProvider
+  -> Local Compute + System HUD
+```
+
+The telemetry endpoint is implemented in `vite.config.ts`. It does not call Hermes, does not use the LLM, and consumes no model tokens.
+
+## Brain HUD layout
+
+Local Compute, Activity and System are fixed Brain-view HUDs rather than draggable floating panels.
+
+All three share the same 1px accent frame and blur treatment. Their fill color and opacity are now controlled independently from the regular panel/sidebar appearance through the **Brain HUD color** and **Brain HUD opacity** settings.
+
+Each panel draws a connector to the visualization center published through `BrainSceneContext`. The endpoint is therefore dynamic rather than hard-coded: when the current 3D scene is panned, the connector dot follows the scene center. The same context is intended to be driven by the future Three.js/React Three Fiber camera and real graph/brain renderer.
+
+The Local Compute panel can be placed at either `top-right` or `bottom-right` from Appearance settings. Activity and System automatically occupy the opposite right-side position.
+
+## Polling and overhead
+
+- Browser polling interval: approximately 3 seconds.
+- Server-side telemetry cache: 1.5 seconds.
+- Polling pauses while the page is hidden.
+- GPU sampling uses NVIDIA `nvidia-smi` selective queries.
+- Host CPU/RAM and Ollama process/model state are collected from Windows through a short non-interactive PowerShell call.
+- The UI keeps the most recent 48 samples for compact VRAM/GPU/CPU sparklines.
+
+This is a semi-realtime observability layer, not a high-frequency profiler.
+
+## Metrics
+
+Current telemetry includes:
+
+- GPU name
+- GPU utilization
+- VRAM used / total and percentage
+- GPU temperature
+- CPU name when available
+- CPU utilization
+- Windows physical RAM used / total
+- currently loaded Ollama model
+- fraction of the loaded model reported in VRAM
+- VRAM, GPU, and CPU sparkline history
+
+### CPU temperature
+
+CPU package temperature is deliberately shown as `SENSOR N/A` unless a trustworthy sensor source is added later. Windows ACPI thermal-zone values are not assumed to represent the actual CPU package temperature.
+
+## Runtime health HUDs
+
+The top status pill plus Activity/System HUDs use real local state rather than fixed placeholders:
+
+- System / Hermes `/health`
+- Hermes version
+- Memory / Hindsight `/docs`
+- Ollama loaded-model state
+- GPU, VRAM, CPU and RAM information
+- browser chat session activity/errors
+
+Hindsight is reached through the server-side `/hindsight-api` Vite proxy.
+
+## 3D scene scaffold
+
+The current Brain view contains a temporary glowing cyan **3x3 Rubik-style wireframe cube** in a native CSS 3D scene. It supports rotation, pan, zoom and reset.
+
+Only that temporary marker is rendered as a wireframe. The scene grid and HUD interfaces retain their normal styling. The wireframe cube is not the final brain visualization; it establishes the interaction model and dynamic center anchor before the real 3D graph renderer is introduced.
+
+## Security boundary
+
+- `HERMES_API_KEY` remains server-side in `.env.local`.
+- `.env` and `.env.*` are ignored by Git, while `.env.example` remains tracked.
+- The browser never receives a shell command or API secret.
+- Raw Hermes port `8642` remains intended for local host access; the household-facing frontend can be exposed separately later.
+
+## Production note
+
+The current telemetry route is Vite development-server middleware. When Hermes Home moves from Vite dev hosting to the planned LAN production service, this collector should move into that local backend/reverse-proxy process rather than being reimplemented in browser code.
