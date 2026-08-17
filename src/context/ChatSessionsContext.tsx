@@ -224,7 +224,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const value = useMemo<ChatSessionsContextValue>(() => ({
+  const value: ChatSessionsContextValue = {
     sessions,
     openTabIds,
     activeSessionId,
@@ -235,7 +235,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     closeTab,
     closeAllTabs,
     sendMessage,
-  }), [activeSession, activeSessionId, openTabIds, sessions])
+  }
 
   return <ChatSessionsContext.Provider value={value}>{children}</ChatSessionsContext.Provider>
 }
