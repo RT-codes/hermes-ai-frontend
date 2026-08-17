@@ -1,15 +1,21 @@
 import { useState } from 'react'
+import { ActivityPanel } from './components/ActivityPanel/ActivityPanel'
 import { ChatPanel } from './components/ChatPanel/ChatPanel'
 import { FloatingPanel } from './components/FloatingPanel/FloatingPanel'
+import { HardwareTelemetryHud } from './components/HardwareTelemetryHud/HardwareTelemetryHud'
 import { Sidebar } from './components/Sidebar/Sidebar'
+import { SystemPanel } from './components/SystemPanel/SystemPanel'
 import { TopBar } from './components/TopBar/TopBar'
 import { WorkspaceStage, type WorkspaceView } from './components/WorkspaceStage/WorkspaceStage'
 import { AppearanceProvider } from './context/AppearanceContext'
 import { ChatSessionsProvider, useChatSessions } from './context/ChatSessionsContext'
 import { HouseholdProvider } from './context/HouseholdContext'
+import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
+import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
 import './styles/layout.css'
 import './styles/chat.css'
 import './styles/workspace.css'
+import './styles/telemetry.css'
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -38,6 +44,8 @@ function HermesHome() {
       <TopBar />
       <WorkspaceStage activeView={activeView} />
 
+      {activeView === 'brain' && <HardwareTelemetryHud />}
+
       {openTabIds.length > 0 && (
         <FloatingPanel
           id="chat"
@@ -59,11 +67,7 @@ function HermesHome() {
         minWidth={240}
         minHeight={180}
       >
-        <ul>
-          <li><span className="activity-dot active" /> Hermes ready</li>
-          <li><span className="activity-dot" /> Memory idle</li>
-          <li><span className="activity-dot" /> Tools idle</li>
-        </ul>
+        <ActivityPanel />
       </FloatingPanel>
 
       <FloatingPanel
@@ -71,14 +75,10 @@ function HermesHome() {
         title="SYSTEM"
         className="system-panel"
         defaultRect={{ x: 1020, y: 690, width: 300, height: 190 }}
-        minWidth={230}
-        minHeight={160}
+        minWidth={250}
+        minHeight={180}
       >
-        <div className="system-list">
-          <span>Qwen</span>
-          <span>Hindsight</span>
-          <span>Ollama</span>
-        </div>
+        <SystemPanel />
       </FloatingPanel>
     </main>
   )
@@ -89,7 +89,11 @@ function App() {
     <HouseholdProvider>
       <AppearanceProvider>
         <ChatSessionsProvider>
-          <HermesHome />
+          <RuntimeStatusProvider>
+            <SystemTelemetryProvider>
+              <HermesHome />
+            </SystemTelemetryProvider>
+          </RuntimeStatusProvider>
         </ChatSessionsProvider>
       </AppearanceProvider>
     </HouseholdProvider>
