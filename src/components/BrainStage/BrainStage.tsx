@@ -10,12 +10,13 @@ type Interaction = {
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+const cubieCoordinates = [-1, 0, 1]
 
 export function BrainStage() {
   const stageRef = useRef<HTMLElement | null>(null)
   const interaction = useRef<Interaction | null>(null)
   const { setCenterPoint } = useBrainScene()
-  const [rotation, setRotation] = useState({ x: -18, y: 32 })
+  const [rotation, setRotation] = useState({ x: -22, y: 36 })
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
 
@@ -75,7 +76,7 @@ export function BrainStage() {
   }
 
   function resetView() {
-    setRotation({ x: -18, y: 32 })
+    setRotation({ x: -22, y: 36 })
     setPan({ x: 0, y: 0 })
     setZoom(1)
   }
@@ -103,12 +104,26 @@ export function BrainStage() {
         aria-hidden="true"
       >
         <div className="brain-cube">
-          <span className="brain-cube__face brain-cube__face--front" />
-          <span className="brain-cube__face brain-cube__face--back" />
-          <span className="brain-cube__face brain-cube__face--right" />
-          <span className="brain-cube__face brain-cube__face--left" />
-          <span className="brain-cube__face brain-cube__face--top" />
-          <span className="brain-cube__face brain-cube__face--bottom" />
+          {cubieCoordinates.flatMap((z) =>
+            cubieCoordinates.flatMap((y) =>
+              cubieCoordinates.map((x) => (
+                <span
+                  className="brain-cubie"
+                  key={`${x}:${y}:${z}`}
+                  style={{
+                    transform: `translate3d(${x * 38}px, ${y * 38}px, ${z * 38}px)`,
+                  }}
+                >
+                  <i className="brain-cubie__face brain-cubie__face--front" />
+                  <i className="brain-cubie__face brain-cubie__face--back" />
+                  <i className="brain-cubie__face brain-cubie__face--right" />
+                  <i className="brain-cubie__face brain-cubie__face--left" />
+                  <i className="brain-cubie__face brain-cubie__face--top" />
+                  <i className="brain-cubie__face brain-cubie__face--bottom" />
+                </span>
+              )),
+            ),
+          )}
         </div>
       </div>
 
