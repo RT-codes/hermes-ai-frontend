@@ -20,8 +20,16 @@ export function BrainHudPanel({ title, meta, className = '', children, ariaLabel
   const measure = () => {
     const panel = panelRef.current
     if (!panel) return
+
     const rect = panel.getBoundingClientRect()
-    setStartPoint({ x: rect.left, y: rect.top + rect.height * 0.5 })
+    const next = { x: rect.left, y: rect.top + rect.height * 0.5 }
+
+    setStartPoint((current) => {
+      if (current && Math.abs(current.x - next.x) < 0.5 && Math.abs(current.y - next.y) < 0.5) {
+        return current
+      }
+      return next
+    })
   }
 
   useLayoutEffect(() => {
