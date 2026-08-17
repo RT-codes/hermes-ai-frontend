@@ -34,39 +34,60 @@
   will-change: transform;
 }
 
+/*
+ * Keep glow effects OUTSIDE the preserve-3d cube hierarchy. CSS filter on an
+ * ancestor forces descendants into a flattened compositing plane, which was
+ * why the previous 3x3x3 cubies visually collapsed into a single surface.
+ */
+.brain-cube-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  margin: -32px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgb(var(--accent-rgb) / 0.28);
+  box-shadow: 0 0 72px 22px rgb(var(--accent-rgb) / 0.34);
+  filter: blur(22px);
+  animation: brain-cube-glow-breathe 3.8s ease-in-out infinite alternate;
+}
+
+.brain-cube-glow.is-thinking {
+  animation-duration: 1.25s;
+}
+
 .brain-cube {
   position: relative;
   width: 116px;
   height: 116px;
   transform-style: preserve-3d;
-  animation: brain-cube-breathe 3.8s ease-in-out infinite alternate;
 }
 
-.brain-cube::before {
-  content: '';
+.brain-cube-layer {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 58px;
-  height: 58px;
-  margin: -29px;
-  border-radius: 50%;
-  background: rgb(var(--accent-rgb) / 0.34);
-  filter: blur(24px);
-  box-shadow: 0 0 64px rgb(var(--accent-rgb) / 0.5);
-  transform: translateZ(0);
+  inset: 0;
+  display: block;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50% 0;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.22, 0.78, 0.25, 1);
+  will-change: transform;
 }
 
 /*
- * Temporary 3D scene marker: 27 separate wireframe cubies arranged as a 3x3x3
- * Rubik-style block. Only this placeholder uses the wireframe treatment.
+ * Temporary scene marker: 27 separate wireframe cubies arranged as a true
+ * 3x3x3 block. The cubie center is positioned at the cube center first; each
+ * translate3d then offsets it along X/Y/Z by one grid step.
  */
 .brain-cubie {
   position: absolute;
-  left: 42px;
-  top: 42px;
+  left: 50%;
+  top: 50%;
   width: 32px;
   height: 32px;
+  margin: -16px 0 0 -16px;
   display: block;
   transform-style: preserve-3d;
 }
@@ -75,11 +96,11 @@
   position: absolute;
   inset: 0;
   display: block;
-  border: 1px solid rgb(var(--accent-rgb) / 0.8);
-  background: rgb(var(--accent-rgb) / 0.008);
+  border: 1px solid rgb(var(--accent-rgb) / 0.82);
+  background: rgb(var(--accent-rgb) / 0.006);
   box-shadow:
-    inset 0 0 5px rgb(var(--accent-rgb) / 0.04),
-    0 0 8px rgb(var(--accent-rgb) / 0.2);
+    inset 0 0 5px rgb(var(--accent-rgb) / 0.035),
+    0 0 7px rgb(var(--accent-rgb) / 0.18);
   backface-visibility: visible;
 }
 
@@ -198,9 +219,9 @@
   font-size: 0.68rem;
 }
 
-@keyframes brain-cube-breathe {
-  from { filter: brightness(0.9) drop-shadow(0 0 10px rgb(var(--accent-rgb) / 0.2)); }
-  to { filter: brightness(1.15) drop-shadow(0 0 28px rgb(var(--accent-rgb) / 0.42)); }
+@keyframes brain-cube-glow-breathe {
+  from { opacity: 0.58; transform: scale(0.88); }
+  to { opacity: 1; transform: scale(1.12); }
 }
 
 @media (max-width: 1100px) {
