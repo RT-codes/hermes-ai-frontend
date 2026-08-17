@@ -6,7 +6,8 @@ It is a separate React + TypeScript + Vite application designed to provide a pol
 
 ## Screenshot
 
-> Screenshot coming soon.
+<img width="2552" height="1305" alt="1786980121523864102475827444014" src="https://github.com/user-attachments/assets/84ce8dad-b28d-4874-9565-d8d2486e6048" />
+
 
 <!-- Add the main project screenshot here once the UI stabilizes.
 
