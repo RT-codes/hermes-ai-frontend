@@ -13,13 +13,15 @@
   --text-faint: #5e7384;
 
   --cyan: #35d9ff;
+  --accent-rgb: 53 217 255;
   --cyan-soft: #7ee8ff;
-  --cyan-dim: rgb(53 217 255 / 0.24);
-  --cyan-faint: rgb(53 217 255 / 0.09);
+  --cyan-dim: rgb(var(--accent-rgb) / 0.24);
+  --cyan-faint: rgb(var(--accent-rgb) / 0.09);
 
-  --glass: rgb(6 16 25 / 0.72);
-  --glass-soft: rgb(8 19 29 / 0.58);
-  --glass-border: rgb(75 211 255 / 0.28);
+  --panel-rgb: 6 16 25;
+  --glass: rgb(var(--panel-rgb) / 0.72);
+  --glass-soft: rgb(var(--panel-rgb) / 0.58);
+  --glass-border: rgb(var(--accent-rgb) / 0.28);
 
   --status-online: #66f0c0;
   --status-idle: #496171;
@@ -27,7 +29,7 @@
   --blur-panel: 20px;
   --hud-cut: 18px;
 
-  --space-page: 1.5rem;
+  --space-page: 24px;
   --sidebar-width: 224px;
   --sidebar-width-collapsed: 72px;
 }
