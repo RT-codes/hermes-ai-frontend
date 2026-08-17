@@ -55,8 +55,8 @@
 
 /*
  * Temporary 3D scene marker: a transparent 3x3 Rubik-style wireframe cube.
- * Only the placeholder object uses wireframe treatment; the rest of the Brain
- * workspace keeps the normal HUD/glass styling.
+ * Only this placeholder object uses wireframe treatment; the rest of the Brain
+ * workspace keeps its normal HUD/glass styling.
  */
 .brain-cube__face {
   position: absolute;
@@ -142,7 +142,7 @@
   inset: 1px;
   clip-path: inherit;
   background:
-    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.035) 28%, rgb(var(--brain-hud-rgb) / calc(var(--brain-hud-opacity) * 0.9))),
+    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.035) 28%, rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity-soft))),
     rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity));
   backdrop-filter: blur(var(--blur-panel)) saturate(128%);
   -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
