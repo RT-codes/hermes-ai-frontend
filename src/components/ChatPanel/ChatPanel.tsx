@@ -62,16 +62,17 @@ export function ChatPanel() {
       <div className="chat-tabs" role="tablist" aria-label="Open Hermes chats">
         <div className="chat-tabs__scroll">
           {openSessions.map((session) => (
-            <button
-              className={`chat-tab ${session.id === activeSessionId ? 'is-active' : ''}`}
-              type="button"
-              role="tab"
-              aria-selected={session.id === activeSessionId}
-              key={session.id}
-              onClick={() => selectSession(session.id)}
-            >
-              <span className={`chat-tab__state chat-tab__state--${session.connectionState}`} />
-              <span className="chat-tab__title">{session.title}</span>
+            <div className={`chat-tab ${session.id === activeSessionId ? 'is-active' : ''}`} key={session.id}>
+              <button
+                className="chat-tab__select"
+                type="button"
+                role="tab"
+                aria-selected={session.id === activeSessionId}
+                onClick={() => selectSession(session.id)}
+              >
+                <span className={`chat-tab__state chat-tab__state--${session.connectionState}`} />
+                <span className="chat-tab__title">{session.title}</span>
+              </button>
               <button
                 className="chat-tab__close"
                 type="button"
@@ -80,7 +81,7 @@ export function ChatPanel() {
               >
                 ×
               </button>
-            </button>
+            </div>
           ))}
         </div>
 
