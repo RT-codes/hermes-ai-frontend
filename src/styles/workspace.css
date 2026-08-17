@@ -255,7 +255,7 @@
   cursor: pointer;
 }
 
-/* The old broad .sidebar__brand span rule in layout.css must not override the grid mark. */
+/* Keep the brand mark as a grid: layout.css has a broad span rule that otherwise wins. */
 .sidebar__brand .sidebar__mark {
   display: grid;
   place-items: center;
@@ -280,7 +280,7 @@
 .quick-new-chat {
   position: absolute;
   top: 6.9rem;
-  left: calc(var(--sidebar-width) + 1.35rem);
+  left: calc(var(--sidebar-width) + 0.7rem);
   z-index: 70;
   display: grid;
   place-items: center;
@@ -297,7 +297,7 @@
 }
 
 .sidebar-is-collapsed .quick-new-chat {
-  left: calc(var(--sidebar-width-collapsed) + 1.35rem);
+  left: calc(var(--sidebar-width-collapsed) + 0.7rem);
 }
 
 .quick-new-chat::before,
