@@ -9,7 +9,7 @@ type SidebarProps = {
 
 const primaryNavItems: Array<{ code: string; label: string; view: WorkspaceView }> = [
   { code: 'BR', label: 'Brain', view: 'brain' },
-  { code: 'CH', label: 'Chat', view: 'chat' },
+  { code: 'CH', label: 'Chats', view: 'chat' },
   { code: 'ME', label: 'Memory', view: 'memory' },
   { code: 'SK', label: 'Skills', view: 'skills' },
   { code: 'SY', label: 'System', view: 'system' },
@@ -42,9 +42,9 @@ export function Sidebar({ collapsed, activeView, onToggle, onViewChange }: Sideb
 
       <div className="sidebar__content">
         <div className="sidebar__brand">
-          <span className="sidebar__mark"><span>H</span></span>
+          <span className="sidebar__mark" aria-hidden="true">H</span>
           {!collapsed && (
-            <div>
+            <div className="sidebar__brand-copy">
               <strong>HERMES</strong>
               <span>HOME AI</span>
             </div>
