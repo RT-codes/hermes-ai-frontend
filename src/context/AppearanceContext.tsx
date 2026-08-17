@@ -61,6 +61,7 @@ function applySettings(settings: AppearanceSettings) {
   const accentRgb = hexToRgb(settings.accentColor)
   const panelRgb = hexToRgb(settings.panelColor)
   const brainHudRgb = hexToRgb(settings.brainHudColor)
+  const brainHudOpacitySoft = Math.max(0.12, settings.brainHudOpacity * 0.9)
 
   root.style.setProperty('--cyan', settings.accentColor)
   root.style.setProperty('--accent-rgb', accentRgb)
@@ -77,6 +78,7 @@ function applySettings(settings: AppearanceSettings) {
   root.style.setProperty('--hud-cut', `${settings.cornerCut}px`)
   root.style.setProperty('--brain-hud-rgb', brainHudRgb)
   root.style.setProperty('--brain-hud-opacity', `${settings.brainHudOpacity}`)
+  root.style.setProperty('--brain-hud-opacity-soft', `${brainHudOpacitySoft}`)
 }
 
 export function AppearanceProvider({ children }: { children: ReactNode }) {
