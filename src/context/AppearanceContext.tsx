@@ -12,6 +12,7 @@ export type AppearanceSettings = {
   computeHudPosition: 'top-right' | 'bottom-right'
   brainHudColor: string
   brainHudOpacity: number
+  rubikTurnSpeedMs: number
 }
 
 type AppearanceContextValue = {
@@ -32,6 +33,7 @@ const defaults: AppearanceSettings = {
   computeHudPosition: 'bottom-right',
   brainHudColor: '#02070c',
   brainHudOpacity: 0.72,
+  rubikTurnSpeedMs: 650,
 }
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null)
