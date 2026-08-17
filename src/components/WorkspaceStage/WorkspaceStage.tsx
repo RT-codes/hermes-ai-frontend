@@ -156,6 +156,19 @@ function SettingsWorkspace() {
           </label>
 
           <label className="appearance-control">
+            <span>Rubik thinking speed</span>
+            <input
+              type="range"
+              min="220"
+              max="1800"
+              step="20"
+              value={settings.rubikTurnSpeedMs}
+              onChange={(event) => updateSetting('rubikTurnSpeedMs', Number(event.target.value))}
+            />
+            <output>{settings.rubikTurnSpeedMs}ms</output>
+          </label>
+
+          <label className="appearance-control">
             <span>Panel blur</span>
             <input type="range" min="0" max="42" step="1" value={settings.panelBlur} onChange={(event) => updateSetting('panelBlur', Number(event.target.value))} />
             <output>{settings.panelBlur}px</output>
