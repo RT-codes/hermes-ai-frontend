@@ -23,6 +23,7 @@ type ChatSessionsContextValue = {
   selectSession: (sessionId: string) => void
   closeTab: (sessionId: string) => void
   closeAllTabs: () => void
+  deleteSession: (sessionId: string) => void
   sendMessage: (sessionId: string, content: string) => Promise<void>
 }
 
@@ -59,11 +60,12 @@ function createFreshSession(index = 1): ChatSession {
 function loadStoredState(): StoredChatState {
   const fallback = createFreshSession()
   const raw = localStorage.getItem(STORAGE_KEY)
+
   if (!raw) {
     return {
       sessions: [fallback],
-      openTabIds: [fallback.id],
-      activeSessionId: fallback.id,
+      openTabIds: [],
+      activeSessionId: null,
     }
   }
 
@@ -77,28 +79,17 @@ function loadStoredState(): StoredChatState {
         }))
       : []
 
-    if (!sessions.length) {
-      return {
-        sessions: [fallback],
-        openTabIds: [fallback.id],
-        activeSessionId: fallback.id,
-      }
+    // Persist conversations, but never force the floating console open on a new page load.
+    return {
+      sessions,
+      openTabIds: [],
+      activeSessionId: null,
     }
-
-    const knownIds = new Set(sessions.map((session) => session.id))
-    const openTabIds = Array.isArray(parsed.openTabIds)
-      ? parsed.openTabIds.filter((id) => knownIds.has(id))
-      : []
-    const activeSessionId = parsed.activeSessionId && openTabIds.includes(parsed.activeSessionId)
-      ? parsed.activeSessionId
-      : openTabIds.at(-1) ?? null
-
-    return { sessions, openTabIds, activeSessionId }
   } catch {
     return {
       sessions: [fallback],
-      openTabIds: [fallback.id],
-      activeSessionId: fallback.id,
+      openTabIds: [],
+      activeSessionId: null,
     }
   }
 }
@@ -157,6 +148,17 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   function closeAllTabs() {
     setOpenTabIds([])
     setActiveSessionId(null)
+  }
+
+  function deleteSession(sessionId: string) {
+    setSessions((current) => current.filter((session) => session.id !== sessionId))
+    setOpenTabIds((current) => {
+      const next = current.filter((id) => id !== sessionId)
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(next.at(-1) ?? null)
+      }
+      return next
+    })
   }
 
   function patchSession(sessionId: string, patch: (session: ChatSession) => ChatSession) {
@@ -234,6 +236,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     selectSession,
     closeTab,
     closeAllTabs,
+    deleteSession,
     sendMessage,
   }
 

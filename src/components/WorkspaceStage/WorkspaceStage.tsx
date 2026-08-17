@@ -39,7 +39,7 @@ const viewCopy: Record<Exclude<WorkspaceView, 'brain' | 'chat' | 'settings'>, { 
 }
 
 function ChatsWorkspace() {
-  const { sessions, openTabIds, createSession, openSession } = useChatSessions()
+  const { sessions, openTabIds, createSession, openSession, closeTab, deleteSession } = useChatSessions()
 
   return (
     <section className="workspace-stage workspace-stage--interactive" aria-label="Chats workspace">
@@ -54,20 +54,47 @@ function ChatsWorkspace() {
         </div>
 
         <div className="chat-session-list">
+          {sessions.length === 0 && (
+            <div className="chat-session-empty">
+              No saved chats. Start a new conversation when you need Hermes.
+            </div>
+          )}
+
           {sessions.map((session) => {
             const isOpen = openTabIds.includes(session.id)
+            const isBusy = session.connectionState === 'connecting' || session.connectionState === 'streaming'
+
             return (
-              <button className="chat-session-card" type="button" key={session.id} onClick={() => openSession(session.id)}>
-                <span className={`chat-session-card__state chat-session-card__state--${session.connectionState}`} />
-                <span className="chat-session-card__copy">
-                  <strong>{session.title}</strong>
-                  <span>{session.messages.length > 1 ? `${session.messages.length - 1} messages` : 'No messages yet'}</span>
-                </span>
-                <span className="chat-session-card__meta">
-                  {new Date(session.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  <small>{isOpen ? 'OPEN TAB' : 'OPEN'}</small>
-                </span>
-              </button>
+              <article className="chat-session-card" key={session.id}>
+                <button className="chat-session-card__open" type="button" onClick={() => openSession(session.id)}>
+                  <span className={`chat-session-card__state chat-session-card__state--${session.connectionState}`} />
+                  <span className="chat-session-card__copy">
+                    <strong>{session.title}</strong>
+                    <span>{session.messages.length > 1 ? `${session.messages.length - 1} messages` : 'No messages yet'}</span>
+                  </span>
+                  <span className="chat-session-card__meta">
+                    {new Date(session.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <small>{isOpen ? 'OPEN TAB' : 'SAVED'}</small>
+                  </span>
+                </button>
+
+                <div className="chat-session-card__actions">
+                  {isOpen ? (
+                    <button type="button" onClick={() => closeTab(session.id)}>CLOSE</button>
+                  ) : (
+                    <button type="button" onClick={() => openSession(session.id)}>OPEN</button>
+                  )}
+                  <button
+                    className="chat-session-card__delete"
+                    type="button"
+                    disabled={isBusy}
+                    title={isBusy ? 'Wait for the current Hermes response to finish before deleting this chat.' : 'Delete saved chat'}
+                    onClick={() => deleteSession(session.id)}
+                  >
+                    DELETE
+                  </button>
+                </div>
+              </article>
             )
           })}
         </div>
