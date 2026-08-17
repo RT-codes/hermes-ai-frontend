@@ -6,7 +6,12 @@ It is a separate React + TypeScript + Vite application designed to provide a pol
 
 ## Screenshot
 
-<img width="2552" height="1305" alt="1786980121523864102475827444014" src="https://github.com/user-attachments/assets/84ce8dad-b28d-4874-9565-d8d2486e6048" />
+<img width="1600" height="809" alt="image" src="https://github.com/user-attachments/assets/e1d31801-cfd3-41b8-8de2-9cc398994665" />
+
+
+
+https://github.com/user-attachments/assets/baa775ab-5ab0-41ee-a449-8d3b1c1066d0
+
 
 
 <!-- Add the main project screenshot here once the UI stabilizes.
