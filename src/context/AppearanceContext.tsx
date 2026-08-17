@@ -9,6 +9,7 @@ export type AppearanceSettings = {
   panelBlur: number
   workspaceMargin: number
   cornerCut: number
+  computeHudPosition: 'top-right' | 'bottom-right'
 }
 
 type AppearanceContextValue = {
@@ -26,6 +27,7 @@ const defaults: AppearanceSettings = {
   panelBlur: 20,
   workspaceMargin: 24,
   cornerCut: 18,
+  computeHudPosition: 'bottom-right',
 }
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null)
