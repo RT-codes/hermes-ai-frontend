@@ -10,16 +10,17 @@ The frontend now includes:
 
 - streaming multi-chat against the local Hermes API;
 - persistent saved conversations with explicit open/close/delete controls;
-- configurable HUD appearance and panel blur;
+- configurable panel appearance and blur;
+- independently configurable Brain HUD color/opacity for Local Compute, Activity and System;
 - a live Brain-view telemetry layer for Hermes, Hindsight, Ollama, CPU, RAM, GPU, VRAM and GPU temperature;
 - compact Activity and System HUDs with the same glass treatment as Local Compute;
 - dynamic connector lines whose endpoint follows the current Brain-scene center;
 - a Local Compute position setting (`top-right` or `bottom-right`), with Activity/System automatically occupying the opposite side;
-- a pannable, rotatable and zoomable 3D Brain workspace scaffold with a glowing cyan cube placeholder;
+- a pannable, rotatable and zoomable 3D Brain workspace scaffold with a glowing cyan 3x3 Rubik-style wireframe cube placeholder;
 - a floating chat console that stays above Brain-view HUD content while remaining below the fixed sidebar;
 - local development lifecycle integration through `hermesctl`.
 
-The cube is intentionally temporary. It establishes the camera/interaction space and shared screen-space center anchor that the future 3D brain/knowledge visualization can reuse.
+The wireframe cube is intentionally temporary. It establishes the camera/interaction space and shared screen-space center anchor that the future 3D brain/knowledge visualization can reuse.
 
 ## Screenshot
 
@@ -83,14 +84,18 @@ The raw Hermes API remains a local backend boundary; the browser reaches it thro
 
 The Brain workspace now has an explicit interactive scene coordinate system.
 
-The temporary 3D cube can be:
+The temporary 3D Rubik-style wireframe cube can be:
 
 - dragged to rotate;
 - Shift/right/middle-dragged to pan;
 - zoomed with the mouse wheel;
 - reset with a double click.
 
+Only the placeholder model uses wireframe rendering. The surrounding scene and HUDs retain the standard glass/cyberpunk treatment.
+
 A shared `BrainSceneContext` publishes the visualization's current screen-space center. Local Compute, Activity and System HUD connectors use that anchor instead of a hard-coded endpoint, so the connector dot follows the scene when it is panned and can later be driven by the real Three.js camera/graph center.
+
+The Brain HUDs have their own appearance variables and can be tuned independently from the regular floating panel/sidebar system through **Brain HUD color** and **Brain HUD opacity** settings.
 
 ## Telemetry
 
@@ -138,6 +143,6 @@ When using the local Hermes Home stack, `hermesctl` is the preferred lifecycle e
 2. Functional multi-chat UX, navigation and appearance controls. ✅
 3. Real streaming chat against the local Hermes runtime. ✅
 4. Local runtime telemetry and `hermesctl` development lifecycle. ✅
-5. Replace the temporary 3D cube with the interactive Hermes brain/knowledge graph.
+5. Replace the temporary wireframe cube with the interactive Hermes brain/knowledge graph.
 6. Feed memory, skill, tool and observable activity data into the 3D visualization.
 7. Finish the production/LAN frontend serving boundary and household access.
