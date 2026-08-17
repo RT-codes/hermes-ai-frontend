@@ -1,4 +1,5 @@
-import { FormEvent, KeyboardEvent, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import type { FormEvent, KeyboardEvent } from 'react'
 import { streamHermesChat } from '../../lib/hermes/client'
 import type { ChatMessage, HermesConnectionState } from '../../lib/hermes/types'
 
