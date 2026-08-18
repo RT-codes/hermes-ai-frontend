@@ -4,6 +4,164 @@ Hermes Home is the custom household-facing frontend for the **Hermes Home AI Sta
 
 It is a separate React + TypeScript + Vite application designed as a local control center for chatting with Hermes, watching the local AI runtime, managing workspaces, and growing into an interactive 3D memory/skills/tool graph.
 
+## What powers Hermes Home?
+
+Hermes Home is the frontend for a **local-first AI assistant stack**.
+
+The project is currently developed and tested against a reference backend running on a home workstation. That system combines:
+
+- **Hermes Agent** for conversation, reasoning and orchestration;
+- **Qwen3.8 27B Q4_K_M** through Ollama as the main local language model;
+- **Hindsight** for persistent memory;
+- **Docker + WSL2** for the supporting services;
+- a small `hermesctl` orchestration script that starts, stops and health-checks the stack as one system.
+
+The stack is intentionally local-first. The normal AI workload runs on owned hardware instead of depending on paid API calls for every request, while keeping full control over context, memory, tools, skills and future home integrations.
+
+The numbers below describe the **current development/test backend for this project**. They are useful as a performance baseline, not as minimum requirements for running the frontend.
+
+### Why this model?
+
+Qwen3.8 27B currently hits a useful middle ground for this machine.
+
+It is large enough to be useful for reasoning, coding and agent-style tasks, while still fitting on a single RTX 4090 with a large context window.
+
+The main goal was not simply to get the model running, but to keep a **64K context fully on the GPU** without falling back to slower system memory.
+
+### Baseline vs. tuned runtime
+
+Initial tests showed that simply increasing the context size was enough to push the runtime very close to the GPU memory limit.
+
+| | Initial / default behavior | Current Hermes configuration |
+|---|---:|---:|
+| Model | Qwen3.8 27B Q4_K_M | Qwen3.8 27B Q4_K_M |
+| Context | 32,768 tokens | **65,536 tokens** |
+| Loaded size | ~17 GB | ~18 GB |
+| GPU residency | 100% at smaller context | **100% at 64K** |
+| 64K VRAM use | ~23.6 GB | **~21.8–22.4 GB** |
+| CPU offload at 64K | ~6% | **none** |
+| KV cache | default | **Q8** |
+| Flash Attention | default/runtime dependent | **enabled** |
+| Keep-alive | temporary | **Forever while Hermes is running** |
+| MTP speculative decoding | enabled/tested | **disabled for stability** |
+| Parallel inference | experimental | **1 stable inference slot** |
+
+A straightforward 64K run with the original runtime settings reached roughly:
+
+```text
+Context        65,536
+Processor      94% GPU / 6% CPU
+VRAM           ~23.6 GB
+```
+
+That worked, but it was right against the RTX 4090's memory ceiling and started spilling part of the workload to CPU memory.
+
+After switching the KV cache to Q8 and enabling Flash Attention, the same model and context fit fully on the GPU:
+
+```text
+Context        65,536
+Processor      100% GPU
+VRAM           ~21.8–22.4 GB
+```
+
+That difference matters for Hermes because it is an agent rather than a single-shot chatbot. One request may involve several reasoning or tool steps, so keeping the model fully GPU-resident helps keep those steps more responsive and predictable.
+
+### Current performance baseline
+
+The current stable configuration benchmarks at roughly:
+
+```text
+Prompt processing    ~299 tokens/s
+Generation           ~45 tokens/s
+Context              65,536 tokens
+GPU residency        100%
+Loaded model size    ~18 GB
+Working VRAM         ~21.8–22.4 GB / 24 GB
+```
+
+This is the current **stability-first baseline**.
+
+Earlier experiments with Qwen3.8's MTP speculative decoding reached roughly **80+ generated tokens/s**, showing that the hardware has more raw decoding headroom.
+
+However, the current Ollama/Qwen runtime showed instability when initializing the additional MTP draft context at 64K.
+
+For now Hermes therefore favors:
+
+```text
+64K context
++ full GPU residency
++ stable startup
++ predictable memory use
+```
+
+over:
+
+```text
+higher peak token throughput
++ less reliable model loading
+```
+
+MTP can be revisited later as the runtime matures.
+
+### Current reference hardware
+
+Hermes Home is currently developed and tested against:
+
+- **NVIDIA RTX 4090 24 GB**
+- **Intel Core i7-12700K**
+- **32 GB system RAM**
+- **Windows + WSL2**
+
+On this system, the current Qwen model runs fully on the RTX 4090 with a 65,536-token context window.
+
+### How the stack starts
+
+The local stack is managed through `hermesctl`.
+
+At a high level, `hermesctl start` does roughly this:
+
+```text
+Start Docker if needed
+↓
+Start Ollama with the Hermes runtime settings
+↓
+Preload the local Qwen model
+↓
+Start Hindsight memory
+↓
+Start Hermes
+↓
+Start Hermes Home
+↓
+Verify that each service is healthy
+```
+
+Shutdown happens in reverse.
+
+`hermesctl stop` also cleans up the Ollama inference runner so failed or interrupted model loads do not leave orphaned processes holding RAM or VRAM.
+
+### Backend overview
+
+```text
+Browser
+  │
+  ▼
+Hermes Home
+  │
+  ▼
+Hermes Agent
+  │
+  ├── Qwen3.8 27B / Ollama
+  │
+  ├── Hindsight memory
+  │
+  └── future skills / tools / integrations
+```
+
+The frontend is intentionally kept separate from the AI runtime. That makes the interface easier to replace or evolve without tying the local model, memory system and future tools directly to one UI implementation.
+
+For deeper technical notes, benchmarks and runtime experiments, see the **[Hermes Runtime & Performance Log](https://app.notion.com/p/3c0a2ea2012b819eb016f895cbd25936?pvs=204)**.
+
 ## Current state
 
 The frontend now includes:
