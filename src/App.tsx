@@ -19,6 +19,8 @@ import './styles/chat.css'
 import './styles/workspace.css'
 import './styles/telemetry.css'
 import './styles/brain.css'
+import './styles/brain-phase2.css'
+import './styles/brain-final-polish.css'
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -34,17 +36,8 @@ function HermesHome() {
         activeView={activeView}
         onToggle={() => setSidebarCollapsed((value) => !value)}
         onViewChange={setActiveView}
+        onNewChat={createSession}
       />
-
-      <button
-        className="quick-new-chat"
-        type="button"
-        onClick={createSession}
-        aria-label="Start a new Hermes chat"
-        title="New Hermes chat"
-      >
-        <span>+</span>
-      </button>
 
       <TopBar />
       <WorkspaceStage activeView={activeView} />

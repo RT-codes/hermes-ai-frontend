@@ -53,7 +53,7 @@ After switching the KV cache to Q8 and enabling Flash Attention, the same model 
 ```text
 Context        65,536
 Processor      100% GPU
-VRAM           ~21.8–22.4 GB
+VRAM           ~21.8–22.4 GB / 24 GB
 ```
 
 That difference matters for Hermes because it is an agent rather than a single-shot chatbot. A request may involve several reasoning or tool steps, so keeping the model GPU-resident helps make those steps more responsive and predictable.

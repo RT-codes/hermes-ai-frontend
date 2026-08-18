@@ -38,13 +38,15 @@ The frontend already includes:
 - **multi-chat support** with persistent saved conversations;
 - draggable/resizable floating panels and configurable appearance;
 - a collapsible navigation sidebar and chat management;
-- a pannable, rotatable and zoomable **3D Brain workspace scaffold**;
+- a pannable, rotatable and zoomable **Three.js Brain graph backed by read-only Hindsight memory data**;
+- memory hover/selection, multi-hop relationship emphasis, connected-memory navigation and a read-only Memory Inspector;
+- manual graph sync/fit controls and a live orthogonal selected-node-to-inspector connector;
 - live local telemetry for **Hermes, Hindsight, Ollama, CPU, RAM, GPU, VRAM and GPU temperature**;
 - compact Activity, System and Local Compute HUDs;
 - configurable Brain HUD color, opacity and positioning;
 - local stack lifecycle integration through `hermesctl`.
 
-The current 3D scene still uses a glowing wireframe cube as a placeholder while the real knowledge/memory graph is being designed.
+The current Brain view is the accepted Phase 2 memory-inspection baseline. Camera-focus/restore polish and future provenance, skills and tool/MCP graph layers remain separate follow-up work.
 
 ## How it fits together
 
@@ -71,8 +73,8 @@ For the full reference backend, model choice, hardware, benchmark numbers and `h
 - TypeScript
 - Vite
 - custom CSS / design tokens
-- native CSS 3D + pointer interaction for the current Brain scaffold
-- Three.js / React Three Fiber planned for the full graph renderer
+- Three.js through `react-force-graph-3d` for the interactive Brain graph
+- CSS 3D for the fixed Hermes thinking cube
 - React Flow planned where structured 2D graph inspection is useful
 
 ## Telemetry
@@ -112,8 +114,8 @@ When using the complete local stack, `hermesctl` is the preferred lifecycle entr
 2. Functional multi-chat UX, navigation and appearance controls. ✅
 3. Real streaming chat against the local Hermes runtime. ✅
 4. Local runtime telemetry and `hermesctl` development lifecycle. ✅
-5. Replace the temporary wireframe cube with the interactive Hermes brain / knowledge graph.
-6. Feed memory, skill, tool and observable activity data into the 3D visualization.
+5. Interactive 3D Hindsight memory graph and read-only Memory Inspector. ✅
+6. Add provenance/activity, skills and tool/MCP node layers to the Brain graph.
 7. Finish the production / LAN frontend serving boundary and household access.
 
 ---
