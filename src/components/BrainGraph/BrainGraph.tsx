@@ -16,9 +16,11 @@ type BrainGraphProps = {
 type GraphNode = NodeObject<BrainGraphNode>
 type GraphLink = LinkObject<BrainGraphNode, BrainGraphLink>
 type GraphSource = 'loading' | 'hindsight' | 'fallback' | 'error'
+type DistanceForce = { distance: (value: number) => unknown }
 
 const AUTO_SYNC_MS = 20_000
 const INSPECTOR_ENTRY_DELAY_MS = 170
+const LINK_DISTANCE = 33
 
 function endpointId(endpoint: LinkEndpoint) {
   if (typeof endpoint === 'string' || typeof endpoint === 'number') return String(endpoint)
@@ -143,6 +145,18 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
   }, [refreshToken])
 
   useEffect(() => {
+    const graph = graphRef.current
+    if (!graph) return
+
+    // A single, deliberately small layout adjustment: links are about 10%
+    // longer than the force-graph/D3 default. Charge, node size and camera fit
+    // stay untouched so the stable visible layout remains the baseline.
+    const link = graph.d3Force('link') as DistanceForce | undefined
+    link?.distance(LINK_DISTANCE)
+    graph.d3ReheatSimulation()
+  }, [graphData])
+
+  useEffect(() => {
     if (selectedNodeId) return
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
@@ -212,6 +226,27 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
     () => graphData.nodes.find((node) => String(node.id) === selectedNodeId) as BrainGraphNode | undefined,
     [graphData.nodes, selectedNodeId],
   )
+
+  const selectedConnections = useMemo(() => {
+    if (!selectedNodeId) return []
+
+    return graphData.links
+      .map((link) => link as GraphLink)
+      .filter((link) => isDirectLink(link, selectedNodeId))
+      .map((link) => {
+        const sourceId = endpointId(link.source as LinkEndpoint)
+        const targetId = endpointId(link.target as LinkEndpoint)
+        const neighbourId = sourceId === selectedNodeId ? targetId : sourceId
+        const neighbour = graphData.nodes.find((node) => String(node.id) === neighbourId) as BrainGraphNode | undefined
+        const relationship = (link as BrainGraphLink).relationship || (link as BrainGraphLink).entity || 'related'
+        return {
+          id: neighbourId,
+          label: neighbour?.label || neighbour?.summary || neighbourId,
+          relationship,
+        }
+      })
+      .filter((connection) => connection.id && connection.id !== 'core')
+  }, [graphData.links, graphData.nodes, selectedNodeId])
 
   function resetView() {
     setSelectedNodeId(null)
@@ -306,10 +341,27 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
             <dl>
               <div><dt>BANK</dt><dd>{bankId}</dd></div>
               <div><dt>MEMORY ID</dt><dd>{selectedNode.id}</dd></div>
+              <div><dt>LINKS</dt><dd>{selectedConnections.length} direct</dd></div>
               <div><dt>WHEN</dt><dd>{formatDate(selectedNode.occurredAt)}</dd></div>
               {selectedNode.context && <div><dt>CONTEXT</dt><dd>{selectedNode.context}</dd></div>}
               {selectedNode.entities && <div><dt>ENTITIES</dt><dd>{selectedNode.entities}</dd></div>}
             </dl>
+
+            {selectedConnections.length > 0 && (
+              <section className="brain-memory-inspector__connections" aria-label="Connected memories">
+                <span>CONNECTED MEMORIES</span>
+                <ul>
+                  {selectedConnections.slice(0, 8).map((connection) => (
+                    <li key={`${connection.id}-${connection.relationship}`}>
+                      <strong>{connection.label}</strong>
+                      <small>{connection.relationship}</small>
+                    </li>
+                  ))}
+                </ul>
+                {selectedConnections.length > 8 && <small>+ {selectedConnections.length - 8} more direct links</small>}
+              </section>
+            )}
+
             <div className="brain-memory-inspector__hint">Read-only inspection · no memory is written or changed from this view.</div>
           </div>
         </aside>
