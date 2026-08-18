@@ -23,6 +23,7 @@ The frontend now includes:
 ## Preview
 
 <img width="1600" height="809" alt="image" src="https://github.com/user-attachments/assets/e1d31801-cfd3-41b8-8de2-9cc398994665" />
+<img width="1600" height="1105" alt="image" src="https://github.com/user-attachments/assets/7bbd0859-1e7c-4743-ae8e-a113e81d861e" />
 
 https://github.com/user-attachments/assets/baa775ab-5ab0-41ee-a449-8d3b1c1066d0
 
