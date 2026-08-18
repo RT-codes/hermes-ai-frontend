@@ -15,8 +15,12 @@ type BrainGraphProps = {
 
 type GraphNode = NodeObject<BrainGraphNode>
 type GraphLink = LinkObject<BrainGraphNode, BrainGraphLink>
-
 type GraphSource = 'loading' | 'hindsight' | 'fallback' | 'error'
+type StrengthForce = { strength: (value: number) => unknown }
+type DistanceForce = { distance: (value: number) => unknown }
+
+const AUTO_SYNC_MS = 20_000
+const INSPECTOR_ENTRY_DELAY_MS = 170
 
 function endpointId(endpoint: LinkEndpoint) {
   if (typeof endpoint === 'string' || typeof endpoint === 'number') return String(endpoint)
@@ -28,28 +32,36 @@ function isDirectLink(link: GraphLink, nodeId: string | null) {
   return endpointId(link.source as LinkEndpoint) === nodeId || endpointId(link.target as LinkEndpoint) === nodeId
 }
 
-function createNeuralSphere(node: GraphNode, emphasized: boolean, faded: boolean) {
+function createNeuralSphere(
+  node: GraphNode,
+  emphasized: boolean,
+  faded: boolean,
+  selected: boolean,
+  inspecting: boolean,
+) {
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || '#35d9ff'
-  const radius = 3.8 + Math.max(0, Number(node.val ?? 1)) * 1.45
+  const baseRadius = 2.8 + Math.max(0, Number(node.val ?? 1)) * 1.05
+  const inspectionScale = !inspecting || selected ? 1 : emphasized ? 0.82 : 0.68
+  const radius = baseRadius * inspectionScale
   const group = new Group()
   const phase = Math.random() * Math.PI * 2
 
   const body = new Mesh(
-    new SphereGeometry(radius, 22, 16),
+    new SphereGeometry(radius, 20, 14),
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
-      opacity: faded ? 0.08 : emphasized ? 0.72 : 0.34,
+      opacity: faded ? 0.07 : emphasized ? 0.72 : 0.3,
       depthWrite: false,
     }),
   )
 
   const halo = new Mesh(
-    new SphereGeometry(radius * 1.5, 18, 12),
+    new SphereGeometry(radius * 1.48, 16, 10),
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
-      opacity: faded ? 0.015 : emphasized ? 0.2 : 0.07,
+      opacity: faded ? 0.012 : emphasized ? 0.19 : 0.055,
       depthWrite: false,
       blending: AdditiveBlending,
     }),
@@ -58,7 +70,7 @@ function createNeuralSphere(node: GraphNode, emphasized: boolean, faded: boolean
   group.add(halo)
   group.add(body)
   group.onBeforeRender = () => {
-    const pulse = 1 + Math.sin(performance.now() / 820 + phase) * (emphasized ? 0.1 : 0.055)
+    const pulse = 1 + Math.sin(performance.now() / 820 + phase) * (emphasized ? 0.085 : 0.04)
     halo.scale.setScalar(pulse)
   }
 
@@ -84,6 +96,7 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
   const [totalUnits, setTotalUnits] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [refreshToken, setRefreshToken] = useState(0)
+  const [inspectorVisible, setInspectorVisible] = useState(false)
 
   useEffect(() => {
     const host = hostRef.current
@@ -129,6 +142,45 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
     return () => controller.abort()
   }, [refreshToken])
 
+  useEffect(() => {
+    const graph = graphRef.current
+    if (!graph) return
+
+    const charge = graph.d3Force('charge') as StrengthForce | undefined
+    const link = graph.d3Force('link') as DistanceForce | undefined
+    charge?.strength(-165)
+    link?.distance(72)
+    graph.d3ReheatSimulation()
+  }, [graphData])
+
+  useEffect(() => {
+    if (selectedNodeId) return
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        setRefreshToken((value) => value + 1)
+      }
+    }, AUTO_SYNC_MS)
+    return () => window.clearInterval(timer)
+  }, [selectedNodeId])
+
+  useEffect(() => {
+    let timer: number | undefined
+    if (selectedNodeId) {
+      document.documentElement.classList.add('brain-is-inspecting')
+      timer = window.setTimeout(() => setInspectorVisible(true), INSPECTOR_ENTRY_DELAY_MS)
+    } else {
+      setInspectorVisible(false)
+      document.documentElement.classList.remove('brain-is-inspecting')
+    }
+
+    return () => {
+      if (timer) window.clearTimeout(timer)
+      if (!selectedNodeId) document.documentElement.classList.remove('brain-is-inspecting')
+    }
+  }, [selectedNodeId])
+
+  useEffect(() => () => document.documentElement.classList.remove('brain-is-inspecting'), [])
+
   const publishCorePoint = useCallback(() => {
     const graph = graphRef.current
     if (!graph) return
@@ -163,7 +215,8 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
     const id = String(node.id)
     const emphasized = highlightedNodeIds.has(id)
     const faded = Boolean(selectedNodeId) && !emphasized
-    return createNeuralSphere(node, emphasized, faded)
+    const selected = id === selectedNodeId
+    return createNeuralSphere(node, emphasized, faded, selected, Boolean(selectedNodeId))
   }, [highlightedNodeIds, selectedNodeId])
 
   const selectedNode = useMemo(
@@ -173,11 +226,11 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
 
   function resetView() {
     setSelectedNodeId(null)
-    graphRef.current?.zoomToFit(520, 190, (node) => node.kind !== 'core')
+    graphRef.current?.zoomToFit(520, 220, (node) => node.kind !== 'core')
   }
 
   function refreshGraph() {
-    setRefreshToken((value) => value + 1)
+    if (source !== 'loading') setRefreshToken((value) => value + 1)
   }
 
   const activeNodeId = selectedNodeId ?? hoveredNodeId
@@ -198,25 +251,25 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
         nodeThreeObject={createNodeObject}
         nodeThreeObjectExtend={false}
         linkColor={(link) => {
-          if (selectedNodeId && !isDirectLink(link as GraphLink, selectedNodeId)) return 'rgba(53,217,255,0.045)'
-          return isDirectLink(link as GraphLink, activeNodeId) ? 'rgba(53,217,255,0.9)' : 'rgba(53,217,255,0.22)'
+          if (selectedNodeId && !isDirectLink(link as GraphLink, selectedNodeId)) return 'rgba(53,217,255,0.035)'
+          return isDirectLink(link as GraphLink, activeNodeId) ? 'rgba(53,217,255,0.82)' : 'rgba(53,217,255,0.17)'
         }}
-        linkOpacity={0.5}
-        linkWidth={(link) => isDirectLink(link as GraphLink, activeNodeId) ? 1.25 : 0.22}
+        linkOpacity={0.44}
+        linkWidth={(link) => isDirectLink(link as GraphLink, activeNodeId) ? 1.05 : 0.16}
         linkDirectionalParticles={(link) => isDirectLink(link as GraphLink, selectedNodeId) ? 2 : 0}
         linkDirectionalParticleColor={() => '#72e7ff'}
-        linkDirectionalParticleWidth={1.25}
+        linkDirectionalParticleWidth={1.1}
         linkDirectionalParticleSpeed={0.0045}
-        d3AlphaDecay={0.022}
-        d3VelocityDecay={0.42}
-        cooldownTicks={180}
-        warmupTicks={70}
+        d3AlphaDecay={0.018}
+        d3VelocityDecay={0.38}
+        cooldownTicks={220}
+        warmupTicks={90}
         onEngineTick={publishCorePoint}
         onEngineStop={() => {
           publishCorePoint()
           if (!initialFitDone.current) {
             initialFitDone.current = true
-            graphRef.current?.zoomToFit(700, 190, (node) => node.kind !== 'core')
+            graphRef.current?.zoomToFit(700, 220, (node) => node.kind !== 'core')
           }
         }}
         onNodeHover={(node) => setHoveredNodeId(node?.id == null ? null : String(node.id))}
@@ -231,8 +284,14 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
         <strong>{memoryCount} / {totalUnits || memoryCount} NODES</strong>
       </div>
 
-      <button className="brain-graph__test-add" type="button" onClick={refreshGraph} disabled={source === 'loading'}>
-        {source === 'loading' ? 'LOADING…' : '↻ REFRESH MEMORY'}
+      <button
+        className="brain-graph__test-add"
+        type="button"
+        onClick={refreshGraph}
+        disabled={source === 'loading'}
+        title="Reload the current Hindsight graph snapshot. Read-only; this does not change memory."
+      >
+        {source === 'loading' ? 'SYNCING…' : '↻ SYNC GRAPH'}
       </button>
 
       {activeNodeId && (
@@ -243,7 +302,7 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
 
       {loadError && <div className="brain-graph__load-error">READ-ONLY FALLBACK · {loadError}</div>}
 
-      {selectedNode && (
+      {selectedNode && inspectorVisible && (
         <aside className="brain-memory-inspector" aria-label="Selected memory">
           <div className="brain-memory-inspector__surface" />
           <header className="brain-memory-inspector__header">
