@@ -12,6 +12,8 @@ type BrainHudPanelProps = {
   ariaLabel?: string
 }
 
+const MAX_CONNECTOR_LENGTH = 150
+
 export function BrainHudPanel({ title, meta, className = '', children, ariaLabel }: BrainHudPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
   const { centerPoint } = useBrainScene()
@@ -22,12 +24,14 @@ export function BrainHudPanel({ title, meta, className = '', children, ariaLabel
     if (!panel) return
 
     const rect = panel.getBoundingClientRect()
-    const next = { x: rect.left, y: rect.top + rect.height * 0.5 }
+    const panelCenterX = rect.left + rect.width * 0.5
+    const next = {
+      x: centerPoint && centerPoint.x > panelCenterX ? rect.right : rect.left,
+      y: rect.top + rect.height * 0.5,
+    }
 
     setStartPoint((current) => {
-      if (current && Math.abs(current.x - next.x) < 0.5 && Math.abs(current.y - next.y) < 0.5) {
-        return current
-      }
+      if (current && Math.abs(current.x - next.x) < 0.5 && Math.abs(current.y - next.y) < 0.5) return current
       return next
     })
   }
@@ -43,19 +47,35 @@ export function BrainHudPanel({ title, meta, className = '', children, ariaLabel
     const observer = new ResizeObserver(measure)
     observer.observe(panel)
     window.addEventListener('resize', measure)
+    const timer = window.setInterval(measure, 90)
 
     return () => {
       observer.disconnect()
       window.removeEventListener('resize', measure)
+      window.clearInterval(timer)
     }
-  }, [])
+  }, [centerPoint])
+
+  let connectorEnd: Point | null = null
+  if (startPoint && centerPoint) {
+    const dx = centerPoint.x - startPoint.x
+    const dy = centerPoint.y - startPoint.y
+    const distance = Math.hypot(dx, dy)
+    if (distance > 0.001) {
+      const length = Math.min(distance, MAX_CONNECTOR_LENGTH)
+      connectorEnd = {
+        x: startPoint.x + dx / distance * length,
+        y: startPoint.y + dy / distance * length,
+      }
+    }
+  }
 
   return (
     <>
-      {startPoint && centerPoint && (
+      {startPoint && connectorEnd && (
         <svg className="brain-hud-connector" aria-hidden="true">
-          <line x1={startPoint.x} y1={startPoint.y} x2={centerPoint.x} y2={centerPoint.y} />
-          <circle cx={centerPoint.x} cy={centerPoint.y} r="4" />
+          <line x1={startPoint.x} y1={startPoint.y} x2={connectorEnd.x} y2={connectorEnd.y} />
+          <circle cx={connectorEnd.x} cy={connectorEnd.y} r="3" />
         </svg>
       )}
 
