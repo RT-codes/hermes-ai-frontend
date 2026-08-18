@@ -5,6 +5,7 @@ type SidebarProps = {
   activeView: WorkspaceView
   onToggle: () => void
   onViewChange: (view: WorkspaceView) => void
+  onNewChat: () => void
 }
 
 const primaryNavItems: Array<{ code: string; label: string; view: WorkspaceView }> = [
@@ -20,19 +21,35 @@ const footerNavItems: Array<{ code: string; label: string; view: WorkspaceView }
   { code: 'SE', label: 'Settings', view: 'settings' },
 ]
 
-export function Sidebar({ collapsed, activeView, onToggle, onViewChange }: SidebarProps) {
+export function Sidebar({ collapsed, activeView, onToggle, onViewChange, onNewChat }: SidebarProps) {
   function renderNavItem(item: { code: string; label: string; view: WorkspaceView }) {
-    return (
+    const button = (
       <button
         className={`sidebar__item ${activeView === item.view ? 'is-active' : ''}`}
         type="button"
-        key={item.view}
         onClick={() => onViewChange(item.view)}
         title={collapsed ? item.label : undefined}
       >
         <span className="sidebar__icon">{item.code}</span>
         {!collapsed && <span>{item.label}</span>}
       </button>
+    )
+
+    if (item.view !== 'memory' || collapsed) return <div key={item.view}>{button}</div>
+
+    return (
+      <div className="sidebar__item-row" key={item.view}>
+        {button}
+        <button
+          className="sidebar__new-chat"
+          type="button"
+          onClick={onNewChat}
+          aria-label="Start a new Hermes chat"
+          title="New Hermes chat"
+        >
+          +
+        </button>
+      </div>
     )
   }
 
@@ -56,6 +73,18 @@ export function Sidebar({ collapsed, activeView, onToggle, onViewChange }: Sideb
         </nav>
 
         <div className="sidebar__footer">
+          {collapsed && (
+            <button
+              className="sidebar__new-chat sidebar__new-chat--collapsed"
+              type="button"
+              onClick={onNewChat}
+              aria-label="Start a new Hermes chat"
+              title="New Hermes chat"
+            >
+              +
+            </button>
+          )}
+
           {footerNavItems.map(renderNavItem)}
 
           <button className="sidebar__toggle" type="button" onClick={onToggle}>
