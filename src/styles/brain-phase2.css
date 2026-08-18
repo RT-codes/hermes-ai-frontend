@@ -19,6 +19,34 @@
   cursor: wait;
 }
 
+.brain-graph__fit {
+  position: absolute;
+  z-index: 8;
+  left: calc(var(--sidebar-width) + 29.25rem);
+  bottom: 3.25rem;
+  min-height: 26px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  padding: 0 0.65rem;
+  color: var(--text-faint);
+  background: rgb(var(--brain-hud-rgb) / 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font: inherit;
+  font-size: 0.52rem;
+  letter-spacing: 0.11em;
+  cursor: pointer;
+}
+
+.brain-graph__fit:hover {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+  color: var(--cyan-soft);
+  background: rgb(var(--accent-rgb) / 0.08);
+}
+
+.brain-graph__selection-label {
+  left: calc(var(--sidebar-width) + 39.75rem);
+}
+
 /*
  * Normal Brain telemetry lives on the right. Selection first adds the
  * brain-is-inspecting class; the HUDs glide to the left, then the inspector
@@ -270,6 +298,11 @@
 
   .brain-is-inspecting .brain-hud-stack {
     transform: translateX(calc(var(--sidebar-width) + 2.5rem + 100% - 100vw));
+  }
+
+  .brain-graph__fit,
+  .brain-graph__selection-label {
+    display: none;
   }
 }
 
