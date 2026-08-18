@@ -1,0 +1,164 @@
+.brain-graph__load-error {
+  position: absolute;
+  z-index: 10;
+  left: calc(var(--sidebar-width) + 2.2rem);
+  bottom: 5.45rem;
+  max-width: min(620px, 60vw);
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgb(255 139 164 / 0.32);
+  color: #ff9caf;
+  background: rgb(var(--brain-hud-rgb) / 0.78);
+  backdrop-filter: blur(10px);
+  font-size: 0.54rem;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.brain-graph__test-add:disabled {
+  opacity: 0.48;
+  cursor: wait;
+}
+
+.brain-memory-inspector {
+  position: absolute;
+  z-index: 30;
+  top: 6.8rem;
+  right: 2rem;
+  bottom: 2rem;
+  width: min(390px, calc(100vw - var(--sidebar-width) - 5rem));
+  color: var(--text-muted);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.85);
+  filter: drop-shadow(0 18px 36px rgb(0 0 0 / 0.34));
+  isolation: isolate;
+}
+
+.brain-memory-inspector__surface {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: var(--glass-border);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.brain-memory-inspector__surface::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  clip-path: inherit;
+  background:
+    linear-gradient(120deg, transparent, rgb(var(--accent-rgb) / 0.045) 32%, rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity-soft))),
+    rgb(var(--brain-hud-rgb) / calc(var(--brain-hud-opacity) + 0.08));
+  backdrop-filter: blur(var(--blur-panel)) saturate(130%);
+  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(130%);
+}
+
+.brain-memory-inspector__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.14);
+}
+
+.brain-memory-inspector__header div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.brain-memory-inspector__header span {
+  color: var(--cyan-soft);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+}
+
+.brain-memory-inspector__header strong {
+  color: var(--text-faint);
+  font-size: 0.54rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.brain-memory-inspector__header button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  color: var(--cyan-soft);
+  background: rgb(var(--accent-rgb) / 0.04);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.brain-memory-inspector__header button:hover {
+  border-color: rgb(var(--accent-rgb) / 0.65);
+  background: rgb(var(--accent-rgb) / 0.1);
+}
+
+.brain-memory-inspector__content {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  overflow: auto;
+  max-height: calc(100% - 72px);
+}
+
+.brain-memory-inspector__memory {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  line-height: 1.65;
+}
+
+.brain-memory-inspector dl {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.brain-memory-inspector dl > div {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+}
+
+.brain-memory-inspector dt {
+  color: var(--text-faint);
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+}
+
+.brain-memory-inspector dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.brain-memory-inspector__hint {
+  margin-top: auto;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+  color: var(--text-faint);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 1100px) {
+  .brain-memory-inspector {
+    right: 1.25rem;
+    width: 340px;
+  }
+}
+
+@media (max-width: 760px) {
+  .brain-memory-inspector,
+  .brain-graph__load-error {
+    display: none;
+  }
+}
