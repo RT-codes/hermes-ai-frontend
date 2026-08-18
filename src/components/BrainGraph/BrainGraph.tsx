@@ -21,7 +21,6 @@ type ViewRotation = { yaw: number; pitch: number }
 type LinkEndpoint = string | number | GraphNode | undefined
 
 type BrainGraphProps = {
-  onCorePointChange: (point: Point) => void
   onViewRotationChange?: (rotation: ViewRotation) => void
 }
 
@@ -35,7 +34,6 @@ type OrbitControlsLike = {
 }
 type CameraLike = { position: { x: number; y: number; z: number } }
 
-const AUTO_SYNC_MS = 20_000
 const INSPECTOR_ENTRY_DELAY_MS = 170
 const MAX_HIGHLIGHT_HOPS = 4
 const GRID_Y = -92
@@ -74,7 +72,7 @@ function createNeuralSphere(node: GraphNode, distance: number | null, selected: 
   const phase = Math.random() * Math.PI * 2
 
   const body = new Mesh(
-    new SphereGeometry(radius, 16, 12),
+    new SphereGeometry(radius, 14, 10),
     new MeshBasicMaterial({
       color: accent,
       transparent: !selected,
@@ -84,7 +82,7 @@ function createNeuralSphere(node: GraphNode, distance: number | null, selected: 
   )
 
   const halo = new Mesh(
-    new SphereGeometry(radius * 1.5, 12, 8),
+    new SphereGeometry(radius * 1.5, 10, 6),
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
@@ -144,7 +142,7 @@ function buildHopDistances(links: GraphData<BrainGraphNode, BrainGraphLink>['lin
   return distances
 }
 
-export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGraphProps) {
+export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const graphRef = useRef<ForceGraphMethods<BrainGraphNode, BrainGraphLink> | undefined>(undefined)
   const initialFitDone = useRef(false)
@@ -206,14 +204,6 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
 
     return () => controller.abort()
   }, [refreshToken])
-
-  useEffect(() => {
-    if (selectedNodeId) return
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') setRefreshToken((value) => value + 1)
-    }, AUTO_SYNC_MS)
-    return () => window.clearInterval(timer)
-  }, [selectedNodeId])
 
   useEffect(() => {
     let timer: number | undefined
@@ -293,9 +283,6 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
     const graph = graphRef.current
     if (!graph) return
 
-    const point = graph.graph2ScreenCoords(0, 0, 0)
-    if (Number.isFinite(point.x) && Number.isFinite(point.y)) onCorePointChange({ x: point.x, y: point.y })
-
     if (hoveredNode && Number.isFinite(hoveredNode.x) && Number.isFinite(hoveredNode.y) && Number.isFinite(hoveredNode.z)) {
       const projected = graph.graph2ScreenCoords(hoveredNode.x as number, hoveredNode.y as number, hoveredNode.z as number)
       if (Number.isFinite(projected.x) && Number.isFinite(projected.y)) setHoverPoint(projected)
@@ -316,7 +303,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
         pitch: Math.atan2(dy, horizontal) * 180 / Math.PI,
       })
     }
-  }, [hoverPoint, hoveredNode, onCorePointChange, onViewRotationChange])
+  }, [hoverPoint, hoveredNode, onViewRotationChange])
 
   useEffect(() => {
     const timer = window.setInterval(publishViewState, 80)
@@ -431,6 +418,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
         nodeLabel={() => ''}
         nodeThreeObject={createNodeObject}
         nodeThreeObjectExtend={false}
+        linkResolution={3}
         linkColor={(rawLink) => {
           const depth = linkDepth(rawLink as GraphLink)
           if (depth == null) return focusNodeId ? 'rgba(53,217,255,0.16)' : 'rgba(53,217,255,0.2)'
@@ -446,7 +434,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
         linkDirectionalParticles={(rawLink) => focusNodeId && linkDepth(rawLink as GraphLink) === 0 ? 2 : 0}
         linkDirectionalParticleColor={() => '#72e7ff'}
         linkDirectionalParticleWidth={1.25}
-        linkDirectionalParticleResolution={3}
+        linkDirectionalParticleResolution={2}
         linkDirectionalParticleOffset={(rawLink) => linkHash(rawLink as GraphLink)}
         linkDirectionalParticleSpeed={(rawLink) => {
           const phase = linkHash(rawLink as GraphLink)
