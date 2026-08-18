@@ -1,112 +1,91 @@
 # Hermes Home
 
-Hermes Home is the custom household-facing frontend for the **Hermes Home AI Stack**.
+**A local-first household interface for the Hermes Home AI Stack.**
 
-It is a separate React + TypeScript + Vite application designed as a local control center for chatting with Hermes, watching the local AI runtime, managing workspaces, and growing into an interactive 3D memory/skills/tool graph.
+Hermes Home is a React + TypeScript + Vite frontend for chatting with Hermes, monitoring the local AI runtime, managing conversations and workspaces, and eventually exploring memory, skills and tools through an interactive 3D brain.
 
-## Current state
-
-The frontend now includes:
-
-- streaming multi-chat against the local Hermes API;
-- persistent saved conversations with explicit open/close/delete controls;
-- configurable panel appearance and blur;
-- independently configurable Brain HUD color/opacity for Local Compute, Activity and System;
-- a live Brain-view telemetry layer for Hermes, Hindsight, Ollama, CPU, RAM, GPU, VRAM and GPU temperature;
-- compact Activity and System HUDs with the same glass treatment as Local Compute;
-- a real Three.js force-directed Brain graph backed by read-only Hindsight memory data;
-- memory hover/selection, multi-hop relationship emphasis, connected-memory navigation and a right-side Memory Inspector;
-- a live orthogonal selected-node-to-inspector connector, manual graph sync and camera fit controls;
-- a fixed animated Hermes thinking cube and fading 3D ground plane;
-- a Local Compute position setting (`top-right` or `bottom-right`), with Activity/System automatically occupying the opposite side;
-- a floating chat console that stays above Brain-view HUD content while remaining below the fixed sidebar;
-- local development lifecycle integration through `hermesctl`.
+> Interested in the local model, hardware, benchmarks, tuning choices and how the backend stack is orchestrated? See **[Backend & runtime](./docs/BACKEND.md)**.
 
 ## Preview
+<img width="2541" height="1294" alt="image" src="https://github.com/user-attachments/assets/d6cc4597-0ff6-4be7-ba03-da34596c6bae" />
 
-<img width="1600" height="809" alt="image" src="https://github.com/user-attachments/assets/e1d31801-cfd3-41b8-8de2-9cc398994665" />
+<img width="1600" height="809" alt="Hermes Home preview" src="https://github.com/user-attachments/assets/e1d31801-cfd3-41b8-8de2-9cc398994665" />
+
+
 
 https://github.com/user-attachments/assets/baa775ab-5ab0-41ee-a449-8d3b1c1066d0
 
-<!-- Add the main project screenshot here once the UI stabilizes.
-
-![Hermes Home control center](./docs/images/hermes-home.png)
--->
-
-## What this frontend is for
+## What it is
 
 Hermes Home is intentionally **not** a replacement for the built-in Hermes admin/developer dashboard.
 
-Its job is to be the household interface on top of the local stack:
+It is the household-facing layer on top of the local stack: a more visual, approachable place to use the assistant day to day while still exposing useful information about what the system is doing underneath.
+
+The long-term goal is a single interface where the household can:
 
 - chat with the local Hermes agent;
-- manage multiple conversations;
-- surface useful runtime and activity feedback;
-- provide customizable HUD workspaces;
-- expose future memory, skill, tool and automation views;
-- host the interactive 3D Hermes brain;
-- run on the home LAN as part of the stack managed by `hermesctl`.
+- manage multiple conversations and workspaces;
+- see useful runtime and activity feedback;
+- inspect memory, skills, tools and automations;
+- explore an interactive 3D representation of the Hermes "brain";
+- use the system over the home LAN without needing to interact with containers or terminals.
+
+## Current state
+
+The frontend already includes:
+
+- **real streaming chat** against the local Hermes API;
+- **multi-chat support** with persistent saved conversations;
+- draggable/resizable floating panels and configurable appearance;
+- a collapsible navigation sidebar and chat management;
+- a pannable, rotatable and zoomable **Three.js Brain graph backed by read-only Hindsight memory data**;
+- memory hover/selection, multi-hop relationship emphasis, connected-memory navigation and a read-only Memory Inspector;
+- manual graph sync/fit controls and a live orthogonal selected-node-to-inspector connector;
+- live local telemetry for **Hermes, Hindsight, Ollama, CPU, RAM, GPU, VRAM and GPU temperature**;
+- compact Activity, System and Local Compute HUDs;
+- configurable Brain HUD color, opacity and positioning;
+- local stack lifecycle integration through `hermesctl`.
+
+The current Brain view is the accepted Phase 2 memory-inspection baseline. Camera-focus/restore polish and future provenance, skills and tool/MCP graph layers remain separate follow-up work.
+
+## How it fits together
+
+```text
+Browser
+   |
+   v
+Hermes Home
+   |
+   +---- Hermes Agent ---- local Qwen model
+   |
+   +---- Hindsight ------- persistent memory
+   |
+   +---- Telemetry ------- host + GPU + Ollama state
+```
+
+The browser does not talk directly to the raw Hermes backend. Hermes Home proxies the local API boundary, keeping backend credentials server-side rather than shipping them in browser JavaScript.
+
+For the full reference backend, model choice, hardware, benchmark numbers and `hermesctl` startup flow, see **[docs/BACKEND.md](./docs/BACKEND.md)**.
 
 ## Frontend stack
 
 - React
 - TypeScript
 - Vite
-- custom CSS/design tokens
+- custom CSS / design tokens
 - Three.js through `react-force-graph-3d` for the interactive Brain graph
 - CSS 3D for the fixed Hermes thinking cube
 - React Flow planned where structured 2D graph inspection is useful
-
-## Runtime boundary
-
-```text
-Browser
-  |
-  v
-Hermes Home / Vite
-  |
-  +-- /hermes-api/* ------> Hermes API :8642 ------> Ollama / Qwen
-  |                              |
-  |                              +------> skills / tools
-  |
-  +-- /hindsight-api/* ----> Hindsight memory
-  |
-  +-- /system-api/telemetry
-          |
-          +-- Windows host CPU / RAM
-          +-- NVIDIA GPU / VRAM / temperature
-          +-- Ollama loaded-model state
-```
-
-The Hermes API key remains server-side in the frontend environment and is not shipped in browser JavaScript.
-
-The raw Hermes API remains a local backend boundary; the browser reaches it through the frontend proxy.
-
-## Brain-view architecture
-
-The Brain workspace renders real Hindsight memory nodes and relationships in a Three.js force-directed scene. It supports orbit, pan, zoom, node dragging, hover inspection, persistent selection and connected-memory hopping.
-
-Selecting a memory opens the read-only Memory Inspector and attaches a live orthogonal screen-space connector to the selected 3D node. The graph snapshot loads on entry and can be refreshed explicitly with **Sync Graph**; no Hindsight memory is written or changed by the visualization.
-
-The fixed Rubik-style thinking cube mirrors graph camera orientation while remaining anchored beside the Hermes Home header. The scene also includes a fading 3D ground plane and prevents orbiting below the floor.
-
-The Brain HUDs have their own appearance variables and can be tuned independently from the regular floating panel/sidebar system through **Brain HUD color** and **Brain HUD opacity** settings.
 
 ## Telemetry
 
 Telemetry is local-only and does not call the LLM.
 
-The development server samples host/Ollama/NVIDIA state and exposes it at:
+The development server samples host, Ollama and NVIDIA state and exposes it through `/system-api/telemetry`. The browser keeps a short rolling history for the compact resource graphs and pauses polling while the tab is hidden.
 
-```text
-/system-api/telemetry
-```
+CPU package temperature is intentionally omitted when a trustworthy sensor value is unavailable; GPU temperature comes from NVIDIA telemetry.
 
-The browser keeps a short rolling history for the compact VRAM/GPU/CPU graphs. Polling pauses while the tab is hidden.
-
-CPU package temperature is intentionally omitted when a trustworthy sensor value is unavailable. GPU temperature is provided by NVIDIA telemetry.
-
-See **[docs/TELEMETRY.md](./docs/TELEMETRY.md)** for details.
+See **[docs/TELEMETRY.md](./docs/TELEMETRY.md)** for the implementation details.
 
 ## Development
 
@@ -121,18 +100,15 @@ Build check:
 npm run build
 ```
 
-When using the local Hermes Home stack, `hermesctl` is the preferred lifecycle entry point rather than starting multiple frontend/runtime instances manually.
+When using the complete local stack, `hermesctl` is the preferred lifecycle entry point so the frontend, Hermes, Hindsight and Ollama are started and stopped together rather than as unrelated processes.
 
-## Project documentation
+## Documentation
 
-- **[docs/HERMES_HOME.md](./docs/HERMES_HOME.md)** — detailed frontend architecture and product direction.
-- **[docs/TELEMETRY.md](./docs/TELEMETRY.md)** — telemetry data flow and implementation notes.
+- **[Backend & runtime](./docs/BACKEND.md)** — reference hardware, local model choice, benchmarks, tuning and orchestration.
+- **[Hermes Home architecture](./docs/HERMES_HOME.md)** — detailed frontend architecture and product direction.
+- **[Telemetry](./docs/TELEMETRY.md)** — telemetry data flow and implementation notes.
 
-## Repository
-
-<https://github.com/RT-codes/hermes-ai-frontend>
-
-## Current roadmap
+## Roadmap
 
 1. Foundation and custom HUD workspace. ✅
 2. Functional multi-chat UX, navigation and appearance controls. ✅
@@ -140,4 +116,8 @@ When using the local Hermes Home stack, `hermesctl` is the preferred lifecycle e
 4. Local runtime telemetry and `hermesctl` development lifecycle. ✅
 5. Interactive 3D Hindsight memory graph and read-only Memory Inspector. ✅
 6. Add provenance/activity, skills and tool/MCP node layers to the Brain graph.
-7. Finish the production/LAN frontend serving boundary and household access.
+7. Finish the production / LAN frontend serving boundary and household access.
+
+---
+
+Repository: <https://github.com/RT-codes/hermes-ai-frontend>
