@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAppearance } from '../../context/AppearanceContext'
-import { useBrainScene } from '../../context/BrainSceneContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
 import { BrainGraph } from '../BrainGraph/BrainGraph'
 
@@ -12,7 +11,6 @@ type LayerTurn = {
   degrees: number
 }
 
-type Point = { x: number; y: number }
 type ViewRotation = { yaw: number; pitch: number }
 
 const cubieCoordinates = [-1, 0, 1] as const
@@ -32,7 +30,6 @@ function turnTransform(turn: LayerTurn | null, layer: number) {
 }
 
 export function BrainStage() {
-  const { setCenterPoint } = useBrainScene()
   const { settings } = useAppearance()
   const { sessions } = useChatSessions()
   const [turn, setTurn] = useState<LayerTurn | null>(null)
@@ -42,21 +39,12 @@ export function BrainStage() {
     (session) => session.connectionState === 'connecting' || session.connectionState === 'streaming',
   )
 
-  const handleCorePointChange = useCallback((point: Point) => {
-    const stage = document.querySelector<HTMLElement>('.brain-stage--3d')
-    const rect = stage?.getBoundingClientRect()
-    if (!rect) return
-    setCenterPoint({ x: rect.left + point.x, y: rect.top + point.y })
-  }, [setCenterPoint])
-
   const handleViewRotationChange = useCallback((rotation: ViewRotation) => {
     setViewRotation((current) => {
       if (Math.abs(current.yaw - rotation.yaw) < 0.35 && Math.abs(current.pitch - rotation.pitch) < 0.35) return current
       return rotation
     })
   }, [])
-
-  useEffect(() => () => setCenterPoint(null), [setCenterPoint])
 
   useEffect(() => {
     let cancelled = false
@@ -111,10 +99,7 @@ export function BrainStage() {
 
   return (
     <section className="brain-stage brain-stage--3d" aria-label="Interactive 3D Hermes memory graph foundation">
-      <BrainGraph
-        onCorePointChange={handleCorePointChange}
-        onViewRotationChange={handleViewRotationChange}
-      />
+      <BrainGraph onViewRotationChange={handleViewRotationChange} />
 
       <div className={`brain-scene-core ${isThinking ? 'is-thinking' : 'is-idle'}`} aria-hidden="true">
         <span className={`brain-cube-glow ${isThinking ? 'is-thinking' : 'is-idle'}`} />
