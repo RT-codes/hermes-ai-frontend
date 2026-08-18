@@ -7,21 +7,6 @@
   touch-action: none;
 }
 
-.brain-scene-grid {
-  position: absolute;
-  z-index: 0;
-  inset: 15% 12% 10% calc(var(--sidebar-width) + 4rem);
-  pointer-events: none;
-  opacity: 0.16;
-  transform: perspective(900px) rotateX(68deg) translateY(22%);
-  transform-origin: center 70%;
-  background-image:
-    linear-gradient(rgb(var(--accent-rgb) / 0.14) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(var(--accent-rgb) / 0.14) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse at center, black 5%, transparent 70%);
-}
-
 .brain-graph {
   position: absolute;
   z-index: 2;
@@ -35,34 +20,8 @@
   pointer-events: auto;
 }
 
-.brain-graph .scene-tooltip {
-  max-width: 240px;
-  border: 1px solid rgb(var(--accent-rgb) / 0.36);
-  padding: 0.45rem 0.55rem;
-  color: var(--text-primary);
-  background: rgb(var(--brain-hud-rgb) / 0.9);
-  box-shadow: 0 0 24px rgb(var(--accent-rgb) / 0.12);
-  backdrop-filter: blur(10px);
-  font-size: 0.62rem;
-  line-height: 1.4;
-}
-
-.brain-graph .scene-tooltip strong {
-  color: var(--cyan-soft);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-}
-
-.brain-graph .scene-tooltip span {
-  color: var(--text-muted);
-}
-
 .brain-graph__phase-label,
-.brain-graph__selection-label,
 .brain-graph__test-add {
-  position: absolute;
-  z-index: 8;
-  bottom: 3.25rem;
   min-height: 26px;
   border: 1px solid rgb(var(--accent-rgb) / 0.22);
   color: var(--text-faint);
@@ -75,7 +34,6 @@
 }
 
 .brain-graph__phase-label {
-  left: calc(var(--sidebar-width) + 2.2rem);
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -89,7 +47,6 @@
 }
 
 .brain-graph__test-add {
-  left: calc(var(--sidebar-width) + 18.5rem);
   padding: 0 0.65rem;
   cursor: pointer;
 }
@@ -100,82 +57,72 @@
   background: rgb(var(--accent-rgb) / 0.08);
 }
 
-.brain-graph__selection-label {
-  left: calc(var(--sidebar-width) + 29.25rem);
-  display: flex;
-  align-items: center;
-  max-width: 300px;
-  overflow: hidden;
-  padding: 0 0.65rem;
-  color: var(--cyan-soft);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
 /*
- * The DOM Rubik core remains as a temporary thinking indicator while the new
- * WebGL graph owns navigation. It follows the projected graph origin so it can
- * stay visually centered in the living graph even after orbit/pan/zoom.
+ * Fixed Hermes thinking mark. It no longer follows the graph origin; only its
+ * visual orientation mirrors the orbiting graph camera.
  */
 .brain-scene-core {
   position: absolute;
-  z-index: 6;
-  left: 50%;
-  top: 50%;
-  width: 116px;
-  height: 116px;
+  z-index: 41;
+  left: calc(var(--sidebar-width) + 12.3rem);
+  top: calc(var(--space-page) + 0.6rem);
+  width: 64px;
+  height: 64px;
   pointer-events: none;
-  transform: translate(-50%, -50%);
   transform-style: preserve-3d;
+  transition: left 180ms ease;
+}
+
+.sidebar-is-collapsed .brain-scene-core {
+  left: calc(var(--sidebar-width-collapsed) + 12.3rem);
 }
 
 .brain-scene-core__scale {
-  width: 100%;
-  height: 100%;
-  opacity: 0.46;
-  transform: scale(0.72);
+  width: 116px;
+  height: 116px;
+  opacity: 0.58;
+  transform: scale(0.42);
+  transform-origin: 0 0;
   transform-style: preserve-3d;
   transition:
-    opacity 260ms ease,
-    transform 320ms cubic-bezier(0.2, 0.75, 0.2, 1);
+    opacity 260ms linear,
+    transform 320ms linear;
 }
 
 .brain-scene-core.is-thinking .brain-scene-core__scale {
-  opacity: 0.96;
-  transform: scale(1.08);
+  opacity: 1;
+  transform: scale(0.48);
 }
 
-/* Keep glow effects outside the preserve-3d cubie hierarchy. */
 .brain-cube-glow {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 64px;
-  height: 64px;
-  margin: -32px;
+  left: 26px;
+  top: 26px;
+  width: 48px;
+  height: 48px;
+  margin: -24px;
   border-radius: 50%;
   pointer-events: none;
-  opacity: 0.28;
-  background: rgb(var(--accent-rgb) / 0.2);
-  box-shadow: 0 0 58px 16px rgb(var(--accent-rgb) / 0.24);
-  filter: blur(22px);
-  animation: brain-cube-glow-breathe 3.8s ease-in-out infinite alternate;
-  transition: opacity 240ms ease, box-shadow 240ms ease;
+  opacity: 0.26;
+  background: rgb(var(--accent-rgb) / 0.18);
+  box-shadow: 0 0 38px 12px rgb(var(--accent-rgb) / 0.2);
+  filter: blur(17px);
+  animation: brain-cube-glow-breathe 4.8s linear infinite alternate;
+  transition: opacity 220ms linear, box-shadow 220ms linear;
 }
 
 .brain-cube-glow.is-thinking {
-  opacity: 0.9;
-  box-shadow: 0 0 84px 28px rgb(var(--accent-rgb) / 0.46);
-  animation-duration: 1.25s;
+  opacity: 0.88;
+  box-shadow: 0 0 58px 20px rgb(var(--accent-rgb) / 0.48);
+  animation-duration: 1.6s;
 }
 
 .brain-cube {
   position: relative;
   width: 116px;
   height: 116px;
-  transform: rotateX(-24deg) rotateY(38deg);
   transform-style: preserve-3d;
+  transition: transform 80ms linear;
 }
 
 .brain-cube-layer {
@@ -185,7 +132,7 @@
   transform-style: preserve-3d;
   transform-origin: 50% 50% 0;
   transition-property: transform;
-  transition-timing-function: cubic-bezier(0.22, 0.78, 0.25, 1);
+  transition-timing-function: linear;
   will-change: transform;
 }
 
@@ -306,6 +253,7 @@
 .brain-hud-connector line {
   stroke: var(--cyan-dim);
   stroke-width: 1;
+  opacity: 0.78;
   filter: drop-shadow(0 0 4px rgb(var(--accent-rgb) / 0.3));
 }
 
@@ -313,6 +261,7 @@
   fill: var(--bg);
   stroke: var(--cyan-soft);
   stroke-width: 1;
+  opacity: 0.82;
   filter: drop-shadow(0 0 6px rgb(var(--accent-rgb) / 0.48));
 }
 
@@ -329,8 +278,8 @@
 }
 
 @keyframes brain-cube-glow-breathe {
-  from { transform: scale(0.88); }
-  to { transform: scale(1.12); }
+  from { transform: scale(0.9); opacity: 0.72; }
+  to { transform: scale(1.1); opacity: 1; }
 }
 
 @media (max-width: 1100px) {
@@ -339,15 +288,19 @@
     width: 300px;
   }
 
-  .brain-graph__selection-label { display: none; }
-  .brain-graph__test-add { left: calc(var(--sidebar-width) + 17.5rem); }
+  .brain-scene-core {
+    left: calc(var(--sidebar-width) + 11.7rem);
+  }
+
+  .sidebar-is-collapsed .brain-scene-core {
+    left: calc(var(--sidebar-width-collapsed) + 11.7rem);
+  }
+
   .brain-scene-help { display: none; }
 }
 
 @media (max-width: 760px) {
   .brain-hud-stack,
   .brain-hud-connector,
-  .brain-graph__phase-label,
-  .brain-graph__selection-label,
-  .brain-graph__test-add { display: none; }
+  .brain-scene-core { display: none; }
 }
