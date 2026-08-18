@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ForceGraph3D from 'react-force-graph-3d'
 import type { ForceGraphMethods, GraphData, LinkObject, NodeObject } from 'react-force-graph-3d'
 import { AdditiveBlending, Group, Mesh, MeshBasicMaterial, SphereGeometry } from 'three'
+import { loadHindsightBrainGraph } from './hindsightGraph'
 import { createMockBrainGraph } from './mockBrainGraph'
 import type { BrainGraphLink, BrainGraphNode } from './mockBrainGraph'
 
@@ -15,6 +16,8 @@ type BrainGraphProps = {
 type GraphNode = NodeObject<BrainGraphNode>
 type GraphLink = LinkObject<BrainGraphNode, BrainGraphLink>
 
+type GraphSource = 'loading' | 'hindsight' | 'fallback' | 'error'
+
 function endpointId(endpoint: LinkEndpoint) {
   if (typeof endpoint === 'string' || typeof endpoint === 'number') return String(endpoint)
   return endpoint?.id == null ? '' : String(endpoint.id)
@@ -25,7 +28,7 @@ function isDirectLink(link: GraphLink, nodeId: string | null) {
   return endpointId(link.source as LinkEndpoint) === nodeId || endpointId(link.target as LinkEndpoint) === nodeId
 }
 
-function createNeuralSphere(node: GraphNode, emphasized: boolean) {
+function createNeuralSphere(node: GraphNode, emphasized: boolean, faded: boolean) {
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || '#35d9ff'
   const radius = 3.8 + Math.max(0, Number(node.val ?? 1)) * 1.45
   const group = new Group()
@@ -36,7 +39,7 @@ function createNeuralSphere(node: GraphNode, emphasized: boolean) {
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
-      opacity: emphasized ? 0.68 : 0.34,
+      opacity: faded ? 0.08 : emphasized ? 0.72 : 0.34,
       depthWrite: false,
     }),
   )
@@ -46,7 +49,7 @@ function createNeuralSphere(node: GraphNode, emphasized: boolean) {
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
-      opacity: emphasized ? 0.18 : 0.07,
+      opacity: faded ? 0.015 : emphasized ? 0.2 : 0.07,
       depthWrite: false,
       blending: AdditiveBlending,
     }),
@@ -62,6 +65,12 @@ function createNeuralSphere(node: GraphNode, emphasized: boolean) {
   return group
 }
 
+function formatDate(value?: string) {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString()
+}
+
 export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const graphRef = useRef<ForceGraphMethods<BrainGraphNode, BrainGraphLink> | undefined>(undefined)
@@ -70,7 +79,11 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
   const [graphData, setGraphData] = useState<GraphData<BrainGraphNode, BrainGraphLink>>(() => createMockBrainGraph())
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
-  const [addedCount, setAddedCount] = useState(0)
+  const [source, setSource] = useState<GraphSource>('loading')
+  const [bankId, setBankId] = useState<string>('—')
+  const [totalUnits, setTotalUnits] = useState(0)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [refreshToken, setRefreshToken] = useState(0)
 
   useEffect(() => {
     const host = hostRef.current
@@ -86,6 +99,35 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
     observer.observe(host)
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setSource('loading')
+    setLoadError(null)
+
+    loadHindsightBrainGraph(controller.signal)
+      .then((loaded) => {
+        setGraphData(loaded.data)
+        setBankId(loaded.bankId)
+        setTotalUnits(loaded.totalUnits)
+        setSelectedNodeId(null)
+        setHoveredNodeId(null)
+        setSource('hindsight')
+        initialFitDone.current = false
+        window.setTimeout(() => graphRef.current?.d3ReheatSimulation(), 0)
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return
+        setGraphData(createMockBrainGraph())
+        setBankId('mock fallback')
+        setTotalUnits(0)
+        setLoadError(error instanceof Error ? error.message : 'Unable to load Hindsight graph.')
+        setSource('fallback')
+        initialFitDone.current = false
+      })
+
+    return () => controller.abort()
+  }, [refreshToken])
 
   const publishCorePoint = useCallback(() => {
     const graph = graphRef.current
@@ -109,49 +151,37 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
     highlighted.add(activeId)
     graphData.links.forEach((link) => {
       const typedLink = link as GraphLink
-      const source = endpointId(typedLink.source as LinkEndpoint)
-      const target = endpointId(typedLink.target as LinkEndpoint)
-      if (source === activeId) highlighted.add(target)
-      if (target === activeId) highlighted.add(source)
+      const sourceId = endpointId(typedLink.source as LinkEndpoint)
+      const targetId = endpointId(typedLink.target as LinkEndpoint)
+      if (sourceId === activeId) highlighted.add(targetId)
+      if (targetId === activeId) highlighted.add(sourceId)
     })
     return highlighted
   }, [graphData.links, hoveredNodeId, selectedNodeId])
 
   const createNodeObject = useCallback((node: GraphNode) => {
-    const emphasized = highlightedNodeIds.has(String(node.id))
-    return createNeuralSphere(node, emphasized)
-  }, [highlightedNodeIds])
+    const id = String(node.id)
+    const emphasized = highlightedNodeIds.has(id)
+    const faded = Boolean(selectedNodeId) && !emphasized
+    return createNeuralSphere(node, emphasized, faded)
+  }, [highlightedNodeIds, selectedNodeId])
 
-  function addMockMemory() {
-    setGraphData((current) => {
-      const memoryNodes = current.nodes.filter((node) => (node as GraphNode).kind === 'memory')
-      const target = memoryNodes[Math.floor(Math.random() * memoryNodes.length)] as GraphNode | undefined
-      const nextIndex = addedCount + 1
-      const id = `live-memory-${Date.now()}`
-      const nextNode: BrainGraphNode = {
-        id,
-        label: `Incoming memory ${nextIndex}`,
-        summary: 'Synthetic Phase 1 node used to verify live graph updates before Hindsight is connected.',
-        kind: 'memory',
-        val: 1.1 + Math.random() * 0.45,
-      }
-      const nextLink: BrainGraphLink = { source: target?.id ? String(target.id) : 'memory', target: id }
-
-      return {
-        nodes: [...current.nodes, nextNode],
-        links: [...current.links, nextLink],
-      }
-    })
-    setAddedCount((count) => count + 1)
-    window.setTimeout(() => graphRef.current?.d3ReheatSimulation(), 0)
-  }
+  const selectedNode = useMemo(
+    () => graphData.nodes.find((node) => String(node.id) === selectedNodeId) as BrainGraphNode | undefined,
+    [graphData.nodes, selectedNodeId],
+  )
 
   function resetView() {
     setSelectedNodeId(null)
     graphRef.current?.zoomToFit(520, 190, (node) => node.kind !== 'core')
   }
 
+  function refreshGraph() {
+    setRefreshToken((value) => value + 1)
+  }
+
   const activeNodeId = selectedNodeId ?? hoveredNodeId
+  const memoryCount = graphData.nodes.filter((node) => node.kind !== 'core').length
 
   return (
     <div className="brain-graph" ref={hostRef} onDoubleClick={resetView}>
@@ -167,7 +197,10 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
         nodeLabel={(node) => `<strong>${node.label}</strong><br/><span>${node.summary}</span>`}
         nodeThreeObject={createNodeObject}
         nodeThreeObjectExtend={false}
-        linkColor={(link) => isDirectLink(link as GraphLink, activeNodeId) ? 'rgba(53,217,255,0.9)' : 'rgba(53,217,255,0.22)'}
+        linkColor={(link) => {
+          if (selectedNodeId && !isDirectLink(link as GraphLink, selectedNodeId)) return 'rgba(53,217,255,0.045)'
+          return isDirectLink(link as GraphLink, activeNodeId) ? 'rgba(53,217,255,0.9)' : 'rgba(53,217,255,0.22)'
+        }}
         linkOpacity={0.5}
         linkWidth={(link) => isDirectLink(link as GraphLink, activeNodeId) ? 1.25 : 0.22}
         linkDirectionalParticles={(link) => isDirectLink(link as GraphLink, selectedNodeId) ? 2 : 0}
@@ -193,19 +226,45 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
         enableNavigationControls
       />
 
-      <div className="brain-graph__phase-label">
-        <span>MEMORY GRAPH · PHASE 1 MOCK DATA</span>
-        <strong>{graphData.nodes.length - 1} NODES</strong>
+      <div className={`brain-graph__phase-label is-${source}`}>
+        <span>{source === 'hindsight' ? `HINDSIGHT · ${bankId}` : source === 'loading' ? 'HINDSIGHT · LOADING' : 'MOCK FALLBACK'}</span>
+        <strong>{memoryCount} / {totalUnits || memoryCount} NODES</strong>
       </div>
 
-      <button className="brain-graph__test-add" type="button" onClick={addMockMemory}>
-        + ADD TEST MEMORY
+      <button className="brain-graph__test-add" type="button" onClick={refreshGraph} disabled={source === 'loading'}>
+        {source === 'loading' ? 'LOADING…' : '↻ REFRESH MEMORY'}
       </button>
 
       {activeNodeId && (
         <div className="brain-graph__selection-label">
           {selectedNodeId ? 'SELECTED' : 'HOVER'} · {graphData.nodes.find((node) => String(node.id) === activeNodeId)?.label}
         </div>
+      )}
+
+      {loadError && <div className="brain-graph__load-error">READ-ONLY FALLBACK · {loadError}</div>}
+
+      {selectedNode && (
+        <aside className="brain-memory-inspector" aria-label="Selected memory">
+          <div className="brain-memory-inspector__surface" />
+          <header className="brain-memory-inspector__header">
+            <div>
+              <span>MEMORY INSPECTOR</span>
+              <strong>{selectedNode.factType || 'memory'}</strong>
+            </div>
+            <button type="button" onClick={() => setSelectedNodeId(null)} aria-label="Close memory inspector">×</button>
+          </header>
+          <div className="brain-memory-inspector__content">
+            <p className="brain-memory-inspector__memory">{selectedNode.summary}</p>
+            <dl>
+              <div><dt>BANK</dt><dd>{bankId}</dd></div>
+              <div><dt>MEMORY ID</dt><dd>{selectedNode.id}</dd></div>
+              <div><dt>WHEN</dt><dd>{formatDate(selectedNode.occurredAt)}</dd></div>
+              {selectedNode.context && <div><dt>CONTEXT</dt><dd>{selectedNode.context}</dd></div>}
+              {selectedNode.entities && <div><dt>ENTITIES</dt><dd>{selectedNode.entities}</dd></div>}
+            </dl>
+            <div className="brain-memory-inspector__hint">Read-only inspection · no memory is written or changed from this view.</div>
+          </div>
+        </aside>
       )}
     </div>
   )
