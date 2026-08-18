@@ -3,6 +3,8 @@
   inset: 0;
   overflow: hidden;
   user-select: none;
+  pointer-events: auto;
+  touch-action: none;
 }
 
 .brain-scene-grid {
@@ -25,10 +27,12 @@
   z-index: 2;
   inset: 0;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .brain-graph canvas {
   display: block;
+  pointer-events: auto;
 }
 
 .brain-graph .scene-tooltip {
