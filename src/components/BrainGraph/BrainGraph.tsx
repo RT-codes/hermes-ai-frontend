@@ -16,8 +16,6 @@ type BrainGraphProps = {
 type GraphNode = NodeObject<BrainGraphNode>
 type GraphLink = LinkObject<BrainGraphNode, BrainGraphLink>
 type GraphSource = 'loading' | 'hindsight' | 'fallback' | 'error'
-type StrengthForce = { strength: (value: number) => unknown }
-type DistanceForce = { distance: (value: number) => unknown }
 
 const AUTO_SYNC_MS = 20_000
 const INSPECTOR_ENTRY_DELAY_MS = 170
@@ -40,11 +38,10 @@ function createNeuralSphere(
   inspecting: boolean,
 ) {
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || '#35d9ff'
-  // Keep Phase 1's visual scale almost intact. The previous Phase 2 tuning made
-  // both the nodes and layout too extreme, which could push the graph out of a
-  // useful visible range after zoom-to-fit.
-  const baseRadius = 3.55 + Math.max(0, Number(node.val ?? 1)) * 1.32
-  const inspectionScale = !inspecting || selected ? 1 : emphasized ? 0.92 : 0.84
+  // Keep the original Phase 1 node scale. Only de-emphasize surrounding nodes
+  // while inspecting; selected nodes remain exactly at the original size.
+  const baseRadius = 3.8 + Math.max(0, Number(node.val ?? 1)) * 1.45
+  const inspectionScale = !inspecting || selected ? 1 : emphasized ? 0.94 : 0.88
   const radius = baseRadius * inspectionScale
   const group = new Group()
   const phase = Math.random() * Math.PI * 2
@@ -144,19 +141,6 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
 
     return () => controller.abort()
   }, [refreshToken])
-
-  useEffect(() => {
-    const graph = graphRef.current
-    if (!graph) return
-
-    // Only a mild nudge away from the Phase 1 defaults. Enough to loosen dense
-    // clusters without exploding the graph's bounding box.
-    const charge = graph.d3Force('charge') as StrengthForce | undefined
-    const link = graph.d3Force('link') as DistanceForce | undefined
-    charge?.strength(-55)
-    link?.distance(38)
-    graph.d3ReheatSimulation()
-  }, [graphData])
 
   useEffect(() => {
     if (selectedNodeId) return
