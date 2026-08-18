@@ -19,6 +19,24 @@
   cursor: wait;
 }
 
+/*
+ * Normal Brain telemetry lives on the right. Selection first adds the
+ * brain-is-inspecting class; the HUDs glide to the left, then the inspector
+ * mounts a fraction later. Keeping the movement on transform lets the existing
+ * top/bottom layout and user-selected compute position remain intact.
+ */
+.brain-hud-stack {
+  transition:
+    transform 155ms cubic-bezier(0.22, 0.78, 0.25, 1),
+    opacity 140ms ease;
+  will-change: transform;
+}
+
+.brain-is-inspecting .brain-hud-stack {
+  transform: translateX(calc(var(--sidebar-width) + 4rem + 100% - 100vw));
+  opacity: 0.82;
+}
+
 .brain-memory-inspector {
   position: absolute;
   z-index: 30;
@@ -30,6 +48,7 @@
   text-shadow: 0 1px 8px rgb(0 0 0 / 0.85);
   filter: drop-shadow(0 18px 36px rgb(0 0 0 / 0.34));
   isolation: isolate;
+  animation: brain-inspector-enter 145ms cubic-bezier(0.22, 0.78, 0.25, 1) both;
 }
 
 .brain-memory-inspector__surface {
@@ -149,10 +168,25 @@
   letter-spacing: 0.08em;
 }
 
+@keyframes brain-inspector-enter {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @media (max-width: 1100px) {
   .brain-memory-inspector {
     right: 1.25rem;
     width: 340px;
+  }
+
+  .brain-is-inspecting .brain-hud-stack {
+    transform: translateX(calc(var(--sidebar-width) + 2.5rem + 100% - 100vw));
   }
 }
 
@@ -160,5 +194,9 @@
   .brain-memory-inspector,
   .brain-graph__load-error {
     display: none;
+  }
+
+  .brain-is-inspecting .brain-hud-stack {
+    transform: none;
   }
 }
