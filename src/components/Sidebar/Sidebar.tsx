@@ -35,7 +35,7 @@ export function Sidebar({ collapsed, activeView, onToggle, onViewChange, onNewCh
       </button>
     )
 
-    if (item.view !== 'memory' || collapsed) return <div key={item.view}>{button}</div>
+    if (item.view !== 'chat' || collapsed) return <div key={item.view}>{button}</div>
 
     return (
       <div className="sidebar__item-row" key={item.view}>
@@ -47,7 +47,7 @@ export function Sidebar({ collapsed, activeView, onToggle, onViewChange, onNewCh
           aria-label="Start a new Hermes chat"
           title="New Hermes chat"
         >
-          +
+          <span aria-hidden="true">+</span>
         </button>
       </div>
     )
@@ -81,7 +81,7 @@ export function Sidebar({ collapsed, activeView, onToggle, onViewChange, onNewCh
               aria-label="Start a new Hermes chat"
               title="New Hermes chat"
             >
-              +
+              <span aria-hidden="true">+</span>
             </button>
           )}
 
