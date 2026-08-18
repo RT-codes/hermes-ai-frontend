@@ -6,6 +6,7 @@ import { createMockBrainGraph } from './mockBrainGraph'
 import type { BrainGraphLink, BrainGraphNode } from './mockBrainGraph'
 
 type Point = { x: number; y: number }
+type LinkEndpoint = string | number | GraphNode | undefined
 
 type BrainGraphProps = {
   onCorePointChange: (point: Point) => void
@@ -14,18 +15,14 @@ type BrainGraphProps = {
 type GraphNode = NodeObject<BrainGraphNode>
 type GraphLink = LinkObject<BrainGraphNode, BrainGraphLink>
 
-function endpointId(endpoint: unknown) {
+function endpointId(endpoint: LinkEndpoint) {
   if (typeof endpoint === 'string' || typeof endpoint === 'number') return String(endpoint)
-  if (endpoint && typeof endpoint === 'object' && 'id' in endpoint) {
-    const id = (endpoint as { id?: string | number }).id
-    return id == null ? '' : String(id)
-  }
-  return ''
+  return endpoint?.id == null ? '' : String(endpoint.id)
 }
 
 function isDirectLink(link: GraphLink, nodeId: string | null) {
   if (!nodeId) return false
-  return endpointId(link.source) === nodeId || endpointId(link.target) === nodeId
+  return endpointId(link.source as LinkEndpoint) === nodeId || endpointId(link.target as LinkEndpoint) === nodeId
 }
 
 function createNeuralSphere(node: GraphNode, emphasized: boolean) {
@@ -112,8 +109,8 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
     highlighted.add(activeId)
     graphData.links.forEach((link) => {
       const typedLink = link as GraphLink
-      const source = endpointId(typedLink.source)
-      const target = endpointId(typedLink.target)
+      const source = endpointId(typedLink.source as LinkEndpoint)
+      const target = endpointId(typedLink.target as LinkEndpoint)
       if (source === activeId) highlighted.add(target)
       if (target === activeId) highlighted.add(source)
     })
@@ -149,10 +146,15 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
     window.setTimeout(() => graphRef.current?.d3ReheatSimulation(), 0)
   }
 
+  function resetView() {
+    setSelectedNodeId(null)
+    graphRef.current?.zoomToFit(520, 190, (node) => node.kind !== 'core')
+  }
+
   const activeNodeId = selectedNodeId ?? hoveredNodeId
 
   return (
-    <div className="brain-graph" ref={hostRef}>
+    <div className="brain-graph" ref={hostRef} onDoubleClick={resetView}>
       <ForceGraph3D<BrainGraphNode, BrainGraphLink>
         ref={graphRef}
         graphData={graphData}
