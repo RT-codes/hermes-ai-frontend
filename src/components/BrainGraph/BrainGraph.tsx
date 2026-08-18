@@ -16,11 +16,9 @@ type BrainGraphProps = {
 type GraphNode = NodeObject<BrainGraphNode>
 type GraphLink = LinkObject<BrainGraphNode, BrainGraphLink>
 type GraphSource = 'loading' | 'hindsight' | 'fallback' | 'error'
-type DistanceForce = { distance: (value: number) => unknown }
 
 const AUTO_SYNC_MS = 20_000
 const INSPECTOR_ENTRY_DELAY_MS = 170
-const LINK_DISTANCE = 33
 
 function endpointId(endpoint: LinkEndpoint) {
   if (typeof endpoint === 'string' || typeof endpoint === 'number') return String(endpoint)
@@ -145,18 +143,6 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
   }, [refreshToken])
 
   useEffect(() => {
-    const graph = graphRef.current
-    if (!graph) return
-
-    // A single, deliberately small layout adjustment: links are about 10%
-    // longer than the force-graph/D3 default. Charge, node size and camera fit
-    // stay untouched so the stable visible layout remains the baseline.
-    const link = graph.d3Force('link') as DistanceForce | undefined
-    link?.distance(LINK_DISTANCE)
-    graph.d3ReheatSimulation()
-  }, [graphData])
-
-  useEffect(() => {
     if (selectedNodeId) return
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
@@ -248,9 +234,13 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
       .filter((connection) => connection.id && connection.id !== 'core')
   }, [graphData.links, graphData.nodes, selectedNodeId])
 
+  function fitGraph() {
+    graphRef.current?.zoomToFit(420, 120, (node) => node.kind !== 'core')
+  }
+
   function resetView() {
     setSelectedNodeId(null)
-    graphRef.current?.zoomToFit(520, 190, (node) => node.kind !== 'core')
+    fitGraph()
   }
 
   function refreshGraph() {
@@ -307,6 +297,15 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
         <span>{source === 'hindsight' ? `HINDSIGHT · ${bankId}` : source === 'loading' ? 'HINDSIGHT · LOADING' : 'MOCK FALLBACK'}</span>
         <strong>{memoryCount} / {totalUnits || memoryCount} NODES</strong>
       </div>
+
+      <button
+        className="brain-graph__fit"
+        type="button"
+        onClick={fitGraph}
+        title="Fit all currently loaded memory nodes into the camera view."
+      >
+        ◎ FIT GRAPH
+      </button>
 
       <button
         className="brain-graph__test-add"
