@@ -2,11 +2,7 @@ import type { GraphData } from 'react-force-graph-3d'
 import type { BrainGraphLink, BrainGraphNode } from './mockBrainGraph'
 
 type HindsightNode = {
-  data?: {
-    id?: string
-    label?: string
-    color?: string
-  }
+  data?: { id?: string; label?: string; color?: string }
 }
 
 type HindsightEdge = {
@@ -33,12 +29,22 @@ type HindsightTableRow = {
 }
 
 type HindsightGraphResponse = {
-  bankId?: string
   nodes?: HindsightNode[]
   edges?: HindsightEdge[]
   table_rows?: HindsightTableRow[]
   total_units?: number
   limit?: number
+}
+
+type HindsightBank = {
+  bank_id?: string
+  id?: string
+  name?: string
+}
+
+type HindsightBankList = {
+  banks?: HindsightBank[]
+  items?: HindsightBank[]
 }
 
 export type LoadedBrainGraph = {
@@ -53,8 +59,37 @@ function compactLabel(text: string) {
   return `${normalized.slice(0, 49)}…`
 }
 
+function bankIdentifier(bank: HindsightBank) {
+  return bank.bank_id || bank.id || bank.name || ''
+}
+
+async function discoverBankId(signal?: AbortSignal) {
+  const response = await fetch('/hindsight-api/v1/default/banks', {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+    signal,
+  })
+
+  if (!response.ok) throw new Error(`Unable to list Hindsight banks (${response.status})`)
+
+  const payload = await response.json() as HindsightBankList
+  const banks = payload.banks ?? payload.items ?? []
+  if (!banks.length) throw new Error('Hindsight is running, but no memory bank was found.')
+
+  const saved = window.localStorage.getItem('hermes-hindsight-bank')
+  const selected = banks.find((bank) => bankIdentifier(bank) === saved)
+    ?? banks.find((bank) => /household|hermes|home/i.test(`${bankIdentifier(bank)} ${bank.name ?? ''}`))
+    ?? banks[0]
+
+  const id = bankIdentifier(selected)
+  if (!id) throw new Error('Hindsight returned a memory bank without an id.')
+  window.localStorage.setItem('hermes-hindsight-bank', id)
+  return id
+}
+
 export async function loadHindsightBrainGraph(signal?: AbortSignal): Promise<LoadedBrainGraph> {
-  const response = await fetch('/memory-api/graph?limit=300', {
+  const bankId = await discoverBankId(signal)
+  const response = await fetch(`/hindsight-api/v1/default/banks/${encodeURIComponent(bankId)}/graph?limit=300`, {
     method: 'GET',
     headers: { Accept: 'application/json' },
     cache: 'no-store',
@@ -116,22 +151,13 @@ export async function loadHindsightBrainGraph(signal?: AbortSignal): Promise<Loa
   })
 
   const core: BrainGraphNode = {
-    id: 'core',
-    label: 'Hermes core',
-    summary: 'Visual anchor for the Hermes thinking core.',
-    kind: 'core',
-    val: 0.1,
-    fx: 0,
-    fy: 0,
-    fz: 0,
+    id: 'core', label: 'Hermes core', summary: 'Visual anchor for the Hermes thinking core.',
+    kind: 'core', val: 0.1, fx: 0, fy: 0, fz: 0,
   }
 
   return {
-    bankId: payload.bankId || 'unknown',
+    bankId,
     totalUnits: payload.total_units ?? memoryNodes.length,
-    data: {
-      nodes: [core, ...memoryNodes],
-      links,
-    },
+    data: { nodes: [core, ...memoryNodes], links },
   }
 }
