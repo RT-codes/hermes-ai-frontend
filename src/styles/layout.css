@@ -35,6 +35,22 @@
   transition: left 180ms ease;
 }
 
+.topbar > div:first-child {
+  position: relative;
+  width: max-content;
+}
+
+.topbar > div:first-child::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.55rem);
+  width: 115%;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(255 255 255 / 0.78), rgb(255 255 255 / 0));
+  pointer-events: none;
+}
+
 .sidebar-is-collapsed .topbar {
   left: calc(var(--sidebar-width-collapsed) + 2rem);
 }
@@ -58,17 +74,27 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.68rem 1rem;
-  background: var(--glass-soft);
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  backdrop-filter: blur(var(--blur-panel));
-  box-shadow: 0 0 24px rgb(53 217 255 / 0.07);
+  min-height: 34px;
+  margin-top: 1.42rem;
+  padding: 0.52rem 0.88rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  border-radius: 0;
+  color: var(--text-muted);
+  background:
+    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.035) 38%),
+    rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity));
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+  box-shadow: 0 0 24px rgb(var(--accent-rgb) / 0.07);
+  font-size: 0.6rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
 }
 
 .status-dot {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.46rem;
+  height: 0.46rem;
   border-radius: 50%;
   background: var(--status-online);
   box-shadow: 0 0 14px rgb(102 240 192 / 0.75);
