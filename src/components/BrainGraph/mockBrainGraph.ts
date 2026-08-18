@@ -6,6 +6,10 @@ export type BrainGraphNode = {
   summary: string
   kind: 'core' | 'memory'
   val: number
+  factType?: string
+  context?: string
+  entities?: string
+  occurredAt?: string
   fx?: number
   fy?: number
   fz?: number
@@ -15,6 +19,8 @@ export type BrainGraphLink = {
   source: string
   target: string
   strength?: number
+  relationship?: string
+  entity?: string
 }
 
 const nodes: BrainGraphNode[] = [
