@@ -19,6 +19,7 @@ import './styles/chat.css'
 import './styles/workspace.css'
 import './styles/telemetry.css'
 import './styles/brain.css'
+import './styles/brain-phase2.css'
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
