@@ -37,6 +37,8 @@ type CameraLike = { position: { x: number; y: number; z: number } }
 const INSPECTOR_ENTRY_DELAY_MS = 170
 const MAX_HIGHLIGHT_HOPS = 4
 const GRID_Y = -92
+const CONNECTOR_MAX_DEPARTURE = 80
+const CONNECTOR_MIN_APPROACH = 20
 
 function endpointId(endpoint: LinkEndpoint) {
   if (typeof endpoint === 'string' || typeof endpoint === 'number') return String(endpoint)
@@ -145,6 +147,10 @@ function buildHopDistances(links: GraphData<BrainGraphNode, BrainGraphLink>['lin
 export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const graphRef = useRef<ForceGraphMethods<BrainGraphNode, BrainGraphLink> | undefined>(undefined)
+  const inspectorRef = useRef<HTMLElement | null>(null)
+  const inspectorAnchorRef = useRef<HTMLParagraphElement | null>(null)
+  const selectedConnectorPathRef = useRef<SVGPathElement | null>(null)
+  const selectedConnectorDotRef = useRef<SVGCircleElement | null>(null)
   const initialFitDone = useRef(false)
   const [size, setSize] = useState({ width: 1, height: 1 })
   const [graphData, setGraphData] = useState<GraphData<BrainGraphNode, BrainGraphLink>>(() => createMockBrainGraph())
@@ -309,6 +315,58 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
     const timer = window.setInterval(publishViewState, 80)
     return () => window.clearInterval(timer)
   }, [publishViewState])
+
+  useEffect(() => {
+    if (!selectedNodeId || !inspectorVisible) return
+
+    let frame = 0
+    const updateConnector = () => {
+      frame = window.requestAnimationFrame(updateConnector)
+
+      const graph = graphRef.current
+      const host = hostRef.current
+      const inspector = inspectorRef.current
+      const anchor = inspectorAnchorRef.current
+      const path = selectedConnectorPathRef.current
+      const dot = selectedConnectorDotRef.current
+      const selectedGraphNode = graphData.nodes.find((node) => String(node.id) === selectedNodeId) as GraphNode | undefined
+
+      if (!graph || !host || !inspector || !anchor || !path || !dot || !selectedGraphNode) return
+      if (!Number.isFinite(selectedGraphNode.x) || !Number.isFinite(selectedGraphNode.y) || !Number.isFinite(selectedGraphNode.z)) return
+
+      const projected = graph.graph2ScreenCoords(
+        selectedGraphNode.x as number,
+        selectedGraphNode.y as number,
+        selectedGraphNode.z as number,
+      )
+      if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return
+
+      const hostRect = host.getBoundingClientRect()
+      const inspectorRect = inspector.getBoundingClientRect()
+      const anchorRect = anchor.getBoundingClientRect()
+      const startX = projected.x
+      const startY = projected.y
+      const targetX = inspectorRect.left - hostRect.left
+      const targetY = anchorRect.top - hostRect.top + Math.min(18, Math.max(10, anchorRect.height * 0.32))
+      const direction = targetX >= startX ? 1 : -1
+      const horizontalGap = Math.abs(targetX - startX)
+      const departure = Math.min(CONNECTOR_MAX_DEPARTURE, Math.max(0, horizontalGap - CONNECTOR_MIN_APPROACH))
+      const bendX = startX + direction * departure
+
+      path.setAttribute('d', `M ${startX.toFixed(2)} ${startY.toFixed(2)} H ${bendX.toFixed(2)} V ${targetY.toFixed(2)} H ${targetX.toFixed(2)}`)
+      path.style.opacity = '1'
+      dot.setAttribute('cx', targetX.toFixed(2))
+      dot.setAttribute('cy', targetY.toFixed(2))
+      dot.style.opacity = '1'
+    }
+
+    frame = window.requestAnimationFrame(updateConnector)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      if (selectedConnectorPathRef.current) selectedConnectorPathRef.current.style.opacity = '0'
+      if (selectedConnectorDotRef.current) selectedConnectorDotRef.current.style.opacity = '0'
+    }
+  }, [graphData.nodes, inspectorVisible, selectedNodeId])
 
   const focusNodeId = previewNodeId ?? selectedNodeId
   const hopDistances = useMemo(
@@ -506,57 +564,64 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
         </>
       )}
 
-      {loadError && <div className="brain-graph__load-error">READ-ONLY FALLBACK · {loadError}</div>}
-
       {selectedNode && inspectorVisible && (
-        <aside className="brain-memory-inspector" aria-label="Selected memory">
-          <div className="brain-memory-inspector__surface" />
-          <header className="brain-memory-inspector__header">
-            <div>
-              <span>MEMORY INSPECTOR</span>
-              <strong>{selectedNode.factType || 'memory'}</strong>
+        <>
+          <svg className="brain-selected-connector" aria-hidden="true">
+            <path ref={selectedConnectorPathRef} />
+            <circle ref={selectedConnectorDotRef} r="4.2" />
+          </svg>
+
+          <aside ref={inspectorRef} className="brain-memory-inspector" aria-label="Selected memory">
+            <div className="brain-memory-inspector__surface" />
+            <header className="brain-memory-inspector__header">
+              <div>
+                <span>MEMORY INSPECTOR</span>
+                <strong>{selectedNode.factType || 'memory'}</strong>
+              </div>
+              <button type="button" onClick={() => setSelectedNodeId(null)} aria-label="Close memory inspector">×</button>
+            </header>
+            <div className="brain-memory-inspector__content">
+              <p ref={inspectorAnchorRef} className="brain-memory-inspector__memory">{selectedNode.summary}</p>
+              <dl>
+                <div><dt>BANK</dt><dd>{bankId}</dd></div>
+                <div><dt>MEMORY ID</dt><dd>{selectedNode.id}</dd></div>
+                <div><dt>LINKS</dt><dd>{selectedConnections.length} direct</dd></div>
+                <div><dt>WHEN</dt><dd>{formatDate(selectedNode.occurredAt)}</dd></div>
+                {selectedNode.context && <div><dt>CONTEXT</dt><dd>{selectedNode.context}</dd></div>}
+                {selectedNode.entities && <div><dt>ENTITIES</dt><dd>{selectedNode.entities}</dd></div>}
+              </dl>
+
+              {selectedConnections.length > 0 && (
+                <section className="brain-memory-inspector__connections" aria-label="Connected memories">
+                  <span>CONNECTED MEMORIES</span>
+                  <ul>
+                    {selectedConnections.slice(0, 8).map((connection) => (
+                      <li key={`${connection.id}-${connection.relationship}`}>
+                        <button
+                          type="button"
+                          onMouseEnter={() => setPreviewNodeId(connection.id)}
+                          onMouseLeave={() => setPreviewNodeId(null)}
+                          onFocus={() => setPreviewNodeId(connection.id)}
+                          onBlur={() => setPreviewNodeId(null)}
+                          onClick={() => selectConnectedMemory(connection.id)}
+                        >
+                          <strong>{connection.label}</strong>
+                          <small>{connection.relationship}</small>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {selectedConnections.length > 8 && <small>+ {selectedConnections.length - 8} more direct links</small>}
+                </section>
+              )}
+
+              <div className="brain-memory-inspector__hint">Read-only inspection · no memory is written or changed from this view.</div>
             </div>
-            <button type="button" onClick={() => setSelectedNodeId(null)} aria-label="Close memory inspector">×</button>
-          </header>
-          <div className="brain-memory-inspector__content">
-            <p className="brain-memory-inspector__memory">{selectedNode.summary}</p>
-            <dl>
-              <div><dt>BANK</dt><dd>{bankId}</dd></div>
-              <div><dt>MEMORY ID</dt><dd>{selectedNode.id}</dd></div>
-              <div><dt>LINKS</dt><dd>{selectedConnections.length} direct</dd></div>
-              <div><dt>WHEN</dt><dd>{formatDate(selectedNode.occurredAt)}</dd></div>
-              {selectedNode.context && <div><dt>CONTEXT</dt><dd>{selectedNode.context}</dd></div>}
-              {selectedNode.entities && <div><dt>ENTITIES</dt><dd>{selectedNode.entities}</dd></div>}
-            </dl>
-
-            {selectedConnections.length > 0 && (
-              <section className="brain-memory-inspector__connections" aria-label="Connected memories">
-                <span>CONNECTED MEMORIES</span>
-                <ul>
-                  {selectedConnections.slice(0, 8).map((connection) => (
-                    <li key={`${connection.id}-${connection.relationship}`}>
-                      <button
-                        type="button"
-                        onMouseEnter={() => setPreviewNodeId(connection.id)}
-                        onMouseLeave={() => setPreviewNodeId(null)}
-                        onFocus={() => setPreviewNodeId(connection.id)}
-                        onBlur={() => setPreviewNodeId(null)}
-                        onClick={() => selectConnectedMemory(connection.id)}
-                      >
-                        <strong>{connection.label}</strong>
-                        <small>{connection.relationship}</small>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                {selectedConnections.length > 8 && <small>+ {selectedConnections.length - 8} more direct links</small>}
-              </section>
-            )}
-
-            <div className="brain-memory-inspector__hint">Read-only inspection · no memory is written or changed from this view.</div>
-          </div>
-        </aside>
+          </aside>
+        </>
       )}
+
+      {loadError && <div className="brain-graph__load-error">READ-ONLY FALLBACK · {loadError}</div>}
     </div>
   )
 }
