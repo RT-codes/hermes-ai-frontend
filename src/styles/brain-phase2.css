@@ -26,10 +26,46 @@
  * top/bottom layout and user-selected compute position remain intact.
  */
 .brain-hud-stack {
+  gap: 0.62rem;
   transition:
     transform 155ms cubic-bezier(0.22, 0.78, 0.25, 1),
     opacity 140ms ease;
   will-change: transform;
+}
+
+/* Compact the telemetry HUDs enough to keep the lower Brain controls clear. */
+.brain-hud-stack--bottom {
+  bottom: 5.25rem;
+}
+
+.brain-hud-panel__header {
+  min-height: 26px;
+  padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.brain-hud-panel__content {
+  padding: 0.25rem 0.75rem 0.65rem;
+}
+
+.hardware-hud__identity {
+  padding-bottom: 0.48rem;
+}
+
+.hardware-hud__metrics {
+  padding: 0.42rem 0;
+}
+
+.hardware-hud__graphs {
+  gap: 0.2rem;
+  padding: 0.36rem 0;
+}
+
+.telemetry-sparkline {
+  height: 19px;
+}
+
+.hardware-hud__footer {
+  padding-top: 0.34rem;
 }
 
 .brain-is-inspecting .brain-hud-stack {
@@ -157,6 +193,53 @@
   color: var(--text-muted);
   font-size: 0.65rem;
   line-height: 1.45;
+}
+
+.brain-memory-inspector__connections {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+}
+
+.brain-memory-inspector__connections > span {
+  color: var(--cyan-soft);
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+}
+
+.brain-memory-inspector__connections ul {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.brain-memory-inspector__connections li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: baseline;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.08);
+  background: rgb(var(--accent-rgb) / 0.025);
+}
+
+.brain-memory-inspector__connections strong {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brain-memory-inspector__connections small {
+  color: var(--text-faint);
+  font-size: 0.48rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .brain-memory-inspector__hint {
