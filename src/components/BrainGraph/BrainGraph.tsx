@@ -57,18 +57,24 @@ function linkHash(link: GraphLink) {
   return (hash % 997) / 997
 }
 
-function createNeuralSphere(node: GraphNode, intensity: number, selected: boolean, inspecting: boolean) {
+function createNeuralSphere(node: GraphNode, distance: number | null, selected: boolean, inspecting: boolean) {
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || '#35d9ff'
   const baseRadius = 3.8 + Math.max(0, Number(node.val ?? 1)) * 1.45
-  const scale = !inspecting || selected ? 1 : 0.9 + intensity * 0.07
+  const scale = selected ? 0.8 : distance === 1 ? 0.7 : 0.6
   const radius = baseRadius * scale
-  const bodyOpacity = selected ? 1 : inspecting ? 0.22 + intensity * 0.56 : 0.34 + intensity * 0.28
-  const haloOpacity = selected ? 0.28 : inspecting ? 0.025 + intensity * 0.15 : 0.07 + intensity * 0.1
+  const bodyOpacity = selected
+    ? 1
+    : !inspecting
+      ? distance === 0 ? 0.78 : distance === 1 ? 0.54 : 0.34
+      : distance === 1 ? 0.54 : distance === 2 ? 0.38 : distance === 3 ? 0.3 : distance === 4 ? 0.25 : 0.2
+  const haloOpacity = selected
+    ? 0.25
+    : distance === 1 ? 0.12 : distance === 2 ? 0.075 : distance === 3 ? 0.052 : distance === 4 ? 0.04 : 0.028
   const group = new Group()
   const phase = Math.random() * Math.PI * 2
 
   const body = new Mesh(
-    new SphereGeometry(radius, 22, 16),
+    new SphereGeometry(radius, 16, 12),
     new MeshBasicMaterial({
       color: accent,
       transparent: !selected,
@@ -78,7 +84,7 @@ function createNeuralSphere(node: GraphNode, intensity: number, selected: boolea
   )
 
   const halo = new Mesh(
-    new SphereGeometry(radius * 1.5, 18, 12),
+    new SphereGeometry(radius * 1.5, 12, 8),
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
@@ -91,7 +97,7 @@ function createNeuralSphere(node: GraphNode, intensity: number, selected: boolea
   group.add(halo)
   group.add(body)
   group.onBeforeRender = () => {
-    const pulseAmount = selected ? 0.1 : 0.035 + intensity * 0.04
+    const pulseAmount = selected ? 0.085 : distance === 1 ? 0.055 : 0.035
     const pulse = 1 + Math.sin(performance.now() / 900 + phase) * pulseAmount
     halo.scale.setScalar(pulse)
   }
@@ -105,9 +111,9 @@ function formatDate(value?: string) {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString()
 }
 
-function buildHopDistances(links: GraphData<BrainGraphNode, BrainGraphLink>['links'], selectedNodeId: string | null) {
+function buildHopDistances(links: GraphData<BrainGraphNode, BrainGraphLink>['links'], focusNodeId: string | null) {
   const distances = new Map<string, number>()
-  if (!selectedNodeId) return distances
+  if (!focusNodeId) return distances
 
   const adjacency = new Map<string, Set<string>>()
   links.forEach((rawLink) => {
@@ -121,8 +127,8 @@ function buildHopDistances(links: GraphData<BrainGraphNode, BrainGraphLink>['lin
     adjacency.get(target)?.add(source)
   })
 
-  distances.set(selectedNodeId, 0)
-  let frontier = [selectedNodeId]
+  distances.set(focusNodeId, 0)
+  let frontier = [focusNodeId]
   for (let depth = 1; depth <= MAX_HIGHLIGHT_HOPS && frontier.length > 0; depth += 1) {
     const next: string[] = []
     frontier.forEach((nodeId) => {
@@ -145,6 +151,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
   const [size, setSize] = useState({ width: 1, height: 1 })
   const [graphData, setGraphData] = useState<GraphData<BrainGraphNode, BrainGraphLink>>(() => createMockBrainGraph())
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [previewNodeId, setPreviewNodeId] = useState<string | null>(null)
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const [hoverPoint, setHoverPoint] = useState<Point | null>(null)
   const [pointerPoint, setPointerPoint] = useState<Point | null>(null)
@@ -181,6 +188,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
         setBankId(loaded.bankId)
         setTotalUnits(loaded.totalUnits)
         setSelectedNodeId(null)
+        setPreviewNodeId(null)
         setHoveredNodeId(null)
         setSource('hindsight')
         initialFitDone.current = false
@@ -214,6 +222,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
       timer = window.setTimeout(() => setInspectorVisible(true), INSPECTOR_ENTRY_DELAY_MS)
     } else {
       setInspectorVisible(false)
+      setPreviewNodeId(null)
       document.documentElement.classList.remove('brain-is-inspecting')
     }
 
@@ -256,7 +265,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
           float line = 1.0 - min(min(grid.x, grid.y), 1.0);
           float radial = distance(vUv, vec2(0.5));
           float fade = 1.0 - smoothstep(0.08, 0.7, radial);
-          gl_FragColor = vec4(gridColor, line * fade * 0.18);
+          gl_FragColor = vec4(gridColor, line * fade * 0.162);
         }
       `,
     })
@@ -314,9 +323,10 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
     return () => window.clearInterval(timer)
   }, [publishViewState])
 
+  const focusNodeId = previewNodeId ?? selectedNodeId
   const hopDistances = useMemo(
-    () => buildHopDistances(graphData.links, selectedNodeId),
-    [graphData.links, selectedNodeId],
+    () => buildHopDistances(graphData.links, focusNodeId),
+    [focusNodeId, graphData.links],
   )
 
   const hoverNeighbourIds = useMemo(() => {
@@ -335,13 +345,11 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
 
   const createNodeObject = useCallback((node: GraphNode) => {
     const id = String(node.id)
-    const distance = hopDistances.get(id)
-    const selected = distance === 0
-    const intensity = selectedNodeId
-      ? distance == null ? 0 : Math.max(0, 1 - distance / (MAX_HIGHLIGHT_HOPS + 1))
-      : hoverNeighbourIds.has(id) ? (id === hoveredNodeId ? 1 : 0.62) : 0
-    return createNeuralSphere(node, intensity, selected, Boolean(selectedNodeId))
-  }, [hopDistances, hoverNeighbourIds, hoveredNodeId, selectedNodeId])
+    const distance = hopDistances.get(id) ?? null
+    const selected = Boolean(focusNodeId) && distance === 0
+    const hoverDistance = !focusNodeId && hoverNeighbourIds.has(id) ? (id === hoveredNodeId ? 0 : 1) : null
+    return createNeuralSphere(node, focusNodeId ? distance : hoverDistance, selected, Boolean(focusNodeId))
+  }, [focusNodeId, hopDistances, hoverNeighbourIds, hoveredNodeId])
 
   const selectedNode = useMemo(
     () => graphData.nodes.find((node) => String(node.id) === selectedNodeId) as BrainGraphNode | undefined,
@@ -370,12 +378,12 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
   }, [graphData.links, graphData.nodes, selectedNodeId])
 
   const linkDepth = useCallback((link: GraphLink) => {
-    if (!selectedNodeId) return isDirectLink(link, hoveredNodeId) ? 0 : null
+    if (!focusNodeId) return isDirectLink(link, hoveredNodeId) ? 0 : null
     const sourceDepth = hopDistances.get(endpointId(link.source as LinkEndpoint))
     const targetDepth = hopDistances.get(endpointId(link.target as LinkEndpoint))
     if (sourceDepth == null && targetDepth == null) return null
     return Math.min(sourceDepth ?? MAX_HIGHLIGHT_HOPS + 1, targetDepth ?? MAX_HIGHLIGHT_HOPS + 1)
-  }, [hopDistances, hoveredNodeId, selectedNodeId])
+  }, [focusNodeId, hopDistances, hoveredNodeId])
 
   function fitGraph() {
     graphRef.current?.zoomToFit(420, 120, (node) => node.kind !== 'core')
@@ -383,6 +391,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
 
   function resetView() {
     setSelectedNodeId(null)
+    setPreviewNodeId(null)
     fitGraph()
   }
 
@@ -392,6 +401,7 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
 
   function selectConnectedMemory(nodeId: string) {
     setHoveredNodeId(null)
+    setPreviewNodeId(null)
     setSelectedNodeId(nodeId)
   }
 
@@ -423,19 +433,20 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
         nodeThreeObjectExtend={false}
         linkColor={(rawLink) => {
           const depth = linkDepth(rawLink as GraphLink)
-          if (depth == null) return selectedNodeId ? 'rgba(53,217,255,0.04)' : 'rgba(53,217,255,0.2)'
-          const alpha = depth === 0 ? 0.68 : depth === 1 ? 0.44 : depth === 2 ? 0.28 : depth === 3 ? 0.17 : 0.1
+          if (depth == null) return focusNodeId ? 'rgba(53,217,255,0.16)' : 'rgba(53,217,255,0.2)'
+          const alpha = depth === 0 ? 0.5 : depth === 1 ? 0.25 : depth === 2 ? 0.21 : 0.2
           return `rgba(53,217,255,${alpha})`
         }}
         linkOpacity={0.5}
         linkWidth={(rawLink) => {
           const depth = linkDepth(rawLink as GraphLink)
           if (depth == null) return 0.14
-          return depth === 0 ? 0.72 : depth === 1 ? 0.48 : depth === 2 ? 0.34 : depth === 3 ? 0.24 : 0.17
+          return depth === 0 ? 0.38 : depth === 1 ? 0.19 : depth === 2 ? 0.15 : 0.14
         }}
-        linkDirectionalParticles={(rawLink) => selectedNodeId && linkDepth(rawLink as GraphLink) === 0 ? 2 : 0}
+        linkDirectionalParticles={(rawLink) => focusNodeId && linkDepth(rawLink as GraphLink) === 0 ? 2 : 0}
         linkDirectionalParticleColor={() => '#72e7ff'}
         linkDirectionalParticleWidth={1.25}
+        linkDirectionalParticleResolution={3}
         linkDirectionalParticleOffset={(rawLink) => linkHash(rawLink as GraphLink)}
         linkDirectionalParticleSpeed={(rawLink) => {
           const phase = linkHash(rawLink as GraphLink)
@@ -456,8 +467,14 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
           }
         }}
         onNodeHover={(node) => setHoveredNodeId(node?.id == null ? null : String(node.id))}
-        onNodeClick={(node) => setSelectedNodeId((current) => current === String(node.id) ? null : String(node.id))}
-        onBackgroundClick={() => setSelectedNodeId(null)}
+        onNodeClick={(node) => {
+          setPreviewNodeId(null)
+          setSelectedNodeId((current) => current === String(node.id) ? null : String(node.id))
+        }}
+        onBackgroundClick={() => {
+          setPreviewNodeId(null)
+          setSelectedNodeId(null)
+        }}
         enableNodeDrag
         enableNavigationControls
       />
@@ -530,7 +547,14 @@ export function BrainGraph({ onCorePointChange, onViewRotationChange }: BrainGra
                 <ul>
                   {selectedConnections.slice(0, 8).map((connection) => (
                     <li key={`${connection.id}-${connection.relationship}`}>
-                      <button type="button" onClick={() => selectConnectedMemory(connection.id)}>
+                      <button
+                        type="button"
+                        onMouseEnter={() => setPreviewNodeId(connection.id)}
+                        onMouseLeave={() => setPreviewNodeId(null)}
+                        onFocus={() => setPreviewNodeId(connection.id)}
+                        onBlur={() => setPreviewNodeId(null)}
+                        onClick={() => selectConnectedMemory(connection.id)}
+                      >
                         <strong>{connection.label}</strong>
                         <small>{connection.relationship}</small>
                       </button>
