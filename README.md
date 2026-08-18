@@ -14,9 +14,11 @@ The frontend now includes:
 - independently configurable Brain HUD color/opacity for Local Compute, Activity and System;
 - a live Brain-view telemetry layer for Hermes, Hindsight, Ollama, CPU, RAM, GPU, VRAM and GPU temperature;
 - compact Activity and System HUDs with the same glass treatment as Local Compute;
-- dynamic connector lines whose endpoint follows the current Brain-scene center;
+- a real Three.js force-directed Brain graph backed by read-only Hindsight memory data;
+- memory hover/selection, multi-hop relationship emphasis, connected-memory navigation and a right-side Memory Inspector;
+- a live orthogonal selected-node-to-inspector connector, manual graph sync and camera fit controls;
+- a fixed animated Hermes thinking cube and fading 3D ground plane;
 - a Local Compute position setting (`top-right` or `bottom-right`), with Activity/System automatically occupying the opposite side;
-- a pannable, rotatable and zoomable 3D Brain workspace scaffold with a glowing cyan 3x3 Rubik-style wireframe cube placeholder;
 - a floating chat console that stays above Brain-view HUD content while remaining below the fixed sidebar;
 - local development lifecycle integration through `hermesctl`.
 
@@ -51,8 +53,8 @@ Its job is to be the household interface on top of the local stack:
 - TypeScript
 - Vite
 - custom CSS/design tokens
-- native CSS 3D + pointer interaction for the current Brain scaffold
-- Three.js / React Three Fiber planned for the full graph/brain renderer
+- Three.js through `react-force-graph-3d` for the interactive Brain graph
+- CSS 3D for the fixed Hermes thinking cube
 - React Flow planned where structured 2D graph inspection is useful
 
 ## Runtime boundary
@@ -82,18 +84,11 @@ The raw Hermes API remains a local backend boundary; the browser reaches it thro
 
 ## Brain-view architecture
 
-The Brain workspace now has an explicit interactive scene coordinate system.
+The Brain workspace renders real Hindsight memory nodes and relationships in a Three.js force-directed scene. It supports orbit, pan, zoom, node dragging, hover inspection, persistent selection and connected-memory hopping.
 
-The temporary 3D Rubik-style wireframe cube can be:
+Selecting a memory opens the read-only Memory Inspector and attaches a live orthogonal screen-space connector to the selected 3D node. The graph snapshot loads on entry and can be refreshed explicitly with **Sync Graph**; no Hindsight memory is written or changed by the visualization.
 
-- dragged to rotate;
-- Shift/right/middle-dragged to pan;
-- zoomed with the mouse wheel;
-- reset with a double click.
-
-Only the placeholder model uses wireframe rendering. The surrounding scene and HUDs retain the standard glass/cyberpunk treatment.
-
-A shared `BrainSceneContext` publishes the visualization's current screen-space center. Local Compute, Activity and System HUD connectors use that anchor instead of a hard-coded endpoint, so the connector dot follows the scene when it is panned and can later be driven by the real Three.js camera/graph center.
+The fixed Rubik-style thinking cube mirrors graph camera orientation while remaining anchored beside the Hermes Home header. The scene also includes a fading 3D ground plane and prevents orbiting below the floor.
 
 The Brain HUDs have their own appearance variables and can be tuned independently from the regular floating panel/sidebar system through **Brain HUD color** and **Brain HUD opacity** settings.
 
@@ -143,6 +138,6 @@ When using the local Hermes Home stack, `hermesctl` is the preferred lifecycle e
 2. Functional multi-chat UX, navigation and appearance controls. ✅
 3. Real streaming chat against the local Hermes runtime. ✅
 4. Local runtime telemetry and `hermesctl` development lifecycle. ✅
-5. Replace the temporary wireframe cube with the interactive Hermes brain/knowledge graph.
-6. Feed memory, skill, tool and observable activity data into the 3D visualization.
+5. Interactive 3D Hindsight memory graph and read-only Memory Inspector. ✅
+6. Add provenance/activity, skills and tool/MCP node layers to the Brain graph.
 7. Finish the production/LAN frontend serving boundary and household access.
