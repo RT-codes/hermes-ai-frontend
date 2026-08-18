@@ -64,7 +64,7 @@
 .brain-scene-core {
   position: absolute;
   z-index: 41;
-  left: calc(var(--sidebar-width) + 12.3rem);
+  left: calc(var(--sidebar-width) + 14.25rem);
   top: calc(var(--space-page) + 0.6rem);
   width: 64px;
   height: 64px;
@@ -74,7 +74,7 @@
 }
 
 .sidebar-is-collapsed .brain-scene-core {
-  left: calc(var(--sidebar-width-collapsed) + 12.3rem);
+  left: calc(var(--sidebar-width-collapsed) + 14.25rem);
 }
 
 .brain-scene-core__scale {
@@ -289,11 +289,11 @@
   }
 
   .brain-scene-core {
-    left: calc(var(--sidebar-width) + 11.7rem);
+    left: calc(var(--sidebar-width) + 13.5rem);
   }
 
   .sidebar-is-collapsed .brain-scene-core {
-    left: calc(var(--sidebar-width-collapsed) + 11.7rem);
+    left: calc(var(--sidebar-width-collapsed) + 13.5rem);
   }
 
   .brain-scene-help { display: none; }
