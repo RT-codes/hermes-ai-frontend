@@ -40,28 +40,31 @@ function createNeuralSphere(
   inspecting: boolean,
 ) {
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || '#35d9ff'
-  const baseRadius = 2.8 + Math.max(0, Number(node.val ?? 1)) * 1.05
-  const inspectionScale = !inspecting || selected ? 1 : emphasized ? 0.82 : 0.68
+  // Keep Phase 1's visual scale almost intact. The previous Phase 2 tuning made
+  // both the nodes and layout too extreme, which could push the graph out of a
+  // useful visible range after zoom-to-fit.
+  const baseRadius = 3.55 + Math.max(0, Number(node.val ?? 1)) * 1.32
+  const inspectionScale = !inspecting || selected ? 1 : emphasized ? 0.92 : 0.84
   const radius = baseRadius * inspectionScale
   const group = new Group()
   const phase = Math.random() * Math.PI * 2
 
   const body = new Mesh(
-    new SphereGeometry(radius, 20, 14),
+    new SphereGeometry(radius, 22, 16),
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
-      opacity: faded ? 0.07 : emphasized ? 0.72 : 0.3,
+      opacity: faded ? 0.08 : emphasized ? 0.72 : 0.34,
       depthWrite: false,
     }),
   )
 
   const halo = new Mesh(
-    new SphereGeometry(radius * 1.48, 16, 10),
+    new SphereGeometry(radius * 1.5, 18, 12),
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
-      opacity: faded ? 0.012 : emphasized ? 0.19 : 0.055,
+      opacity: faded ? 0.015 : emphasized ? 0.2 : 0.07,
       depthWrite: false,
       blending: AdditiveBlending,
     }),
@@ -70,7 +73,7 @@ function createNeuralSphere(
   group.add(halo)
   group.add(body)
   group.onBeforeRender = () => {
-    const pulse = 1 + Math.sin(performance.now() / 820 + phase) * (emphasized ? 0.085 : 0.04)
+    const pulse = 1 + Math.sin(performance.now() / 820 + phase) * (emphasized ? 0.1 : 0.055)
     halo.scale.setScalar(pulse)
   }
 
@@ -146,10 +149,12 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
     const graph = graphRef.current
     if (!graph) return
 
+    // Only a mild nudge away from the Phase 1 defaults. Enough to loosen dense
+    // clusters without exploding the graph's bounding box.
     const charge = graph.d3Force('charge') as StrengthForce | undefined
     const link = graph.d3Force('link') as DistanceForce | undefined
-    charge?.strength(-165)
-    link?.distance(72)
+    charge?.strength(-55)
+    link?.distance(38)
     graph.d3ReheatSimulation()
   }, [graphData])
 
@@ -226,7 +231,7 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
 
   function resetView() {
     setSelectedNodeId(null)
-    graphRef.current?.zoomToFit(520, 220, (node) => node.kind !== 'core')
+    graphRef.current?.zoomToFit(520, 190, (node) => node.kind !== 'core')
   }
 
   function refreshGraph() {
@@ -251,25 +256,25 @@ export function BrainGraph({ onCorePointChange }: BrainGraphProps) {
         nodeThreeObject={createNodeObject}
         nodeThreeObjectExtend={false}
         linkColor={(link) => {
-          if (selectedNodeId && !isDirectLink(link as GraphLink, selectedNodeId)) return 'rgba(53,217,255,0.035)'
-          return isDirectLink(link as GraphLink, activeNodeId) ? 'rgba(53,217,255,0.82)' : 'rgba(53,217,255,0.17)'
+          if (selectedNodeId && !isDirectLink(link as GraphLink, selectedNodeId)) return 'rgba(53,217,255,0.045)'
+          return isDirectLink(link as GraphLink, activeNodeId) ? 'rgba(53,217,255,0.9)' : 'rgba(53,217,255,0.22)'
         }}
-        linkOpacity={0.44}
-        linkWidth={(link) => isDirectLink(link as GraphLink, activeNodeId) ? 1.05 : 0.16}
+        linkOpacity={0.5}
+        linkWidth={(link) => isDirectLink(link as GraphLink, activeNodeId) ? 1.25 : 0.22}
         linkDirectionalParticles={(link) => isDirectLink(link as GraphLink, selectedNodeId) ? 2 : 0}
         linkDirectionalParticleColor={() => '#72e7ff'}
-        linkDirectionalParticleWidth={1.1}
+        linkDirectionalParticleWidth={1.25}
         linkDirectionalParticleSpeed={0.0045}
-        d3AlphaDecay={0.018}
-        d3VelocityDecay={0.38}
-        cooldownTicks={220}
-        warmupTicks={90}
+        d3AlphaDecay={0.022}
+        d3VelocityDecay={0.42}
+        cooldownTicks={180}
+        warmupTicks={70}
         onEngineTick={publishCorePoint}
         onEngineStop={() => {
           publishCorePoint()
           if (!initialFitDone.current) {
             initialFitDone.current = true
-            graphRef.current?.zoomToFit(700, 220, (node) => node.kind !== 'core')
+            graphRef.current?.zoomToFit(700, 190, (node) => node.kind !== 'core')
           }
         }}
         onNodeHover={(node) => setHoveredNodeId(node?.id == null ? null : String(node.id))}
