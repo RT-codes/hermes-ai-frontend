@@ -13,6 +13,7 @@ type LayerTurn = {
 }
 
 type Point = { x: number; y: number }
+type ViewRotation = { yaw: number; pitch: number }
 
 const cubieCoordinates = [-1, 0, 1] as const
 const axes: Axis[] = ['x', 'y', 'z']
@@ -35,32 +36,29 @@ export function BrainStage() {
   const { settings } = useAppearance()
   const { sessions } = useChatSessions()
   const [turn, setTurn] = useState<LayerTurn | null>(null)
-  const [corePoint, setCorePoint] = useState<Point | null>(null)
+  const [viewRotation, setViewRotation] = useState<ViewRotation>({ yaw: 0, pitch: 0 })
 
   const isThinking = sessions.some(
     (session) => session.connectionState === 'connecting' || session.connectionState === 'streaming',
   )
 
   const handleCorePointChange = useCallback((point: Point) => {
-    setCorePoint((current) => {
-      if (current && Math.abs(current.x - point.x) < 0.5 && Math.abs(current.y - point.y) < 0.5) return current
-      return point
-    })
-
     const stage = document.querySelector<HTMLElement>('.brain-stage--3d')
     const rect = stage?.getBoundingClientRect()
     if (!rect) return
     setCenterPoint({ x: rect.left + point.x, y: rect.top + point.y })
   }, [setCenterPoint])
 
+  const handleViewRotationChange = useCallback((rotation: ViewRotation) => {
+    setViewRotation((current) => {
+      if (Math.abs(current.yaw - rotation.yaw) < 0.35 && Math.abs(current.pitch - rotation.pitch) < 0.35) return current
+      return rotation
+    })
+  }, [])
+
   useEffect(() => () => setCenterPoint(null), [setCenterPoint])
 
   useEffect(() => {
-    if (!isThinking) {
-      setTurn(null)
-      return
-    }
-
     let cancelled = false
     let startTimer = 0
     let finishTimer = 0
@@ -68,7 +66,10 @@ export function BrainStage() {
     let frameTwo = 0
 
     const scheduleTurn = () => {
-      const pause = 420 + Math.random() * 760
+      const activeSpeed = isThinking ? settings.rubikTurnSpeedMs : settings.rubikTurnSpeedMs * 3
+      const pause = isThinking
+        ? 360 + Math.random() * 620
+        : 1100 + Math.random() * 1700
 
       startTimer = window.setTimeout(() => {
         if (cancelled) return
@@ -89,7 +90,7 @@ export function BrainStage() {
           if (cancelled) return
           setTurn(null)
           scheduleTurn()
-        }, settings.rubikTurnSpeedMs + 90)
+        }, activeSpeed + 100)
       }, pause)
     }
 
@@ -105,28 +106,28 @@ export function BrainStage() {
   }, [isThinking, settings.rubikTurnSpeedMs])
 
   const groupingAxis = turn?.axis ?? 'z'
+  const activeTurnSpeed = isThinking ? settings.rubikTurnSpeedMs : settings.rubikTurnSpeedMs * 3
+  const cubeViewTransform = `rotateX(${-24 - viewRotation.pitch * 0.72}deg) rotateY(${38 + viewRotation.yaw}deg)`
 
   return (
     <section className="brain-stage brain-stage--3d" aria-label="Interactive 3D Hermes memory graph foundation">
-      <div className="brain-scene-grid" aria-hidden="true" />
-      <BrainGraph onCorePointChange={handleCorePointChange} />
+      <BrainGraph
+        onCorePointChange={handleCorePointChange}
+        onViewRotationChange={handleViewRotationChange}
+      />
 
-      <div
-        className={`brain-scene-core ${isThinking ? 'is-thinking' : ''}`}
-        style={corePoint ? { left: `${corePoint.x}px`, top: `${corePoint.y}px` } : undefined}
-        aria-hidden="true"
-      >
-        <span className={`brain-cube-glow ${isThinking ? 'is-thinking' : ''}`} />
+      <div className={`brain-scene-core ${isThinking ? 'is-thinking' : 'is-idle'}`} aria-hidden="true">
+        <span className={`brain-cube-glow ${isThinking ? 'is-thinking' : 'is-idle'}`} />
 
         <div className="brain-scene-core__scale">
-          <div className={`brain-cube ${isThinking ? 'is-thinking' : ''}`}>
+          <div className={`brain-cube ${isThinking ? 'is-thinking' : 'is-idle'}`} style={{ transform: cubeViewTransform }}>
             {cubieCoordinates.map((layer) => (
               <span
                 className="brain-cube-layer"
                 key={`${groupingAxis}:${layer}`}
                 style={{
                   transform: turnTransform(turn, layer),
-                  transitionDuration: `${settings.rubikTurnSpeedMs}ms`,
+                  transitionDuration: `${activeTurnSpeed}ms`,
                 }}
               >
                 {cubieCoordinates.flatMap((z) =>
