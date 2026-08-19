@@ -12,8 +12,12 @@ Hermes Home is a React + TypeScript + Vite frontend for chatting with Hermes, mo
 <img width="1600" height="809" alt="Hermes Home preview" src="https://github.com/user-attachments/assets/e1d31801-cfd3-41b8-8de2-9cc398994665" />
 
 
-
+https://github.com/user-attachments/assets/6f6f82f6-2702-4f8a-a07f-63729be18006
 https://github.com/user-attachments/assets/baa775ab-5ab0-41ee-a449-8d3b1c1066d0
+
+
+
+
 
 ## What it is
 
