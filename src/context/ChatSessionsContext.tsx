@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { streamHermesChat } from '../lib/hermes/client'
+import { browserChatPersistence } from '../features/chat/persistence'
 import type { ChatConversation, ChatMessage, StoredChatState } from '../features/chat/types'
+import { streamHermesChat } from '../lib/hermes/client'
 
 type ChatSessionsContextValue = {
   sessions: ChatConversation[]
@@ -24,8 +25,6 @@ type ChatSessionsContextValue = {
   retryResponse: (sessionId: string, assistantMessageId: string) => Promise<void>
 }
 
-const STORAGE_KEY = 'hermes-chat-sessions:v2'
-const DRAFTS_KEY = 'hermes-chat-drafts:v1'
 const ChatSessionsContext = createContext<ChatSessionsContextValue | null>(null)
 
 function createMessage(conversationId: string, role: ChatMessage['role'], content: string, status: ChatMessage['status'] = 'completed'): ChatMessage {
@@ -47,7 +46,7 @@ function createFreshSession(index = 1): ChatConversation {
   return {
     id,
     title: index === 1 ? 'New chat' : `New chat ${index}`,
-    messages: [{ ...createMessage(id, 'assistant', 'Hermes is ready.'), id: `welcome-${id}` }],
+    messages: [],
     connectionState: 'idle',
     error: null,
     createdAt: now,
@@ -75,29 +74,13 @@ function normalizeStoredSession(session: ChatConversation): ChatConversation {
 }
 
 function loadStoredState(): StoredChatState {
-  const fallback = createFreshSession()
-  const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem('hermes-chat-sessions:v1')
-  if (!raw) return { sessions: [fallback], openTabIds: [], activeSessionId: null }
-
-  try {
-    const parsed = JSON.parse(raw) as StoredChatState
-    const sessions = Array.isArray(parsed.sessions) ? parsed.sessions.map(normalizeStoredSession) : []
-    return { sessions: sessions.length ? sessions : [fallback], openTabIds: [], activeSessionId: null }
-  } catch {
-    return { sessions: [fallback], openTabIds: [], activeSessionId: null }
-  }
+  const persisted = browserChatPersistence.loadState()
+  if (!persisted) return { sessions: [], openTabIds: [], activeSessionId: null }
+  const sessions = Array.isArray(persisted.sessions) ? persisted.sessions.map(normalizeStoredSession) : []
+  return { sessions, openTabIds: [], activeSessionId: null }
 }
 
-function loadDrafts() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? '{}') as Record<string, unknown>
-    return Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
-  } catch {
-    return {}
-  }
-}
-
-function titleFromMessage(content: string) {
+function deriveConversationTitle(content: string) {
   const compact = content.replace(/\s+/g, ' ').trim()
   return compact.length <= 30 ? compact : `${compact.slice(0, 29)}…`
 }
@@ -107,15 +90,15 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<ChatConversation[]>(initial.sessions)
   const [openTabIds, setOpenTabIds] = useState<string[]>(initial.openTabIds)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(initial.activeSessionId)
-  const [drafts, setDrafts] = useState<Record<string, string>>(loadDrafts)
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => browserChatPersistence.loadDrafts())
   const sessionsRef = useRef(sessions)
   const controllersRef = useRef(new Map<string, AbortController>())
 
   useEffect(() => { sessionsRef.current = sessions }, [sessions])
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessions, openTabIds, activeSessionId } satisfies StoredChatState))
+    browserChatPersistence.saveState({ sessions, openTabIds, activeSessionId })
   }, [activeSessionId, openTabIds, sessions])
-  useEffect(() => { localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts)) }, [drafts])
+  useEffect(() => { browserChatPersistence.saveDrafts(drafts) }, [drafts])
   useEffect(() => () => {
     controllersRef.current.forEach((controller) => controller.abort())
     controllersRef.current.clear()
@@ -253,7 +236,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
       requestId,
     }
     const requestMessages = [...session.messages, userMessage].filter((message) => !message.id.startsWith('welcome-'))
-    const nextTitle = session.title.startsWith('New chat') ? titleFromMessage(trimmed) : session.title
+    const nextTitle = session.title.startsWith('New chat') ? deriveConversationTitle(trimmed) : session.title
     const hermesSessionId = session.hermesSessionId ?? session.id
 
     patchSession(sessionId, (current) => ({
