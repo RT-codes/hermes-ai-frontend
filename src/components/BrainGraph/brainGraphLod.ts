@@ -97,6 +97,38 @@ function fibonacciAnchor(index: number, total: number, radius: number, label: st
   }
 }
 
+function memberAnchor(
+  nodeId: string,
+  memberIndex: number,
+  memberCount: number,
+  clusterAnchor: { x: number; y: number; z: number },
+  layoutRadius: number,
+  relativeMass: number,
+) {
+  if (memberCount <= 1) return { ...clusterAnchor }
+
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5))
+  const hash = stableHash(nodeId)
+  const jitter = (hash % 1009) / 1009
+  const normalizedIndex = (memberIndex + 0.5) / memberCount
+  const y = 1 - normalizedIndex * 2
+  const radial = Math.sqrt(Math.max(0, 1 - y * y))
+  const angle = goldenAngle * (memberIndex + jitter * 0.7)
+
+  // Scale the local cloud from the actual overview layout and cluster mass.
+  // This keeps a growing bank proportional instead of relying on one fixed
+  // world-space radius that only happens to look right at today's graph size.
+  const cloudRadius = Math.max(12, layoutRadius * 0.075)
+    * (0.72 + Math.sqrt(Math.max(0.04, relativeMass)) * 0.88)
+  const shell = cloudRadius * (0.52 + Math.pow(normalizedIndex, 0.72) * 0.62)
+
+  return {
+    x: clusterAnchor.x + Math.cos(angle) * radial * shell,
+    y: clusterAnchor.y + y * shell * 0.7,
+    z: clusterAnchor.z + Math.sin(angle) * radial * shell,
+  }
+}
+
 function endpointId(value: BrainGraphLink['source'] | BrainGraphLink['target']) {
   if (typeof value === 'string' || typeof value === 'number') return String(value)
   if (value && typeof value === 'object' && 'id' in value) return String(value.id)
@@ -181,16 +213,6 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
     fz: cluster.anchor.z,
   }))
 
-  const membershipLinks: BrainGraphLink[] = memoryNodes.flatMap((node) => {
-    const clusterId = clusterByNodeId.get(node.id)
-    return clusterId ? [{
-      source: clusterId,
-      target: node.id,
-      synthetic: 'membership' as const,
-      strength: 0.22,
-    }] : []
-  })
-
   const aggregateMap = new Map<string, { source: string; target: string; count: number }>()
   rawData.links.forEach((link) => {
     const source = endpointId(link.source)
@@ -213,10 +235,32 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
     strength: entry.count,
   }))
 
-  const decoratedMemoryNodes = memoryNodes.map((node) => ({
-    ...node,
-    clusterId: clusterByNodeId.get(node.id),
-  }))
+  const clusterById = new Map(clusters.map((cluster) => [cluster.id, cluster]))
+  const clusterMemberIndex = new Map<string, number>()
+  clusters.forEach((cluster) => cluster.memberIds.forEach((nodeId, index) => clusterMemberIndex.set(nodeId, index)))
+
+  const decoratedMemoryNodes = memoryNodes.map((node) => {
+    const clusterId = clusterByNodeId.get(node.id)
+    const cluster = clusterId ? clusterById.get(clusterId) : undefined
+    if (!cluster) return { ...node }
+
+    const anchor = memberAnchor(
+      node.id,
+      clusterMemberIndex.get(node.id) ?? 0,
+      cluster.memberCount,
+      cluster.anchor,
+      layoutRadius,
+      cluster.memberCount / maxCount,
+    )
+
+    return {
+      ...node,
+      clusterId,
+      fx: anchor.x,
+      fy: anchor.y,
+      fz: anchor.z,
+    }
+  })
 
   const otherNodes = rawData.nodes.filter((node) => node.kind !== 'memory')
   const rawLinks = rawData.links.map((link) => ({ ...link, synthetic: link.synthetic ?? 'memory' as const }))
@@ -224,7 +268,10 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
   return {
     data: {
       nodes: [...otherNodes, ...decoratedMemoryNodes, ...clusterNodes],
-      links: [...rawLinks, ...membershipLinks, ...aggregateLinks],
+      // Membership is represented by deterministic spatial placement rather
+      // than another force link. This avoids fighting Hindsight's real memory
+      // relationships and keeps overview/detail locations coherent.
+      links: [...rawLinks, ...aggregateLinks],
     },
     clusters,
     clusterByNodeId,
@@ -232,13 +279,11 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
   }
 }
 
-export function chooseAutomaticLod(current: BrainLodLevel, cameraDistance: number, graphExtent: number) {
-  const ratio = cameraDistance / Math.max(1, graphExtent)
-  if (current === 'overview') return ratio < 1.06 ? 'cluster' : 'overview'
-  if (current === 'detail') return ratio > 0.72 ? 'cluster' : 'detail'
-  if (ratio > 1.28) return 'overview'
-  if (ratio < 0.58) return 'detail'
-  return 'cluster'
+export function chooseAutomaticLod(current: BrainLodLevel, _cameraDistance: number, _graphExtent: number) {
+  // Automatic zoom-driven switching is intentionally paused while the LOD
+  // model is being validated against real growing banks. Camera movement must
+  // not change representation underneath the user during this test pass.
+  return current
 }
 
 export function resolveLodLevel(mode: BrainLodMode, automatic: BrainLodLevel): BrainLodLevel {
