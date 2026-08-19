@@ -1,0 +1,81 @@
+.brain-cluster-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.brain-cluster-label {
+  --cluster-prominence: 0.5;
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: max-content;
+  padding: 0.34rem 0.52rem 0.31rem;
+  transform: translate(-50%, calc(-100% - 18px));
+  border: 1px solid rgb(var(--accent-rgb) / calc(0.14 + var(--cluster-prominence) * 0.18));
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+  background:
+    linear-gradient(115deg, rgb(var(--accent-rgb) / 0.075), transparent 72%),
+    rgb(3 10 16 / 0.68);
+  box-shadow:
+    0 0 calc(8px + 18px * var(--cluster-prominence)) rgb(var(--accent-rgb) / calc(0.025 + var(--cluster-prominence) * 0.075)),
+    inset 0 0 18px rgb(var(--accent-rgb) / 0.025);
+  backdrop-filter: blur(10px);
+  opacity: calc(0.52 + var(--cluster-prominence) * 0.46);
+  transition: opacity 140ms ease, border-color 140ms ease;
+}
+
+.brain-cluster-label::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: 13px;
+  background: linear-gradient(to bottom, rgb(var(--accent-rgb) / 0.38), transparent);
+  content: '';
+}
+
+.brain-cluster-label span {
+  color: rgb(224 249 255 / calc(0.72 + var(--cluster-prominence) * 0.26));
+  font-size: calc(0.5rem + 0.08rem * var(--cluster-prominence));
+  font-weight: 560;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgb(var(--accent-rgb) / calc(0.08 + var(--cluster-prominence) * 0.2));
+}
+
+.brain-cluster-label small {
+  color: var(--cyan-soft);
+  font-size: 0.46rem;
+  letter-spacing: 0.08em;
+  opacity: 0.78;
+}
+
+.brain-graph[data-lod='detail'] .brain-cluster-label {
+  opacity: 0.48;
+}
+
+.brain-node-hover.is-cluster {
+  min-width: min(250px, 24vw);
+}
+
+.brain-node-hover.is-cluster strong {
+  text-shadow: 0 0 13px rgb(var(--accent-rgb) / 0.28);
+}
+
+.brain-graph__lod {
+  min-width: 94px;
+}
+
+@media (max-width: 900px) {
+  .brain-cluster-label {
+    transform: translate(-50%, calc(-100% - 12px));
+  }
+
+  .brain-cluster-label::after {
+    height: 9px;
+  }
+}
