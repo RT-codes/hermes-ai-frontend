@@ -8,6 +8,7 @@ type ChatSessionsContextValue = {
   openTabIds: string[]
   activeSessionId: string | null
   activeSession: ChatConversation | null
+  drafts: Record<string, string>
   createSession: () => string
   openSession: (sessionId: string) => void
   selectSession: (sessionId: string) => void
@@ -15,11 +16,14 @@ type ChatSessionsContextValue = {
   closeAllTabs: () => void
   deleteSession: (sessionId: string) => void
   renameSession: (sessionId: string, title: string) => void
+  setDraft: (sessionId: string, content: string) => void
+  clearDraft: (sessionId: string) => void
   sendMessage: (sessionId: string, content: string) => Promise<void>
   cancelGeneration: (sessionId: string) => void
 }
 
 const STORAGE_KEY = 'hermes-chat-sessions:v2'
+const DRAFTS_KEY = 'hermes-chat-drafts:v1'
 const ChatSessionsContext = createContext<ChatSessionsContextValue | null>(null)
 
 function createMessage(conversationId: string, role: ChatMessage['role'], content: string, status: ChatMessage['status'] = 'completed'): ChatMessage {
@@ -82,6 +86,15 @@ function loadStoredState(): StoredChatState {
   }
 }
 
+function loadDrafts() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? '{}') as Record<string, unknown>
+    return Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
+  } catch {
+    return {}
+  }
+}
+
 function titleFromMessage(content: string) {
   const compact = content.replace(/\s+/g, ' ').trim()
   return compact.length <= 30 ? compact : `${compact.slice(0, 29)}…`
@@ -92,6 +105,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<ChatConversation[]>(initial.sessions)
   const [openTabIds, setOpenTabIds] = useState<string[]>(initial.openTabIds)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(initial.activeSessionId)
+  const [drafts, setDrafts] = useState<Record<string, string>>(loadDrafts)
   const sessionsRef = useRef(sessions)
   const controllersRef = useRef(new Map<string, AbortController>())
 
@@ -99,6 +113,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessions, openTabIds, activeSessionId } satisfies StoredChatState))
   }, [activeSessionId, openTabIds, sessions])
+  useEffect(() => { localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts)) }, [drafts])
   useEffect(() => () => {
     controllersRef.current.forEach((controller) => controller.abort())
     controllersRef.current.clear()
@@ -151,6 +166,11 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
 
   function deleteSession(sessionId: string) {
     cancelGeneration(sessionId)
+    setDrafts((current) => {
+      const next = { ...current }
+      delete next[sessionId]
+      return next
+    })
     setSessions((current) => current.filter((session) => session.id !== sessionId))
     setOpenTabIds((current) => {
       const next = current.filter((id) => id !== sessionId)
@@ -165,10 +185,18 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     patchSession(sessionId, (current) => ({ ...current, title: nextTitle, updatedAt: Date.now() }))
   }
 
+  function setDraft(sessionId: string, content: string) {
+    setDrafts((current) => ({ ...current, [sessionId]: content }))
+  }
+
+  function clearDraft(sessionId: string) {
+    setDrafts((current) => ({ ...current, [sessionId]: '' }))
+  }
+
   async function sendMessage(sessionId: string, content: string) {
     const trimmed = content.trim()
     const session = sessionsRef.current.find((item) => item.id === sessionId)
-    if (!trimmed || !session || session.connectionState === 'connecting' || session.connectionState === 'streaming') return
+    if (!trimmed || !session || controllersRef.current.has(sessionId) || session.connectionState === 'connecting' || session.connectionState === 'streaming') return
 
     const requestId = crypto.randomUUID()
     const userMessage = { ...createMessage(sessionId, 'user', trimmed), requestId }
@@ -236,6 +264,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     openTabIds,
     activeSessionId,
     activeSession,
+    drafts,
     createSession,
     openSession,
     selectSession,
@@ -243,6 +272,8 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     closeAllTabs,
     deleteSession,
     renameSession,
+    setDraft,
+    clearDraft,
     sendMessage,
     cancelGeneration,
   }
