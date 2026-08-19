@@ -19,7 +19,7 @@ type HindsightEdge = {
 type HindsightTableRow = {
   id?: string
   text?: string
-  entities?: string
+  entities?: unknown
   context?: string
   fact_type?: string
   occurred_at?: string
@@ -61,6 +61,26 @@ function compactLabel(text: string) {
 
 function bankIdentifier(bank: HindsightBank) {
   return bank.bank_id || bank.id || bank.name || ''
+}
+
+function normalizeEntities(value: unknown): string | string[] | undefined {
+  if (Array.isArray(value)) {
+    const entities = value.filter((entry): entry is string => typeof entry === 'string' && Boolean(entry.trim()))
+    return entities.length ? entities : undefined
+  }
+  if (typeof value !== 'string' || !value.trim()) return undefined
+
+  const trimmed = value.trim()
+  try {
+    const parsed = JSON.parse(trimmed) as unknown
+    if (Array.isArray(parsed)) {
+      const entities = parsed.filter((entry): entry is string => typeof entry === 'string' && Boolean(entry.trim()))
+      if (entities.length) return entities
+    }
+  } catch {
+    // Plain strings are valid in older/local Hindsight graph payloads.
+  }
+  return trimmed
 }
 
 async function discoverBankId(signal?: AbortSignal) {
@@ -124,7 +144,7 @@ export async function loadHindsightBrainGraph(signal?: AbortSignal): Promise<Loa
       val: 1.05,
       factType: typeof row?.fact_type === 'string' ? row.fact_type : undefined,
       context: typeof row?.context === 'string' ? row.context : undefined,
-      entities: typeof row?.entities === 'string' ? row.entities : undefined,
+      entities: normalizeEntities(row?.entities),
       occurredAt: typeof row?.occurred_at === 'string'
         ? row.occurred_at
         : typeof row?.mentioned_at === 'string'
@@ -147,6 +167,7 @@ export async function loadHindsightBrainGraph(signal?: AbortSignal): Promise<Loa
       strength: entry.data?.weight ?? entry.data?.similarity,
       relationship: entry.data?.linkType,
       entity: entry.data?.entityName,
+      synthetic: 'memory' as const,
     }]
   })
 

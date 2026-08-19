@@ -142,10 +142,10 @@
   margin: 0 auto 0.35rem;
 }
 
-/* Orthogonal selected-memory leader: cyan graph line + status-green inspector endpoint. */
+/* Orthogonal selected-memory leader stays above WebGL but below all Brain HUD chrome. */
 .brain-selected-connector {
   position: absolute;
-  z-index: 31;
+  z-index: 23;
   inset: 0;
   width: 100%;
   height: 100%;
