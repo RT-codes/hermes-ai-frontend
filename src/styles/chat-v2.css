@@ -87,3 +87,41 @@
   border-color: var(--cyan-dim);
   background: var(--cyan-faint);
 }
+
+.chat-tab__rename {
+  width: 1.45rem;
+  border: 0;
+  padding: 0;
+  color: var(--text-faint);
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.chat-tab__rename:hover,
+.chat-tab__rename:focus-visible {
+  color: var(--cyan-soft);
+  outline: none;
+}
+
+.chat-conversation-empty {
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  min-height: 100%;
+  padding: 1.5rem;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.chat-conversation-empty strong {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.chat-conversation-empty span {
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
