@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { streamHermesChat } from '../lib/hermes/client'
-import type { ChatConversation, ChatMessage, ChatConnectionState, StoredChatState } from '../features/chat/types'
+import type { ChatConversation, ChatMessage, StoredChatState } from '../features/chat/types'
 
 type ChatSessionsContextValue = {
   sessions: ChatConversation[]
