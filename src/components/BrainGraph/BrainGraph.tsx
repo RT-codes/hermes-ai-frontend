@@ -104,6 +104,20 @@ function floatParameters(id: string, amplitude: number) {
   }
 }
 
+function memoryFloatAmplitude(node: GraphNode) {
+  const baseRadius = 3.8 + Math.max(0, Number(node.val ?? 1)) * 1.45
+  return Math.min(2.75, baseRadius * 0.6 * 0.33)
+}
+
+function memoryVisualOffset(node: GraphNode, time: number) {
+  const float = floatParameters(String(node.id), memoryFloatAmplitude(node))
+  return {
+    x: Math.sin(time * float.speed + float.phaseX) * float.amplitude,
+    y: Math.sin(time * float.speed * 0.77 + float.phaseY) * float.amplitude * 0.72,
+    z: Math.sin(time * float.speed * 0.93 + float.phaseZ) * float.amplitude,
+  }
+}
+
 function clusterFloatAmplitude(cluster: ReturnType<typeof buildBrainLodModel>['clusters'][number]) {
   const overviewRadius = 4.4 + Math.log2(cluster.memberCount + 1) * 0.9 + cluster.prominence * 5.8
   return Math.min(5.2, overviewRadius * 0.31)
@@ -616,8 +630,28 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
     const graph = graphRef.current
     if (!graph) return
 
+    const now = performance.now()
     if (hoveredNode && Number.isFinite(hoveredNode.x) && Number.isFinite(hoveredNode.y) && Number.isFinite(hoveredNode.z)) {
-      const projected = graph.graph2ScreenCoords(hoveredNode.x as number, hoveredNode.y as number, hoveredNode.z as number)
+      let visualX = Number(hoveredNode.x)
+      let visualY = Number(hoveredNode.y)
+      let visualZ = Number(hoveredNode.z)
+
+      if (hoveredNode.kind === 'cluster') {
+        const cluster = lodModel.clusters.find((candidate) => candidate.id === String(hoveredNode.id))
+        if (cluster) {
+          const offset = clusterVisualOffset(cluster, now)
+          visualX += offset.x
+          visualY += offset.y
+          visualZ += offset.z
+        }
+      } else if (hoveredNode.kind === 'memory' && hoveredNode.id !== selectedNodeId && hoveredNode.id !== previewNodeId) {
+        const offset = memoryVisualOffset(hoveredNode, now)
+        visualX += offset.x
+        visualY += offset.y
+        visualZ += offset.z
+      }
+
+      const projected = graph.graph2ScreenCoords(visualX, visualY, visualZ)
       if (Number.isFinite(projected.x) && Number.isFinite(projected.y)) setHoverPoint(projected)
     } else {
       setHoverPoint((current) => current ? null : current)
@@ -631,7 +665,6 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
     cameraRef.current = currentSnapshot
 
     const moved = previousSnapshot ? snapshotDelta(previousSnapshot, currentSnapshot) > 0.035 : false
-    const now = performance.now()
     if (moved) {
       cameraMotionAtRef.current = now
       if (!cameraMovingRef.current) {
@@ -734,6 +767,7 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
     lodModel.clusters,
     nodeById,
     onViewRotationChange,
+    previewNodeId,
     selectedNodeId,
     size.height,
     size.width,
