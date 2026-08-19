@@ -31,55 +31,67 @@ function HermesHome() {
   const computeAtTop = settings.computeHudPosition === 'top-right'
 
   return (
-    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
+    <main className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
       <Sidebar
         collapsed={sidebarCollapsed}
-        onCollapsedChange={setSidebarCollapsed}
         activeView={activeView}
+        onToggle={() => setSidebarCollapsed((value) => !value)}
         onViewChange={setActiveView}
+        onNewChat={createSession}
       />
+
       <TopBar />
-      <WorkspaceStage activeView={activeView} onViewChange={setActiveView} />
-      <BrainHudPanel />
-      <HardwareTelemetryHud position={computeAtTop ? 'top' : 'bottom'} />
+      <WorkspaceStage activeView={activeView} />
+
+      {activeView === 'brain' && (
+        <>
+          <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--top' : 'brain-hud-stack--bottom'}`}>
+            <HardwareTelemetryHud />
+          </div>
+
+          <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--bottom' : 'brain-hud-stack--top'}`}>
+            <BrainHudPanel title="ACTIVITY">
+              <ActivityPanel />
+            </BrainHudPanel>
+            <BrainHudPanel title="SYSTEM">
+              <SystemPanel />
+            </BrainHudPanel>
+          </div>
+        </>
+      )}
 
       {openTabIds.length > 0 && (
         <FloatingPanel
-          id="chat-panel"
-          title="Hermes Chat"
+          id="chat"
+          title="CHAT"
           className="chat-panel"
-          defaultPosition={{ x: 460, y: 130 }}
-          defaultSize={{ width: 460, height: 580 }}
-          minSize={{ width: 320, height: 360 }}
+          defaultRect={{ x: 280, y: 610, width: 560, height: 350 }}
+          minWidth={380}
+          minHeight={270}
         >
           <ChatPanel />
         </FloatingPanel>
       )}
-
-      <button className="quick-new-chat" type="button" onClick={createSession} aria-label="New Hermes chat">
-        +
-      </button>
-
-      <ActivityPanel />
-      <SystemPanel />
-    </div>
+    </main>
   )
 }
 
-export default function App() {
+function App() {
   return (
-    <AppearanceProvider>
-      <HouseholdProvider>
-        <RuntimeStatusProvider>
-          <SystemTelemetryProvider>
-            <ChatSessionsProvider>
+    <HouseholdProvider>
+      <AppearanceProvider>
+        <ChatSessionsProvider>
+          <RuntimeStatusProvider>
+            <SystemTelemetryProvider>
               <BrainSceneProvider>
                 <HermesHome />
               </BrainSceneProvider>
-            </ChatSessionsProvider>
-          </SystemTelemetryProvider>
-        </RuntimeStatusProvider>
-      </HouseholdProvider>
-    </AppearanceProvider>
+            </SystemTelemetryProvider>
+          </RuntimeStatusProvider>
+        </ChatSessionsProvider>
+      </AppearanceProvider>
+    </HouseholdProvider>
   )
 }
+
+export default App
