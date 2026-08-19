@@ -42,3 +42,48 @@
 .chat-message[data-status='cancelled'] {
   opacity: 0.86;
 }
+
+.chat-status--offline .chat-status__dot {
+  background: #ffb86c;
+  box-shadow: 0 0 10px rgb(255 184 108 / 0.3);
+}
+
+.chat-offline,
+.chat-error {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.chat-offline {
+  padding: 0.55rem 0.7rem;
+  border-left: 2px solid #ffb86c;
+  background: rgb(255 184 108 / 0.055);
+  color: #ffd1a3;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.chat-offline button,
+.chat-error__actions button {
+  width: fit-content;
+  border: 1px solid rgb(var(--accent-rgb) / 0.16);
+  padding: 0.28rem 0.45rem;
+  color: var(--cyan-soft);
+  background: rgb(var(--accent-rgb) / 0.04);
+  font: inherit;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.chat-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chat-offline button:hover,
+.chat-error__actions button:hover {
+  border-color: var(--cyan-dim);
+  background: var(--cyan-faint);
+}
