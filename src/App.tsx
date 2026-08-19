@@ -16,6 +16,7 @@ import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
 import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
 import './styles/layout.css'
 import './styles/chat.css'
+import './styles/chat-v2.css'
 import './styles/workspace.css'
 import './styles/telemetry.css'
 import './styles/brain.css'
@@ -30,67 +31,55 @@ function HermesHome() {
   const computeAtTop = settings.computeHudPosition === 'top-right'
 
   return (
-    <main className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
+    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
       <Sidebar
         collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
         activeView={activeView}
-        onToggle={() => setSidebarCollapsed((value) => !value)}
         onViewChange={setActiveView}
-        onNewChat={createSession}
       />
-
       <TopBar />
-      <WorkspaceStage activeView={activeView} />
-
-      {activeView === 'brain' && (
-        <>
-          <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--top' : 'brain-hud-stack--bottom'}`}>
-            <HardwareTelemetryHud />
-          </div>
-
-          <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--bottom' : 'brain-hud-stack--top'}`}>
-            <BrainHudPanel title="ACTIVITY">
-              <ActivityPanel />
-            </BrainHudPanel>
-            <BrainHudPanel title="SYSTEM">
-              <SystemPanel />
-            </BrainHudPanel>
-          </div>
-        </>
-      )}
+      <WorkspaceStage activeView={activeView} onViewChange={setActiveView} />
+      <BrainHudPanel />
+      <HardwareTelemetryHud position={computeAtTop ? 'top' : 'bottom'} />
 
       {openTabIds.length > 0 && (
         <FloatingPanel
-          id="chat"
-          title="CHAT"
+          id="chat-panel"
+          title="Hermes Chat"
           className="chat-panel"
-          defaultRect={{ x: 280, y: 610, width: 560, height: 350 }}
-          minWidth={380}
-          minHeight={270}
+          defaultPosition={{ x: 460, y: 130 }}
+          defaultSize={{ width: 460, height: 580 }}
+          minSize={{ width: 320, height: 360 }}
         >
           <ChatPanel />
         </FloatingPanel>
       )}
-    </main>
+
+      <button className="quick-new-chat" type="button" onClick={createSession} aria-label="New Hermes chat">
+        +
+      </button>
+
+      <ActivityPanel />
+      <SystemPanel />
+    </div>
   )
 }
 
-function App() {
+export default function App() {
   return (
-    <HouseholdProvider>
-      <AppearanceProvider>
-        <ChatSessionsProvider>
-          <RuntimeStatusProvider>
-            <SystemTelemetryProvider>
+    <AppearanceProvider>
+      <HouseholdProvider>
+        <RuntimeStatusProvider>
+          <SystemTelemetryProvider>
+            <ChatSessionsProvider>
               <BrainSceneProvider>
                 <HermesHome />
               </BrainSceneProvider>
-            </SystemTelemetryProvider>
-          </RuntimeStatusProvider>
-        </ChatSessionsProvider>
-      </AppearanceProvider>
-    </HouseholdProvider>
+            </ChatSessionsProvider>
+          </SystemTelemetryProvider>
+        </RuntimeStatusProvider>
+      </HouseholdProvider>
+    </AppearanceProvider>
   )
 }
-
-export default App
