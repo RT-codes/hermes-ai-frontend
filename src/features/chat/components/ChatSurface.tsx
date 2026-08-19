@@ -155,6 +155,12 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
       )}
 
       <div className="chat-messages" ref={messagesRef} onScroll={handleMessagesScroll} aria-live="polite">
+        {conversation.messages.length === 0 && (
+          <div className="chat-conversation-empty">
+            <strong>New conversation</strong>
+            <span>{isKnownOffline ? 'Hermes is offline, but you can prepare a draft now.' : 'Ask Hermes anything when you are ready.'}</span>
+          </div>
+        )}
         {conversation.messages.map((message) => (
           <div className={`chat-message chat-message--${message.role}`} key={message.id} data-status={message.status}>
             <span className="chat-message__role">{message.role === 'user' ? 'YOU' : 'HERMES'}</span>
