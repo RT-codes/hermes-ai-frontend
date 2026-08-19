@@ -35,9 +35,13 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
   const [copied, setCopied] = useState(false)
 
   async function copy() {
-    await navigator.clipboard.writeText(code)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1200)
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1200)
+    } catch {
+      setCopied(false)
+    }
   }
 
   return (
@@ -49,6 +53,17 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
       <pre><code>{code}</code></pre>
     </div>
   )
+}
+
+function heading(level: number, key: string, content: ReactNode[]) {
+  switch (level) {
+    case 1: return <h1 key={key}>{content}</h1>
+    case 2: return <h2 key={key}>{content}</h2>
+    case 3: return <h3 key={key}>{content}</h3>
+    case 4: return <h4 key={key}>{content}</h4>
+    case 5: return <h5 key={key}>{content}</h5>
+    default: return <h6 key={key}>{content}</h6>
+  }
 }
 
 function isTableDivider(line: string) {
@@ -93,11 +108,9 @@ export function MarkdownMessage({ content }: { content: string }) {
       continue
     }
 
-    const heading = line.match(/^(#{1,6})\s+(.+)$/)
-    if (heading) {
-      const level = Math.min(heading[1].length, 6)
-      const Tag = `h${level}` as keyof JSX.IntrinsicElements
-      blocks.push(<Tag key={`h-${i}`}>{inline(heading[2])}</Tag>)
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/)
+    if (headingMatch) {
+      blocks.push(heading(headingMatch[1].length, `h-${i}`, inline(headingMatch[2])))
       i += 1
       continue
     }
@@ -115,8 +128,7 @@ export function MarkdownMessage({ content }: { content: string }) {
       continue
     }
 
-    const unordered = line.match(/^\s*[-*+]\s+(.+)$/)
-    if (unordered) {
+    if (/^\s*[-*+]\s+(.+)$/.test(line)) {
       const items: string[] = []
       while (i < lines.length) {
         const match = lines[i].match(/^\s*[-*+]\s+(.+)$/)
@@ -127,8 +139,7 @@ export function MarkdownMessage({ content }: { content: string }) {
       continue
     }
 
-    const ordered = line.match(/^\s*\d+[.)]\s+(.+)$/)
-    if (ordered) {
+    if (/^\s*\d+[.)]\s+(.+)$/.test(line)) {
       const items: string[] = []
       while (i < lines.length) {
         const match = lines[i].match(/^\s*\d+[.)]\s+(.+)$/)
