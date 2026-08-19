@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent, UIEvent } from 'react'
 import { useChatSessions } from '../../../context/ChatSessionsContext'
+import { MarkdownMessage } from './MarkdownMessage'
 
 type ChatSurfaceProps = {
   conversationId: string
@@ -105,7 +106,9 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
         {conversation.messages.map((message) => (
           <div className={`chat-message chat-message--${message.role}`} key={message.id} data-status={message.status}>
             <span className="chat-message__role">{message.role === 'user' ? 'YOU' : 'HERMES'}</span>
-            <p>{message.content || (isBusy ? '…' : '')}</p>
+            {message.role === 'assistant'
+              ? <MarkdownMessage content={message.content || (isBusy ? '…' : '')} />
+              : <p>{message.content}</p>}
           </div>
         ))}
       </div>
