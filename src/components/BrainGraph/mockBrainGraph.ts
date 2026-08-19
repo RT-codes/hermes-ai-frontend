@@ -26,6 +26,7 @@ export type BrainGraphLink = {
   entity?: string
   synthetic?: 'memory' | 'membership' | 'aggregate'
   aggregateCount?: number
+  lodBackbone?: boolean
 }
 
 const nodes: BrainGraphNode[] = [
