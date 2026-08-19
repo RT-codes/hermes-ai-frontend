@@ -11,6 +11,7 @@ export function ChatPanel() {
     selectSession,
     closeTab,
     closeAllTabs,
+    renameSession,
   } = useChatSessions()
 
   if (!activeSessionId) return null
@@ -22,6 +23,12 @@ export function ChatPanel() {
   function handleClose(event: MouseEvent<HTMLButtonElement>, sessionId: string) {
     event.stopPropagation()
     closeTab(sessionId)
+  }
+
+  function handleRename(event: MouseEvent<HTMLButtonElement>, sessionId: string, currentTitle: string) {
+    event.stopPropagation()
+    const nextTitle = window.prompt('Rename conversation', currentTitle)
+    if (nextTitle !== null) renameSession(sessionId, nextTitle)
   }
 
   return (
@@ -39,6 +46,15 @@ export function ChatPanel() {
               >
                 <span className={`chat-tab__state chat-tab__state--${session.connectionState}`} />
                 <span className="chat-tab__title">{session.title}</span>
+              </button>
+              <button
+                className="chat-tab__rename"
+                type="button"
+                aria-label={`Rename ${session.title}`}
+                title="Rename chat"
+                onClick={(event) => handleRename(event, session.id, session.title)}
+              >
+                ✎
               </button>
               <button
                 className="chat-tab__close"
