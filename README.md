@@ -7,16 +7,26 @@ Hermes Home is a React + TypeScript + Vite frontend for chatting with Hermes, mo
 > Interested in the local model, hardware, benchmarks, tuning choices and how the backend stack is orchestrated? See **[Backend & runtime](./docs/BACKEND.md)**.
 
 ## Preview
-<img width="2541" height="1294" alt="image" src="https://github.com/user-attachments/assets/d6cc4597-0ff6-4be7-ba03-da34596c6bae" />
 
-<img width="1652" height="1304" alt="image" src="https://github.com/user-attachments/assets/865a5e3a-6707-4a37-91f1-419bdabeff2f" />
+<img width="1821" height="1296" alt="image" src="https://github.com/user-attachments/assets/ef4ecb7f-b0f4-4b2f-a51e-60480f7a02e2" />
 
+<img width="1472" height="1290" alt="image" src="https://github.com/user-attachments/assets/f1bc1a20-7d83-4443-b1ee-2c66d0ecebd8" />
+
+<img width="1717" height="1297" alt="image" src="https://github.com/user-attachments/assets/0259a797-917d-4423-8085-bdb0eac2d175" />
+
+<img width="1819" height="1296" alt="image" src="https://github.com/user-attachments/assets/fb2ddd08-616d-4ab7-98f1-072a8ad33029" />
+
+
+<!-- <img width="2541" height="1294" alt="image" src="https://github.com/user-attachments/assets/d6cc4597-0ff6-4be7-ba03-da34596c6bae" /> -->
+
+<!-- <img width="1652" height="1304" alt="image" src="https://github.com/user-attachments/assets/865a5e3a-6707-4a37-91f1-419bdabeff2f" /> -->
 
 
 https://github.com/user-attachments/assets/6f6f82f6-2702-4f8a-a07f-63729be18006
 
+<!--
 https://github.com/user-attachments/assets/baa775ab-5ab0-41ee-a449-8d3b1c1066d0
-
+-->
 
 
 
