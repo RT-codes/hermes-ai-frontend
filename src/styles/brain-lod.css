@@ -1,3 +1,9 @@
+.brain-graph canvas {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+}
+
 .brain-cluster-labels {
   position: absolute;
   inset: 0;
