@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent, UIEvent } from 'react'
 import { useChatSessions } from '../../../context/ChatSessionsContext'
+import type { ChatMessage } from '../types'
 import { MarkdownMessage } from './MarkdownMessage'
 
 type ChatSurfaceProps = {
@@ -8,6 +9,43 @@ type ChatSurfaceProps = {
 }
 
 const FOLLOW_THRESHOLD_PX = 72
+
+function MessageActions({
+  message,
+  busy,
+  onRegenerate,
+}: {
+  message: ChatMessage
+  busy: boolean
+  onRegenerate: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(message.content)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1200)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  const canRegenerate = message.role === 'assistant' && !message.id.startsWith('welcome-') && !busy
+
+  return (
+    <div className="chat-message__meta">
+      <span>{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+      {message.status !== 'completed' && <span className={`chat-message__status chat-message__status--${message.status}`}>{message.status}</span>}
+      {message.content && <button type="button" onClick={() => void copy()}>{copied ? 'COPIED' : 'COPY'}</button>}
+      {canRegenerate && (
+        <button type="button" onClick={onRegenerate}>
+          {message.status === 'failed' ? 'RETRY' : 'REGENERATE'}
+        </button>
+      )}
+    </div>
+  )
+}
 
 export function ChatSurface({ conversationId }: ChatSurfaceProps) {
   const {
@@ -17,6 +55,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
     clearDraft,
     sendMessage,
     cancelGeneration,
+    retryResponse,
   } = useChatSessions()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const messagesRef = useRef<HTMLDivElement | null>(null)
@@ -109,6 +148,11 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
             {message.role === 'assistant'
               ? <MarkdownMessage content={message.content || (isBusy ? '…' : '')} />
               : <p>{message.content}</p>}
+            <MessageActions
+              message={message}
+              busy={isBusy}
+              onRegenerate={() => void retryResponse(conversationId, message.id)}
+            />
           </div>
         ))}
       </div>
