@@ -15,36 +15,60 @@
   min-width: max-content;
   padding: 0.34rem 0.52rem 0.31rem;
   transform: translate(-50%, calc(-100% - 18px));
-  border: 1px solid rgb(var(--accent-rgb) / calc(0.14 + var(--cluster-prominence) * 0.18));
-  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
-  background:
-    linear-gradient(115deg, rgb(var(--accent-rgb) / 0.075), transparent 72%),
-    rgb(3 10 16 / 0.68);
-  box-shadow:
-    0 0 calc(8px + 18px * var(--cluster-prominence)) rgb(var(--accent-rgb) / calc(0.025 + var(--cluster-prominence) * 0.075)),
-    inset 0 0 18px rgb(var(--accent-rgb) / 0.025);
-  backdrop-filter: blur(10px);
+  color: var(--text-muted);
+  filter:
+    drop-shadow(0 0 calc(8px + 18px * var(--cluster-prominence)) rgb(var(--accent-rgb) / calc(0.025 + var(--cluster-prominence) * 0.075)))
+    drop-shadow(0 8px 18px rgb(0 0 0 / 0.2));
+  isolation: isolate;
   opacity: calc(0.52 + var(--cluster-prominence) * 0.46);
-  transition: opacity 140ms ease, border-color 140ms ease;
+  transition: opacity 140ms ease;
+}
+
+/*
+ * Draw the clipped frame as two nested polygons instead of clipping a normal
+ * CSS border. A clipped border loses the diagonal 1px edge at the cut corners.
+ */
+.brain-cluster-label::before {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+  background: rgb(var(--accent-rgb) / calc(0.14 + var(--cluster-prominence) * 0.18));
+  content: '';
 }
 
 .brain-cluster-label::after {
   position: absolute;
-  top: 100%;
-  left: 50%;
-  width: 1px;
-  height: 13px;
-  background: linear-gradient(to bottom, rgb(var(--accent-rgb) / 0.38), transparent);
+  z-index: -1;
+  inset: 1px;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  background:
+    linear-gradient(115deg, rgb(var(--accent-rgb) / 0.075), transparent 72%),
+    rgb(3 10 16 / 0.68);
+  box-shadow: inset 0 0 18px rgb(var(--accent-rgb) / 0.025);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   content: '';
 }
 
 .brain-cluster-label span {
+  position: relative;
   color: rgb(224 249 255 / calc(0.72 + var(--cluster-prominence) * 0.26));
   font-size: calc(0.5rem + 0.08rem * var(--cluster-prominence));
   font-weight: 560;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   text-shadow: 0 0 10px rgb(var(--accent-rgb) / calc(0.08 + var(--cluster-prominence) * 0.2));
+}
+
+.brain-cluster-label span::before {
+  position: absolute;
+  top: calc(100% + 0.31rem);
+  left: 50%;
+  width: 1px;
+  height: 13px;
+  background: linear-gradient(to bottom, rgb(var(--accent-rgb) / 0.38), transparent);
+  content: '';
 }
 
 .brain-cluster-label small {
@@ -66,8 +90,45 @@
   text-shadow: 0 0 13px rgb(var(--accent-rgb) / 0.28);
 }
 
-.brain-graph__lod {
-  min-width: 94px;
+.brain-graph__controls .brain-graph__lod {
+  position: static;
+  min-width: 108px;
+  min-height: 26px;
+  margin: 0;
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  padding: 0 0.65rem;
+  color: var(--text-faint);
+  background: rgb(var(--brain-hud-rgb) / 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font: inherit;
+  font-size: 0;
+  letter-spacing: 0.11em;
+  cursor: pointer;
+}
+
+.brain-graph__lod::after {
+  font-size: 0.52rem;
+  letter-spacing: 0.11em;
+  content: 'VIEW · AUTO';
+}
+
+.brain-graph[data-lod='overview'] .brain-graph__lod::after {
+  content: 'VIEW · OVERVIEW';
+}
+
+.brain-graph[data-lod='cluster'] .brain-graph__lod::after {
+  content: 'VIEW · CLUSTER';
+}
+
+.brain-graph[data-lod='detail'] .brain-graph__lod::after {
+  content: 'VIEW · DETAIL';
+}
+
+.brain-graph__lod:hover {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+  color: var(--cyan-soft);
+  background: rgb(var(--accent-rgb) / 0.08);
 }
 
 @media (max-width: 900px) {
@@ -75,7 +136,7 @@
     transform: translate(-50%, calc(-100% - 12px));
   }
 
-  .brain-cluster-label::after {
+  .brain-cluster-label span::before {
     height: 9px;
   }
 }
