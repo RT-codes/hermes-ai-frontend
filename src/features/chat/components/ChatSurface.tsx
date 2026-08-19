@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { useChatSessions } from '../../../context/ChatSessionsContext'
 
@@ -7,13 +7,27 @@ type ChatSurfaceProps = {
 }
 
 export function ChatSurface({ conversationId }: ChatSurfaceProps) {
-  const { sessions, sendMessage, cancelGeneration } = useChatSessions()
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const {
+    sessions,
+    drafts,
+    setDraft,
+    clearDraft,
+    sendMessage,
+    cancelGeneration,
+  } = useChatSessions()
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const conversation = sessions.find((session) => session.id === conversationId) ?? null
+  const input = drafts[conversationId] ?? ''
+
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`
+  }, [conversationId, input])
 
   if (!conversation) return null
 
-  const input = drafts[conversationId] ?? ''
   const isBusy = conversation.connectionState === 'connecting' || conversation.connectionState === 'streaming'
   const statusLabel = conversation.connectionState === 'connecting'
     ? 'Connecting'
@@ -26,8 +40,9 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
   async function submitMessage() {
     const content = input.trim()
     if (!content || isBusy) return
-    setDrafts((current) => ({ ...current, [conversationId]: '' }))
+    clearDraft(conversationId)
     await sendMessage(conversationId, content)
+    textareaRef.current?.focus()
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -66,13 +81,14 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
 
       <form className="chat-composer" onSubmit={handleSubmit}>
         <textarea
+          ref={textareaRef}
           value={input}
-          onChange={(event) => setDrafts((current) => ({ ...current, [conversationId]: event.target.value }))}
+          onChange={(event) => setDraft(conversationId, event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={`Message ${conversation.title}…`}
           rows={1}
-          disabled={false}
           aria-label="Message Hermes"
+          style={{ maxHeight: 160, overflowY: 'auto', resize: 'none' }}
         />
         {isBusy ? (
           <button type="button" onClick={() => cancelGeneration(conversationId)} aria-label="Stop generation">
