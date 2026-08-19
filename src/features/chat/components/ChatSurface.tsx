@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent, UIEvent } from 'react'
 import { useChatSessions } from '../../../context/ChatSessionsContext'
+import { useRuntimeStatus } from '../../../context/RuntimeStatusContext'
 import type { ChatMessage } from '../types'
 import { MarkdownMessage } from './MarkdownMessage'
 
@@ -57,6 +58,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
     cancelGeneration,
     retryResponse,
   } = useChatSessions()
+  const { hermesOnline, checkedAt, refresh } = useRuntimeStatus()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const messagesRef = useRef<HTMLDivElement | null>(null)
   const followLatestRef = useRef(true)
@@ -88,13 +90,17 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
   if (!conversation) return null
 
   const isBusy = conversation.connectionState === 'connecting' || conversation.connectionState === 'streaming'
+  const isKnownOffline = checkedAt !== null && !hermesOnline
+  const latestFailedAssistant = [...conversation.messages].reverse().find((message) => message.role === 'assistant' && message.status === 'failed') ?? null
   const statusLabel = conversation.connectionState === 'connecting'
     ? 'Connecting'
     : conversation.connectionState === 'streaming'
       ? 'Hermes is working'
       : conversation.connectionState === 'error'
         ? 'Connection error'
-        : 'Ready'
+        : isKnownOffline
+          ? 'Hermes offline'
+          : 'Ready'
 
   function handleMessagesScroll(event: UIEvent<HTMLDivElement>) {
     const element = event.currentTarget
@@ -114,7 +120,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
 
   async function submitMessage() {
     const content = input.trim()
-    if (!content || isBusy) return
+    if (!content || isBusy || isKnownOffline) return
     followLatestRef.current = true
     setShowJumpToLatest(false)
     clearDraft(conversationId)
@@ -136,10 +142,17 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
 
   return (
     <div className="chat-surface" data-conversation-id={conversationId}>
-      <div className={`chat-status chat-status--${conversation.connectionState}`}>
+      <div className={`chat-status chat-status--${conversation.connectionState} ${isKnownOffline ? 'chat-status--offline' : ''}`}>
         <span className="chat-status__dot" />
         {statusLabel}
       </div>
+
+      {isKnownOffline && (
+        <div className="chat-offline" role="status">
+          <span>Hermes is offline. Your conversations and draft are preserved.</span>
+          <button type="button" onClick={() => void refresh()}>CHECK AGAIN</button>
+        </div>
+      )}
 
       <div className="chat-messages" ref={messagesRef} onScroll={handleMessagesScroll} aria-live="polite">
         {conversation.messages.map((message) => (
@@ -164,8 +177,14 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
       )}
 
       {conversation.error && (
-        <div className="chat-error" title={conversation.error}>
-          Hermes API unavailable. Check the local API server and frontend proxy configuration.
+        <div className="chat-error" title={conversation.error} role="alert">
+          <span>{conversation.error}</span>
+          <div className="chat-error__actions">
+            {latestFailedAssistant && !isBusy && (
+              <button type="button" onClick={() => void retryResponse(conversationId, latestFailedAssistant.id)}>RETRY RESPONSE</button>
+            )}
+            <button type="button" onClick={() => void refresh()}>CHECK CONNECTION</button>
+          </div>
         </div>
       )}
 
@@ -175,7 +194,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
           value={input}
           onChange={(event) => setDraft(conversationId, event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={`Message ${conversation.title}…`}
+          placeholder={isKnownOffline ? 'Hermes is offline — draft is saved' : `Message ${conversation.title}…`}
           rows={1}
           aria-label="Message Hermes"
           style={{ maxHeight: 160, overflowY: 'auto', resize: 'none' }}
@@ -185,7 +204,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
             STOP
           </button>
         ) : (
-          <button type="submit" disabled={!input.trim()} aria-label="Send message">
+          <button type="submit" disabled={!input.trim() || isKnownOffline} aria-label="Send message">
             SEND
           </button>
         )}
