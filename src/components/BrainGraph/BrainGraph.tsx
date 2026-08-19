@@ -45,14 +45,27 @@ type ClusterLabelPoint = {
   y: number
 }
 
+type FocusNeighborhood = {
+  distances: Map<string, number>
+  linkKeys: Set<string>
+}
+
 const INSPECTOR_ENTRY_DELAY_MS = 170
-const MAX_HIGHLIGHT_HOPS = 4
 const CONNECTOR_MAX_DEPARTURE = 80
 const CONNECTOR_MIN_APPROACH = 20
+const FOCUS_LINK_LIMIT = 12
 
 function endpointId(endpoint: LinkEndpoint) {
   if (typeof endpoint === 'string' || typeof endpoint === 'number') return String(endpoint)
   return endpoint?.id == null ? '' : String(endpoint.id)
+}
+
+function canonicalLinkKey(source: string, target: string) {
+  return source < target ? `${source}>${target}` : `${target}>${source}`
+}
+
+function graphLinkKey(link: GraphLink) {
+  return canonicalLinkKey(endpointId(link.source as LinkEndpoint), endpointId(link.target as LinkEndpoint))
 }
 
 function isMemoryLink(link: GraphLink) {
@@ -81,16 +94,11 @@ function createNeuralSphere(node: GraphNode, distance: number | null, selected: 
     ? 1
     : !inspecting
       ? distance === 0 ? 0.78 : distance === 1 ? 0.54 : 0.34
-      : distance === 1 ? 0.54 : distance === 2 ? 0.38 : distance === 3 ? 0.3 : distance === 4 ? 0.25 : 0.2
-  const haloOpacity = selected
-    ? 0.25
-    : distance === 1 ? 0.12 : distance === 2 ? 0.075 : distance === 3 ? 0.052 : distance === 4 ? 0.04 : 0.028
+      : distance === 1 ? 0.58 : 0.24
+  const haloOpacity = selected ? 0.25 : distance === 1 ? 0.1 : 0.026
   const group = new Group()
   const phase = Math.random() * Math.PI * 2
 
-  // Keep geometry owned by each generated graph object. Force-graph may dispose
-  // node objects as graph data/visibility changes; sharing one BufferGeometry
-  // across those objects can therefore invalidate later render passes.
   const body = new Mesh(
     new SphereGeometry(radius, 12, 8),
     new MeshBasicMaterial({
@@ -115,7 +123,7 @@ function createNeuralSphere(node: GraphNode, distance: number | null, selected: 
   group.add(halo)
   group.add(body)
   group.onBeforeRender = () => {
-    const pulseAmount = selected ? 0.085 : distance === 1 ? 0.055 : 0.035
+    const pulseAmount = selected ? 0.085 : distance === 1 ? 0.045 : 0.025
     const pulse = 1 + Math.sin(performance.now() / 900 + phase) * pulseAmount
     halo.scale.setScalar(pulse)
   }
@@ -127,15 +135,44 @@ function createClusterSphere(node: GraphNode, hovered: boolean, lodLevel: BrainL
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || '#35d9ff'
   const prominence = Math.max(0.08, Number(node.prominence ?? 0.2))
   const count = Math.max(1, Number(node.memberCount ?? 1))
-  const radius = 4.4 + Math.log2(count + 1) * 0.9 + prominence * 5.8
-  const haloRadius = radius * (1.85 + prominence * 2.45)
-  const bodyOpacity = Math.min(0.96, 0.46 + prominence * 0.38 + (hovered ? 0.12 : 0))
-  const haloOpacity = Math.min(0.31, 0.055 + prominence * 0.19 + (hovered ? 0.07 : 0))
+  const overviewRadius = 4.4 + Math.log2(count + 1) * 0.9 + prominence * 5.8
+  const radius = lodLevel === 'overview' ? overviewRadius : 3.6 + prominence * 1.55
+  const overviewHaloRadius = overviewRadius * (1.85 + prominence * 2.45)
+  const bodyOpacity = lodLevel === 'overview'
+    ? Math.min(0.88, 0.4 + prominence * 0.34 + (hovered ? 0.1 : 0))
+    : Math.min(0.82, 0.5 + prominence * 0.2 + (hovered ? 0.1 : 0))
   const group = new Group()
   const phase = (Number.parseInt(String(node.id).slice(-4), 36) || count) % 13
 
+  // Preserve a forgiving raycast target in cluster view without rendering the
+  // former large translucent shell. The visible shell is overview-only.
+  const hitRadius = lodLevel === 'overview' ? overviewHaloRadius : Math.max(radius * 2.5, overviewRadius * 0.72)
+  const hitArea = new Mesh(
+    new SphereGeometry(hitRadius, 8, 5),
+    new MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+  )
+  group.add(hitArea)
+
+  if (lodLevel === 'overview') {
+    const halo = new Mesh(
+      new SphereGeometry(overviewHaloRadius, 10, 7),
+      new MeshBasicMaterial({
+        color: accent,
+        transparent: true,
+        opacity: Math.min(0.24, 0.045 + prominence * 0.145 + (hovered ? 0.055 : 0)),
+        depthWrite: false,
+        blending: AdditiveBlending,
+      }),
+    )
+    group.add(halo)
+    group.onBeforeRender = () => {
+      const pulse = 1 + Math.sin(performance.now() / 1650 + phase) * (0.025 + prominence * 0.026)
+      halo.scale.setScalar(pulse)
+    }
+  }
+
   const body = new Mesh(
-    new SphereGeometry(radius, 15, 10),
+    new SphereGeometry(radius, lodLevel === 'overview' ? 15 : 11, lodLevel === 'overview' ? 10 : 7),
     new MeshBasicMaterial({
       color: accent,
       transparent: true,
@@ -143,26 +180,7 @@ function createClusterSphere(node: GraphNode, hovered: boolean, lodLevel: BrainL
       depthWrite: false,
     }),
   )
-
-  const halo = new Mesh(
-    new SphereGeometry(haloRadius, 10, 7),
-    new MeshBasicMaterial({
-      color: accent,
-      transparent: true,
-      opacity: haloOpacity,
-      depthWrite: false,
-      blending: AdditiveBlending,
-    }),
-  )
-
-  group.add(halo)
   group.add(body)
-  group.onBeforeRender = () => {
-    const speed = lodLevel === 'overview' ? 1500 : 1850
-    const pulse = 1 + Math.sin(performance.now() / speed + phase) * (0.035 + prominence * 0.035)
-    halo.scale.setScalar(pulse)
-  }
-
   return group
 }
 
@@ -172,44 +190,48 @@ function formatDate(value?: string) {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString()
 }
 
-function buildHopDistances(links: GraphData<BrainGraphNode, BrainGraphLink>['links'], focusNodeId: string | null) {
+function buildFocusNeighborhood(
+  links: GraphData<BrainGraphNode, BrainGraphLink>['links'],
+  focusNodeId: string | null,
+  nodeById: Map<string, BrainGraphNode>,
+): FocusNeighborhood {
   const distances = new Map<string, number>()
-  if (!focusNodeId) return distances
+  const linkKeys = new Set<string>()
+  if (!focusNodeId) return { distances, linkKeys }
 
-  const adjacency = new Map<string, Set<string>>()
-  links.forEach((rawLink) => {
-    const link = rawLink as GraphLink
-    if (!isMemoryLink(link)) return
-    const source = endpointId(link.source as LinkEndpoint)
-    const target = endpointId(link.target as LinkEndpoint)
-    if (!source || !target || source === 'core' || target === 'core') return
-    if (!adjacency.has(source)) adjacency.set(source, new Set())
-    if (!adjacency.has(target)) adjacency.set(target, new Set())
-    adjacency.get(source)?.add(target)
-    adjacency.get(target)?.add(source)
+  const focusNode = nodeById.get(focusNodeId)
+  distances.set(focusNodeId, 0)
+
+  const direct = links
+    .map((rawLink) => rawLink as GraphLink)
+    .filter((link) => isDirectLink(link, focusNodeId))
+    .map((link) => {
+      const source = endpointId(link.source as LinkEndpoint)
+      const target = endpointId(link.target as LinkEndpoint)
+      const neighbourId = source === focusNodeId ? target : source
+      const neighbour = nodeById.get(neighbourId)
+      return {
+        link,
+        neighbourId,
+        sameCluster: Boolean(focusNode?.clusterId && neighbour?.clusterId === focusNode.clusterId),
+        strength: Number.isFinite(Number((link as BrainGraphLink).strength)) ? Number((link as BrainGraphLink).strength) : 0,
+        tie: linkHash(link),
+      }
+    })
+    .filter((entry) => entry.neighbourId && entry.neighbourId !== 'core')
+    .sort((a, b) => Number(b.sameCluster) - Number(a.sameCluster) || b.strength - a.strength || a.tie - b.tie)
+
+  const adaptiveLimit = Math.max(5, Math.min(FOCUS_LINK_LIMIT, Math.round(4 + Math.sqrt(direct.length) * 0.6)))
+  direct.slice(0, adaptiveLimit).forEach((entry) => {
+    distances.set(entry.neighbourId, 1)
+    linkKeys.add(graphLinkKey(entry.link))
   })
 
-  distances.set(focusNodeId, 0)
-  let frontier = [focusNodeId]
-  for (let depth = 1; depth <= MAX_HIGHLIGHT_HOPS && frontier.length > 0; depth += 1) {
-    const next: string[] = []
-    frontier.forEach((nodeId) => {
-      adjacency.get(nodeId)?.forEach((neighbourId) => {
-        if (distances.has(neighbourId)) return
-        distances.set(neighbourId, depth)
-        next.push(neighbourId)
-      })
-    })
-    frontier = next
-  }
-
-  return distances
+  return { distances, linkKeys }
 }
 
 function clusterBounds(clusters: ReturnType<typeof buildBrainLodModel>['clusters']) {
-  if (!clusters.length) {
-    return { centerX: 0, centerZ: 0, minY: -40, extent: 360 }
-  }
+  if (!clusters.length) return { centerX: 0, centerZ: 0, minY: -40, extent: 360 }
 
   const xs = clusters.map((cluster) => cluster.anchor.x)
   const ys = clusters.map((cluster) => cluster.anchor.y)
@@ -236,6 +258,7 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
   const selectedConnectorPathRef = useRef<SVGPathElement | null>(null)
   const selectedConnectorDotRef = useRef<SVGCircleElement | null>(null)
   const initialFitDone = useRef(false)
+  const lastClusterFocusRef = useRef<{ id: string; at: number } | null>(null)
   const [size, setSize] = useState({ width: 1, height: 1 })
   const [rawGraphData, setRawGraphData] = useState<GraphData<BrainGraphNode, BrainGraphLink>>(() => createMockBrainGraph())
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -264,12 +287,10 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
-
     const measure = () => {
       const rect = host.getBoundingClientRect()
       setSize({ width: Math.max(1, rect.width), height: Math.max(1, rect.height) })
     }
-
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(host)
@@ -342,7 +363,6 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
-
     const scene = graph.scene()
     const controls = graph.controls() as OrbitControlsLike
     controls.minPolarAngle = 0.16
@@ -416,30 +436,44 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
     const graphCamera = graph.camera() as CameraLike
     const controls = graph.controls() as OrbitControlsLike
     const target = controls.target ?? { x: 0, y: 0, z: 0 }
-    const labelBudget = Math.max(2, Math.min(lodModel.clusters.length, Math.floor(size.width / 300)))
-    const orderedLabels = [...lodModel.clusters]
-      .sort((a, b) => b.prominence - a.prominence)
-      .filter((cluster, index) => lodLevel === 'overview'
-        ? index < labelBudget
-        : lodLevel === 'cluster'
-          ? index < Math.max(2, Math.ceil(labelBudget * 0.55)) || cluster.id === activeClusterId
-          : cluster.id === activeClusterId)
-
-    const points = orderedLabels.flatMap((cluster) => {
+    const projectedClusters = lodModel.clusters.flatMap((cluster) => {
       const node = nodeById.get(cluster.id) as GraphNode | undefined
       if (!node || !Number.isFinite(node.x) || !Number.isFinite(node.y) || !Number.isFinite(node.z)) return []
       const projected = graph.graph2ScreenCoords(node.x as number, node.y as number, node.z as number)
       if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return []
-      return [{
-        id: cluster.id,
-        label: cluster.label,
-        count: cluster.memberCount,
-        prominence: cluster.prominence,
-        x: projected.x,
-        y: projected.y,
-      }]
+      const screenDistance = Math.hypot(projected.x - size.width / 2, projected.y - size.height / 2)
+      const cameraDistance = Math.hypot(
+        graphCamera.position.x - Number(node.x),
+        graphCamera.position.y - Number(node.y),
+        graphCamera.position.z - Number(node.z),
+      )
+      return [{ cluster, projected, proximity: screenDistance + cameraDistance * 0.14 }]
     })
-    setClusterLabelPoints(points)
+
+    const labelBudget = Math.max(3, Math.min(lodModel.clusters.length, Math.floor(size.width / 245)))
+    const prominent = [...projectedClusters].sort((a, b) => b.cluster.prominence - a.cluster.prominence)
+    const nearest = [...projectedClusters].sort((a, b) => a.proximity - b.proximity)[0]
+    const labelIds = new Set<string>()
+
+    if (lodLevel === 'overview') {
+      prominent.slice(0, Math.max(1, labelBudget - 1)).forEach((entry) => labelIds.add(entry.cluster.id))
+      if (nearest) labelIds.add(nearest.cluster.id)
+    } else if (lodLevel === 'cluster') {
+      prominent.slice(0, Math.max(2, Math.ceil(labelBudget * 0.5))).forEach((entry) => labelIds.add(entry.cluster.id))
+      if (activeClusterId) labelIds.add(activeClusterId)
+      if (nearest) labelIds.add(nearest.cluster.id)
+    }
+
+    setClusterLabelPoints(projectedClusters
+      .filter((entry) => labelIds.has(entry.cluster.id) && entry.cluster.id !== hoveredNodeId)
+      .map((entry) => ({
+        id: entry.cluster.id,
+        label: entry.cluster.label,
+        count: entry.cluster.memberCount,
+        prominence: entry.cluster.prominence,
+        x: entry.projected.x,
+        y: entry.projected.y,
+      })))
 
     if (onViewRotationChange) {
       const dx = graphCamera.position.x - target.x
@@ -451,20 +485,18 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
         pitch: Math.atan2(dy, horizontal) * 180 / Math.PI,
       })
     }
-  }, [activeClusterId, hoveredNode, lodLevel, lodModel.clusters, nodeById, onViewRotationChange, size.width])
+  }, [activeClusterId, hoveredNode, hoveredNodeId, lodLevel, lodModel.clusters, nodeById, onViewRotationChange, size.height, size.width])
 
   useEffect(() => {
-    const timer = window.setInterval(publishViewState, 90)
+    const timer = window.setInterval(publishViewState, 65)
     return () => window.clearInterval(timer)
   }, [publishViewState])
 
   useEffect(() => {
     if (!selectedNodeId || !inspectorVisible) return
-
     let frame = 0
     const updateConnector = () => {
       frame = window.requestAnimationFrame(updateConnector)
-
       const graph = graphRef.current
       const host = hostRef.current
       const inspector = inspectorRef.current
@@ -472,7 +504,6 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
       const path = selectedConnectorPathRef.current
       const dot = selectedConnectorDotRef.current
       const selectedGraphNode = nodeById.get(selectedNodeId) as GraphNode | undefined
-
       if (!graph || !host || !inspector || !anchor || !path || !dot || !selectedGraphNode) return
       if (!Number.isFinite(selectedGraphNode.x) || !Number.isFinite(selectedGraphNode.y) || !Number.isFinite(selectedGraphNode.z)) return
 
@@ -511,36 +542,23 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
   }, [inspectorVisible, nodeById, selectedNodeId])
 
   const focusNodeId = previewNodeId ?? selectedNodeId
-  const hopDistances = useMemo(
-    () => buildHopDistances(graphData.links, focusNodeId),
-    [focusNodeId, graphData.links],
+  const focusNeighborhood = useMemo(
+    () => buildFocusNeighborhood(graphData.links, focusNodeId, nodeById),
+    [focusNodeId, graphData.links, nodeById],
   )
-
-  const hoverNeighbourIds = useMemo(() => {
-    const ids = new Set<string>()
-    if (!hoveredNodeId || selectedNodeId) return ids
-    const hovered = nodeById.get(hoveredNodeId)
-    if (hovered?.kind === 'cluster') return ids
-    ids.add(hoveredNodeId)
-    graphData.links.forEach((rawLink) => {
-      const link = rawLink as GraphLink
-      if (!isMemoryLink(link)) return
-      const sourceId = endpointId(link.source as LinkEndpoint)
-      const targetId = endpointId(link.target as LinkEndpoint)
-      if (sourceId === hoveredNodeId) ids.add(targetId)
-      if (targetId === hoveredNodeId) ids.add(sourceId)
-    })
-    return ids
-  }, [graphData.links, hoveredNodeId, nodeById, selectedNodeId])
+  const hoverNeighborhood = useMemo(
+    () => buildFocusNeighborhood(graphData.links, !selectedNodeId ? hoveredNodeId : null, nodeById),
+    [graphData.links, hoveredNodeId, nodeById, selectedNodeId],
+  )
 
   const createNodeObject = useCallback((node: GraphNode) => {
     const id = String(node.id)
     if (node.kind === 'cluster') return createClusterSphere(node, id === hoveredNodeId, lodLevel)
-    const distance = hopDistances.get(id) ?? null
-    const selected = Boolean(focusNodeId) && distance === 0
-    const hoverDistance = !focusNodeId && hoverNeighbourIds.has(id) ? (id === hoveredNodeId ? 0 : 1) : null
-    return createNeuralSphere(node, focusNodeId ? distance : hoverDistance, selected, Boolean(focusNodeId))
-  }, [focusNodeId, hopDistances, hoverNeighbourIds, hoveredNodeId, lodLevel])
+    const focusDistance = focusNeighborhood.distances.get(id) ?? null
+    const hoverDistance = !focusNodeId ? hoverNeighborhood.distances.get(id) ?? null : null
+    const selected = Boolean(focusNodeId) && focusDistance === 0
+    return createNeuralSphere(node, focusNodeId ? focusDistance : hoverDistance, selected, Boolean(focusNodeId))
+  }, [focusNeighborhood.distances, focusNodeId, hoverNeighborhood.distances, hoveredNodeId, lodLevel])
 
   const selectedNode = useMemo(
     () => selectedNodeId ? nodeById.get(selectedNodeId) : undefined,
@@ -549,7 +567,6 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
 
   const selectedConnections = useMemo(() => {
     if (!selectedNodeId) return []
-
     return graphData.links
       .map((link) => link as GraphLink)
       .filter((link) => isDirectLink(link, selectedNodeId))
@@ -570,47 +587,47 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
 
   const linkDepth = useCallback((link: GraphLink) => {
     if (!isMemoryLink(link)) return null
-    if (!focusNodeId) return isDirectLink(link, hoveredNodeId) ? 0 : null
-    const sourceDepth = hopDistances.get(endpointId(link.source as LinkEndpoint))
-    const targetDepth = hopDistances.get(endpointId(link.target as LinkEndpoint))
-    if (sourceDepth == null && targetDepth == null) return null
-    return Math.min(sourceDepth ?? MAX_HIGHLIGHT_HOPS + 1, targetDepth ?? MAX_HIGHLIGHT_HOPS + 1)
-  }, [focusNodeId, hopDistances, hoveredNodeId])
+    const key = graphLinkKey(link)
+    if (focusNodeId) return focusNeighborhood.linkKeys.has(key) ? 0 : null
+    return hoverNeighborhood.linkKeys.has(key) ? 0 : null
+  }, [focusNeighborhood.linkKeys, focusNodeId, hoverNeighborhood.linkKeys])
 
   const nodeIsVisible = useCallback((node: BrainGraphNode) => {
     if (node.kind === 'core') return false
     if (focusNodeId) {
       if (node.kind === 'cluster') return false
-      const distance = hopDistances.get(node.id)
-      return distance != null && distance <= 3
+      return focusNeighborhood.distances.has(node.id)
     }
-    if (node.kind === 'cluster') return lodLevel !== 'detail' || node.id === activeClusterId
+    if (node.kind === 'cluster') return lodLevel !== 'detail'
     if (lodLevel === 'overview') return false
     if (lodLevel === 'cluster') return lodModel.representativeNodeIds.has(node.id)
     return node.clusterId === activeClusterId
-  }, [activeClusterId, focusNodeId, hopDistances, lodLevel, lodModel.representativeNodeIds])
+  }, [activeClusterId, focusNeighborhood.distances, focusNodeId, lodLevel, lodModel.representativeNodeIds])
 
   const linkIsVisible = useCallback((rawLink: BrainGraphLink) => {
     const link = rawLink as GraphLink
     const typed = rawLink as BrainGraphLink
-    if (typed.synthetic === 'membership') return false
-    if (typed.synthetic === 'aggregate') return !focusNodeId && lodLevel !== 'detail'
-    if (!isMemoryLink(link)) return false
-
     const sourceId = endpointId(link.source as LinkEndpoint)
     const targetId = endpointId(link.target as LinkEndpoint)
     const sourceNode = nodeById.get(sourceId)
     const targetNode = nodeById.get(targetId)
+
+    if (typed.synthetic === 'aggregate') return !focusNodeId && lodLevel !== 'detail'
+    if (typed.synthetic === 'membership') {
+      if (focusNodeId || lodLevel === 'overview') return false
+      const memoryNode = sourceNode?.kind === 'memory' ? sourceNode : targetNode?.kind === 'memory' ? targetNode : undefined
+      if (!memoryNode || !nodeIsVisible(memoryNode)) return false
+      return lodLevel === 'cluster' || memoryNode.clusterId === activeClusterId
+    }
+    if (!isMemoryLink(link)) return false
     if (!sourceNode || !targetNode || !nodeIsVisible(sourceNode) || !nodeIsVisible(targetNode)) return false
 
-    if (focusNodeId) {
-      const depth = linkDepth(link)
-      return depth != null && depth <= 2
-    }
+    if (focusNodeId) return focusNeighborhood.linkKeys.has(graphLinkKey(link))
+    if (!typed.lodBackbone) return false
     if (lodLevel === 'overview') return false
     if (lodLevel === 'cluster') return sourceNode.clusterId === targetNode.clusterId
     return sourceNode.clusterId === activeClusterId && targetNode.clusterId === activeClusterId
-  }, [activeClusterId, focusNodeId, linkDepth, lodLevel, nodeById, nodeIsVisible])
+  }, [activeClusterId, focusNeighborhood.linkKeys, focusNodeId, lodLevel, nodeById, nodeIsVisible])
 
   const fitVisibleGraph = useCallback((duration = 420, padding = 150) => {
     const graph = graphRef.current
@@ -620,16 +637,12 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
 
   useEffect(() => {
     if (source === 'loading') return
-    const timer = window.setTimeout(() => fitVisibleGraph(360, 165), 80)
+    const timer = window.setTimeout(() => fitVisibleGraph(360, 165), 90)
     return () => window.clearTimeout(timer)
-  }, [activeClusterId, fitVisibleGraph, lodLevel, source])
-
-  function resetView() {
-    setSelectedNodeId(null)
-    setPreviewNodeId(null)
-    setLodMode('auto')
-    window.setTimeout(() => fitVisibleGraph(420, 165), 0)
-  }
+    // Deliberately do not key this effect on activeClusterId. Cluster clicks use
+    // their own camera target; auto-fitting at the same time caused double moves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lodLevel, source])
 
   function refreshGraph() {
     if (source !== 'loading') setRefreshToken((value) => value + 1)
@@ -643,28 +656,30 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
 
   function focusCluster(node: GraphNode) {
     if (node.kind !== 'cluster') return
-    setActiveClusterId(String(node.id))
+    const clusterId = String(node.id)
+    const now = performance.now()
+    if (lastClusterFocusRef.current?.id === clusterId && now - lastClusterFocusRef.current.at < 320) return
+    lastClusterFocusRef.current = { id: clusterId, at: now }
+
+    setActiveClusterId(clusterId)
     setSelectedNodeId(null)
     setPreviewNodeId(null)
 
     const graph = graphRef.current
-    if (!graph) return
-    const target = {
-      x: Number(node.x ?? node.fx ?? 0),
-      y: Number(node.y ?? node.fy ?? 0),
-      z: Number(node.z ?? node.fz ?? 0),
-    }
+    const cluster = lodModel.clusters.find((candidate) => candidate.id === clusterId)
+    if (!graph || !cluster) return
+    const target = { x: cluster.anchor.x, y: cluster.anchor.y, z: cluster.anchor.z }
     const camera = graph.camera() as CameraLike
     const dx = camera.position.x - target.x
     const dy = camera.position.y - target.y
     const dz = camera.position.z - target.z
     const length = Math.max(0.0001, Math.hypot(dx, dy, dz))
-    const cluster = lodModel.clusters.find((candidate) => candidate.id === String(node.id))
-    const clusterScale = Math.max(80, clusterBounds(lodModel.clusters).extent * (0.28 + (cluster?.prominence ?? 0.2) * 0.14))
+    const overallExtent = clusterBounds(lodModel.clusters).extent
+    const desiredDistance = Math.max(cluster.cloudRadius * 2.8, overallExtent * 0.1)
     graph.cameraPosition({
-      x: target.x + dx / length * clusterScale,
-      y: target.y + dy / length * clusterScale,
-      z: target.z + dz / length * clusterScale,
+      x: target.x + dx / length * desiredDistance,
+      y: target.y + dy / length * desiredDistance,
+      z: target.z + dz / length * desiredDistance,
     }, target, 520)
   }
 
@@ -683,7 +698,6 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
       className="brain-graph"
       ref={hostRef}
       data-lod={lodLevel}
-      onDoubleClick={resetView}
       onPointerMove={(event) => {
         const rect = hostRef.current?.getBoundingClientRect()
         if (!rect) return
@@ -706,27 +720,26 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
         linkResolution={3}
         linkColor={(rawLink) => {
           const typed = rawLink as BrainGraphLink
+          if (typed.synthetic === 'membership') return 'rgba(53,217,255,0.12)'
           if (typed.synthetic === 'aggregate') {
             const normalized = Math.sqrt(Math.max(1, typed.aggregateCount ?? 1) / maxAggregateCount)
             return `rgba(53,217,255,${0.14 + normalized * 0.26})`
           }
           const depth = linkDepth(rawLink as GraphLink)
-          if (depth == null) return focusNodeId ? 'rgba(53,217,255,0.16)' : 'rgba(53,217,255,0.2)'
-          const alpha = depth === 0 ? 0.5 : depth === 1 ? 0.25 : depth === 2 ? 0.21 : 0.2
-          return `rgba(53,217,255,${alpha})`
+          if (depth === 0) return 'rgba(83,229,255,0.56)'
+          return 'rgba(53,217,255,0.18)'
         }}
-        linkOpacity={0.55}
+        linkOpacity={0.5}
         linkWidth={(rawLink) => {
           const typed = rawLink as BrainGraphLink
+          if (typed.synthetic === 'membership') return 0.08
           if (typed.synthetic === 'aggregate') {
             const normalized = Math.sqrt(Math.max(1, typed.aggregateCount ?? 1) / maxAggregateCount)
             return 0.1 + normalized * 0.18
           }
-          const depth = linkDepth(rawLink as GraphLink)
-          if (depth == null) return 0.14
-          return depth === 0 ? 0.38 : depth === 1 ? 0.19 : depth === 2 ? 0.15 : 0.14
+          return linkDepth(rawLink as GraphLink) === 0 ? 0.28 : 0.11
         }}
-        linkDirectionalParticles={(rawLink) => focusNodeId && isMemoryLink(rawLink as GraphLink) && linkDepth(rawLink as GraphLink) === 0 ? 2 : 0}
+        linkDirectionalParticles={(rawLink) => focusNodeId && isMemoryLink(rawLink as GraphLink) && focusNeighborhood.linkKeys.has(graphLinkKey(rawLink as GraphLink)) ? 1 : 0}
         linkDirectionalParticleColor={() => '#72e7ff'}
         linkDirectionalParticleWidth={1.25}
         linkDirectionalParticleResolution={2}
