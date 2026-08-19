@@ -287,7 +287,10 @@ export function chooseAutomaticLod(current: BrainLodLevel, _cameraDistance: numb
 }
 
 export function resolveLodLevel(mode: BrainLodMode, automatic: BrainLodLevel): BrainLodLevel {
-  if (mode === 'overview') return 'overview'
+  // Reuse the existing three button states as explicit manual views for now:
+  // AUTO state = overview, OVERVIEW state = cluster, DETAIL state = detail.
+  // The button label itself displays the resolved view via data-lod styling.
+  if (mode === 'overview') return 'cluster'
   if (mode === 'detail') return 'detail'
   return automatic
 }
