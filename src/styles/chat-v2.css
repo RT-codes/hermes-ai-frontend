@@ -1,0 +1,44 @@
+.chat-message__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+  color: var(--text-faint);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chat-message--user .chat-message__meta { justify-content: flex-end; }
+
+.chat-message__meta button {
+  border: 0;
+  padding: 0;
+  color: var(--text-faint);
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chat-message__meta button:hover,
+.chat-message__meta button:focus-visible {
+  color: var(--cyan-soft);
+  outline: none;
+}
+
+.chat-message__status--failed { color: #ff8ba4; }
+.chat-message__status--cancelled { color: var(--text-muted); }
+.chat-message__status--sending,
+.chat-message__status--streaming { color: var(--cyan-soft); }
+
+.chat-message[data-status='failed'] {
+  padding-left: 0.55rem;
+  border-left: 1px solid rgb(255 111 143 / 0.42);
+}
+
+.chat-message[data-status='cancelled'] {
+  opacity: 0.86;
+}
