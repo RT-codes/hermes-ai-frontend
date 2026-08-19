@@ -20,6 +20,8 @@ type ChatSessionsContextValue = {
   clearDraft: (sessionId: string) => void
   sendMessage: (sessionId: string, content: string) => Promise<void>
   cancelGeneration: (sessionId: string) => void
+  regenerateFromUser: (sessionId: string, userMessageId: string) => Promise<void>
+  retryResponse: (sessionId: string, assistantMessageId: string) => Promise<void>
 }
 
 const STORAGE_KEY = 'hermes-chat-sessions:v2'
@@ -193,37 +195,14 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     setDrafts((current) => ({ ...current, [sessionId]: '' }))
   }
 
-  async function sendMessage(sessionId: string, content: string) {
-    const trimmed = content.trim()
-    const session = sessionsRef.current.find((item) => item.id === sessionId)
-    if (!trimmed || !session || controllersRef.current.has(sessionId) || session.connectionState === 'connecting' || session.connectionState === 'streaming') return
-
-    const requestId = crypto.randomUUID()
-    const userMessage = { ...createMessage(sessionId, 'user', trimmed), requestId }
-    const assistantId = crypto.randomUUID()
-    const assistantMessage: ChatMessage = {
-      ...createMessage(sessionId, 'assistant', '', 'sending'),
-      id: assistantId,
-      requestId,
-    }
-    const requestMessages = [...session.messages, userMessage].filter((message) => !message.id.startsWith('welcome-'))
-    const nextTitle = session.title.startsWith('New chat') ? titleFromMessage(trimmed) : session.title
+  async function runAssistantGeneration(sessionId: string, requestMessages: ChatMessage[], assistantId: string, requestId: string, hermesSessionId: string) {
     const controller = new AbortController()
     controllersRef.current.set(sessionId, controller)
-
-    patchSession(sessionId, (current) => ({
-      ...current,
-      title: nextTitle,
-      messages: [...current.messages, userMessage, assistantMessage],
-      connectionState: 'connecting',
-      error: null,
-      updatedAt: Date.now(),
-    }))
 
     try {
       await streamHermesChat({
         messages: requestMessages,
-        sessionId: session.hermesSessionId ?? session.id,
+        sessionId: hermesSessionId,
         signal: controller.signal,
         onDelta: (delta) => {
           patchSession(sessionId, (current) => ({
@@ -239,7 +218,8 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
       patchSession(sessionId, (current) => ({
         ...current,
         connectionState: 'idle',
-        messages: current.messages.map((message) => message.id === assistantId ? { ...message, status: 'completed' } : message),
+        error: null,
+        messages: current.messages.map((message) => message.id === assistantId ? { ...message, status: 'completed', error: null } : message),
         updatedAt: Date.now(),
       }))
     } catch (caughtError) {
@@ -256,6 +236,79 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
       }))
     } finally {
       if (controllersRef.current.get(sessionId) === controller) controllersRef.current.delete(sessionId)
+    }
+  }
+
+  async function sendMessage(sessionId: string, content: string) {
+    const trimmed = content.trim()
+    const session = sessionsRef.current.find((item) => item.id === sessionId)
+    if (!trimmed || !session || controllersRef.current.has(sessionId) || session.connectionState === 'connecting' || session.connectionState === 'streaming') return
+
+    const requestId = crypto.randomUUID()
+    const userMessage = { ...createMessage(sessionId, 'user', trimmed), requestId }
+    const assistantId = crypto.randomUUID()
+    const assistantMessage: ChatMessage = {
+      ...createMessage(sessionId, 'assistant', '', 'sending'),
+      id: assistantId,
+      requestId,
+    }
+    const requestMessages = [...session.messages, userMessage].filter((message) => !message.id.startsWith('welcome-'))
+    const nextTitle = session.title.startsWith('New chat') ? titleFromMessage(trimmed) : session.title
+    const hermesSessionId = session.hermesSessionId ?? session.id
+
+    patchSession(sessionId, (current) => ({
+      ...current,
+      title: nextTitle,
+      messages: [...current.messages, userMessage, assistantMessage],
+      connectionState: 'connecting',
+      error: null,
+      updatedAt: Date.now(),
+    }))
+
+    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, hermesSessionId)
+  }
+
+  async function regenerateFromUser(sessionId: string, userMessageId: string) {
+    const session = sessionsRef.current.find((item) => item.id === sessionId)
+    if (!session || controllersRef.current.has(sessionId)) return
+    const userIndex = session.messages.findIndex((message) => message.id === userMessageId && message.role === 'user')
+    if (userIndex < 0) return
+
+    const requestId = crypto.randomUUID()
+    const assistantId = crypto.randomUUID()
+    const nextHermesSessionId = crypto.randomUUID()
+    const history = session.messages.slice(0, userIndex + 1).map((message, index) => index === userIndex
+      ? { ...message, requestId, status: 'completed' as const, error: null }
+      : message)
+    const assistantMessage: ChatMessage = {
+      ...createMessage(sessionId, 'assistant', '', 'sending'),
+      id: assistantId,
+      requestId,
+    }
+    const requestMessages = history.filter((message) => !message.id.startsWith('welcome-'))
+
+    patchSession(sessionId, (current) => ({
+      ...current,
+      hermesSessionId: nextHermesSessionId,
+      messages: [...history, assistantMessage],
+      connectionState: 'connecting',
+      error: null,
+      updatedAt: Date.now(),
+    }))
+
+    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, nextHermesSessionId)
+  }
+
+  async function retryResponse(sessionId: string, assistantMessageId: string) {
+    const session = sessionsRef.current.find((item) => item.id === sessionId)
+    if (!session) return
+    const assistantIndex = session.messages.findIndex((message) => message.id === assistantMessageId && message.role === 'assistant')
+    if (assistantIndex < 0) return
+    for (let index = assistantIndex - 1; index >= 0; index -= 1) {
+      if (session.messages[index].role === 'user') {
+        await regenerateFromUser(sessionId, session.messages[index].id)
+        return
+      }
     }
   }
 
@@ -276,6 +329,8 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     clearDraft,
     sendMessage,
     cancelGeneration,
+    regenerateFromUser,
+    retryResponse,
   }
 
   return <ChatSessionsContext.Provider value={value}>{children}</ChatSessionsContext.Provider>
