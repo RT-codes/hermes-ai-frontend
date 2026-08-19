@@ -8,11 +8,13 @@ Hermes Home is a React + TypeScript + Vite frontend for chatting with Hermes, mo
 
 ## Preview
 
-<img width="1821" height="1296" alt="image" src="https://github.com/user-attachments/assets/ef4ecb7f-b0f4-4b2f-a51e-60480f7a02e2" />
+<img width="1518" height="1295" alt="image" src="https://github.com/user-attachments/assets/f834a0b4-902b-43e6-b513-d3042e51724d" />
 
-<img width="1472" height="1290" alt="image" src="https://github.com/user-attachments/assets/f1bc1a20-7d83-4443-b1ee-2c66d0ecebd8" />
+<img width="1519" height="1298" alt="image" src="https://github.com/user-attachments/assets/cae191ee-0a7f-42d8-b153-3ee0e2be9154" />
 
-<img width="1717" height="1297" alt="image" src="https://github.com/user-attachments/assets/0259a797-917d-4423-8085-bdb0eac2d175" />
+<img width="1521" height="1300" alt="image" src="https://github.com/user-attachments/assets/ea65a8a7-9356-4d07-a0a1-aa2fa893df8b" />
+
+<img width="1522" height="1296" alt="image" src="https://github.com/user-attachments/assets/221329da-99e6-421d-8eea-05d3b5908914" />
 
 <img width="1819" height="1296" alt="image" src="https://github.com/user-attachments/assets/fb2ddd08-616d-4ab7-98f1-072a8ad33029" />
 
