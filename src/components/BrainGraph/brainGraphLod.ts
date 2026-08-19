@@ -10,6 +10,7 @@ export type BrainCluster = {
   memberIds: string[]
   memberCount: number
   prominence: number
+  cloudRadius: number
   anchor: { x: number; y: number; z: number }
 }
 
@@ -97,13 +98,17 @@ function fibonacciAnchor(index: number, total: number, radius: number, label: st
   }
 }
 
+function clusterCloudRadius(layoutRadius: number, relativeMass: number) {
+  return Math.max(16, layoutRadius * 0.105)
+    * (0.78 + Math.sqrt(Math.max(0.04, relativeMass)) * 1.02)
+}
+
 function memberAnchor(
   nodeId: string,
   memberIndex: number,
   memberCount: number,
   clusterAnchor: { x: number; y: number; z: number },
-  layoutRadius: number,
-  relativeMass: number,
+  cloudRadius: number,
 ) {
   if (memberCount <= 1) return { ...clusterAnchor }
 
@@ -114,17 +119,11 @@ function memberAnchor(
   const y = 1 - normalizedIndex * 2
   const radial = Math.sqrt(Math.max(0, 1 - y * y))
   const angle = goldenAngle * (memberIndex + jitter * 0.7)
-
-  // Scale the local cloud from the actual overview layout and cluster mass.
-  // This keeps a growing bank proportional instead of relying on one fixed
-  // world-space radius that only happens to look right at today's graph size.
-  const cloudRadius = Math.max(12, layoutRadius * 0.075)
-    * (0.72 + Math.sqrt(Math.max(0.04, relativeMass)) * 0.88)
-  const shell = cloudRadius * (0.52 + Math.pow(normalizedIndex, 0.72) * 0.62)
+  const shell = cloudRadius * (0.58 + Math.pow(normalizedIndex, 0.72) * 0.72)
 
   return {
     x: clusterAnchor.x + Math.cos(angle) * radial * shell,
-    y: clusterAnchor.y + y * shell * 0.7,
+    y: clusterAnchor.y + y * shell * 0.74,
     z: clusterAnchor.z + Math.sin(angle) * radial * shell,
   }
 }
@@ -133,6 +132,10 @@ function endpointId(value: BrainGraphLink['source'] | BrainGraphLink['target']) 
   if (typeof value === 'string' || typeof value === 'number') return String(value)
   if (value && typeof value === 'object' && 'id' in value) return String(value.id)
   return ''
+}
+
+function canonicalLinkKey(source: string, target: string) {
+  return source < target ? `${source}>${target}` : `${target}>${source}`
 }
 
 export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraphLink>): BrainLodModel {
@@ -161,7 +164,8 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
     * (1 + Math.log2(Math.max(2, kept.length)) * 0.055)
 
   const clusters: BrainCluster[] = kept.map((group, index) => {
-    const prominence = Math.sqrt(group.nodes.length / maxCount)
+    const relativeMass = group.nodes.length / maxCount
+    const prominence = Math.sqrt(relativeMass)
     const id = `cluster:${group.key}`
     return {
       id,
@@ -169,6 +173,7 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
       memberIds: group.nodes.map((node) => node.id),
       memberCount: group.nodes.length,
       prominence,
+      cloudRadius: clusterCloudRadius(layoutRadius, relativeMass),
       anchor: fibonacciAnchor(index, kept.length, layoutRadius, group.label),
     }
   })
@@ -249,8 +254,7 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
       clusterMemberIndex.get(node.id) ?? 0,
       cluster.memberCount,
       cluster.anchor,
-      layoutRadius,
-      cluster.memberCount / maxCount,
+      cluster.cloudRadius,
     )
 
     return {
@@ -262,16 +266,69 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
     }
   })
 
+  // Keep only a small explicit-link backbone for normal cluster/detail views.
+  // Each memory contributes at most two of its strongest same-cluster edges.
+  // This preserves real Hindsight relationships without rendering dense
+  // semantic cliques as an unreadable all-to-all web.
+  const candidateLinksByNode = new Map<string, Array<{ index: number; score: number; tie: number }>>()
+  rawData.links.forEach((link, index) => {
+    const source = endpointId(link.source)
+    const target = endpointId(link.target)
+    const sourceCluster = clusterByNodeId.get(source)
+    const targetCluster = clusterByNodeId.get(target)
+    if (!sourceCluster || sourceCluster !== targetCluster) return
+    const score = Number.isFinite(Number(link.strength)) ? Number(link.strength) : 0
+    const tie = stableHash(canonicalLinkKey(source, target))
+    const sourceCandidates = candidateLinksByNode.get(source) ?? []
+    sourceCandidates.push({ index, score, tie })
+    candidateLinksByNode.set(source, sourceCandidates)
+    const targetCandidates = candidateLinksByNode.get(target) ?? []
+    targetCandidates.push({ index, score, tie })
+    candidateLinksByNode.set(target, targetCandidates)
+  })
+
+  const backboneIndexes = new Set<number>()
+  candidateLinksByNode.forEach((candidates) => {
+    candidates
+      .sort((a, b) => b.score - a.score || a.tie - b.tie)
+      .slice(0, 2)
+      .forEach((candidate) => backboneIndexes.add(candidate.index))
+  })
+
+  const backboneDegree = new Map<string, number>()
+  const rawLinks = rawData.links.map((link, index) => {
+    const source = endpointId(link.source)
+    const target = endpointId(link.target)
+    const lodBackbone = backboneIndexes.has(index)
+    if (lodBackbone) {
+      backboneDegree.set(source, (backboneDegree.get(source) ?? 0) + 1)
+      backboneDegree.set(target, (backboneDegree.get(target) ?? 0) + 1)
+    }
+    return {
+      ...link,
+      synthetic: link.synthetic ?? 'memory' as const,
+      lodBackbone,
+    }
+  })
+
+  // Only true backbone orphans receive a faint visual tether to their cluster
+  // center. These links are structural cues, not memory relationships.
+  const orphanMembershipLinks: BrainGraphLink[] = decoratedMemoryNodes.flatMap((node) => {
+    if (!node.clusterId || (backboneDegree.get(node.id) ?? 0) > 0) return []
+    return [{
+      source: node.id,
+      target: node.clusterId,
+      synthetic: 'membership' as const,
+      strength: 0,
+    }]
+  })
+
   const otherNodes = rawData.nodes.filter((node) => node.kind !== 'memory')
-  const rawLinks = rawData.links.map((link) => ({ ...link, synthetic: link.synthetic ?? 'memory' as const }))
 
   return {
     data: {
       nodes: [...otherNodes, ...decoratedMemoryNodes, ...clusterNodes],
-      // Membership is represented by deterministic spatial placement rather
-      // than another force link. This avoids fighting Hindsight's real memory
-      // relationships and keeps overview/detail locations coherent.
-      links: [...rawLinks, ...aggregateLinks],
+      links: [...rawLinks, ...aggregateLinks, ...orphanMembershipLinks],
     },
     clusters,
     clusterByNodeId,
@@ -280,16 +337,10 @@ export function buildBrainLodModel(rawData: GraphData<BrainGraphNode, BrainGraph
 }
 
 export function chooseAutomaticLod(current: BrainLodLevel, _cameraDistance: number, _graphExtent: number) {
-  // Automatic zoom-driven switching is intentionally paused while the LOD
-  // model is being validated against real growing banks. Camera movement must
-  // not change representation underneath the user during this test pass.
   return current
 }
 
 export function resolveLodLevel(mode: BrainLodMode, automatic: BrainLodLevel): BrainLodLevel {
-  // Reuse the existing three button states as explicit manual views for now:
-  // AUTO state = overview, OVERVIEW state = cluster, DETAIL state = detail.
-  // The button label itself displays the resolved view via data-lod styling.
   if (mode === 'overview') return 'cluster'
   if (mode === 'detail') return 'detail'
   return automatic
