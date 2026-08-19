@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react'
-import type { FormEvent, KeyboardEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { FormEvent, KeyboardEvent, UIEvent } from 'react'
 import { useChatSessions } from '../../../context/ChatSessionsContext'
 
 type ChatSurfaceProps = {
   conversationId: string
 }
+
+const FOLLOW_THRESHOLD_PX = 72
 
 export function ChatSurface({ conversationId }: ChatSurfaceProps) {
   const {
@@ -16,8 +18,12 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
     cancelGeneration,
   } = useChatSessions()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const messagesRef = useRef<HTMLDivElement | null>(null)
+  const followLatestRef = useRef(true)
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false)
   const conversation = sessions.find((session) => session.id === conversationId) ?? null
   const input = drafts[conversationId] ?? ''
+  const latestContent = conversation?.messages.at(-1)?.content ?? ''
 
   useEffect(() => {
     const textarea = textareaRef.current
@@ -25,6 +31,19 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
     textarea.style.height = 'auto'
     textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`
   }, [conversationId, input])
+
+  useEffect(() => {
+    followLatestRef.current = true
+    setShowJumpToLatest(false)
+    const container = messagesRef.current
+    if (container) container.scrollTop = container.scrollHeight
+  }, [conversationId])
+
+  useEffect(() => {
+    const container = messagesRef.current
+    if (!container || !followLatestRef.current) return
+    container.scrollTop = container.scrollHeight
+  }, [conversation?.messages.length, latestContent])
 
   if (!conversation) return null
 
@@ -37,9 +56,27 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
         ? 'Connection error'
         : 'Ready'
 
+  function handleMessagesScroll(event: UIEvent<HTMLDivElement>) {
+    const element = event.currentTarget
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight
+    const shouldFollow = distanceFromBottom <= FOLLOW_THRESHOLD_PX
+    followLatestRef.current = shouldFollow
+    setShowJumpToLatest(!shouldFollow)
+  }
+
+  function jumpToLatest() {
+    const container = messagesRef.current
+    if (!container) return
+    followLatestRef.current = true
+    setShowJumpToLatest(false)
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+  }
+
   async function submitMessage() {
     const content = input.trim()
     if (!content || isBusy) return
+    followLatestRef.current = true
+    setShowJumpToLatest(false)
     clearDraft(conversationId)
     await sendMessage(conversationId, content)
     textareaRef.current?.focus()
@@ -64,7 +101,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
         {statusLabel}
       </div>
 
-      <div className="chat-messages" aria-live="polite">
+      <div className="chat-messages" ref={messagesRef} onScroll={handleMessagesScroll} aria-live="polite">
         {conversation.messages.map((message) => (
           <div className={`chat-message chat-message--${message.role}`} key={message.id} data-status={message.status}>
             <span className="chat-message__role">{message.role === 'user' ? 'YOU' : 'HERMES'}</span>
@@ -72,6 +109,12 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
           </div>
         ))}
       </div>
+
+      {showJumpToLatest && (
+        <button className="chat-jump-latest" type="button" onClick={jumpToLatest} aria-label="Jump to latest message">
+          ↓ LATEST
+        </button>
+      )}
 
       {conversation.error && (
         <div className="chat-error" title={conversation.error}>
