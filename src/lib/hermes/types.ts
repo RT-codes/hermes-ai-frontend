@@ -1,9 +1,10 @@
-export type ChatRole = 'user' | 'assistant'
+export type {
+  ChatRole,
+  ChatMessage,
+  ChatMessageStatus,
+  ChatConnectionState,
+  ChatConversation,
+  StoredChatState,
+} from '../../features/chat/types'
 
-export type ChatMessage = {
-  id: string
-  role: ChatRole
-  content: string
-}
-
-export type HermesConnectionState = 'idle' | 'connecting' | 'streaming' | 'error'
+export type HermesConnectionState = import('../../features/chat/types').ChatConnectionState

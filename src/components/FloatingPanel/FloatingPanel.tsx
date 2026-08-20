@@ -11,6 +11,7 @@ type FloatingPanelProps = {
   id: string
   title: string
   children: ReactNode
+  sidecar?: ReactNode
   defaultRect: PanelRect
   minWidth?: number
   minHeight?: number
@@ -23,6 +24,7 @@ export function FloatingPanel({
   id,
   title,
   children,
+  sidecar,
   defaultRect,
   minWidth = 220,
   minHeight = 150,
@@ -124,6 +126,7 @@ export function FloatingPanel({
         <span className="floating-panel__drag-hint">MOVE</span>
       </header>
       <div className="floating-panel__content">{children}</div>
+      {sidecar && <aside className="floating-panel__sidecar">{sidecar}</aside>}
       <button
         className="floating-panel__resize"
         type="button"

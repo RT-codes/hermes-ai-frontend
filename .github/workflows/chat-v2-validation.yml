@@ -1,0 +1,33 @@
+name: Chat Workspace V2 validation
+
+on:
+  push:
+    branches:
+      - feature/chat-workspace-v2
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint (advisory until #20 is resolved)
+        continue-on-error: true
+        run: npm run lint

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { getHermesConnectionSettings } from '../features/settings/connection'
 
 type RuntimeStatus = {
   hermesOnline: boolean
@@ -28,10 +29,11 @@ export function RuntimeStatusProvider({ children }: { children: ReactNode }) {
 
   async function refresh() {
     if (document.visibilityState === 'hidden') return
+    const { apiBasePath } = getHermesConnectionSettings()
 
     const [healthResult, modelsResult, hindsightResult] = await Promise.allSettled([
-      fetch('/hermes-api/health', { cache: 'no-store' }),
-      fetch('/hermes-api/v1/models', { cache: 'no-store' }),
+      fetch(`${apiBasePath}/health`, { cache: 'no-store' }),
+      fetch(`${apiBasePath}/v1/models`, { cache: 'no-store' }),
       fetch('/hindsight-api/docs', { cache: 'no-store' }),
     ])
 

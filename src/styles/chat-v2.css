@@ -1,0 +1,294 @@
+.chat-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.chat-surface {
+  container-name: chat-surface;
+  container-type: inline-size;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  gap: 0.65rem;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.chat-message__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+  color: var(--text-faint);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chat-message--user .chat-message__meta { justify-content: flex-end; }
+
+.chat-message__meta button {
+  border: 0;
+  padding: 0;
+  color: var(--text-faint);
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chat-message__meta button:hover,
+.chat-message__meta button:focus-visible {
+  color: var(--cyan-soft);
+  outline: 1px solid var(--cyan-dim);
+  outline-offset: 2px;
+}
+
+.chat-message__status--failed { color: #ff8ba4; }
+.chat-message__status--cancelled { color: var(--text-muted); }
+.chat-message__status--sending,
+.chat-message__status--streaming { color: var(--cyan-soft); }
+
+.chat-message[data-status='failed'] {
+  padding-left: 0.55rem;
+  border-left: 1px solid rgb(255 111 143 / 0.42);
+}
+
+.chat-message[data-status='cancelled'] {
+  opacity: 0.86;
+}
+
+.chat-status--offline .chat-status__dot {
+  background: #ffb86c;
+  box-shadow: 0 0 10px rgb(255 184 108 / 0.3);
+}
+
+.chat-offline,
+.chat-error {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.chat-offline {
+  padding: 0.55rem 0.7rem;
+  border-left: 2px solid #ffb86c;
+  background: rgb(255 184 108 / 0.055);
+  color: #ffd1a3;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.chat-offline button,
+.chat-error__actions button {
+  width: fit-content;
+  border: 1px solid rgb(var(--accent-rgb) / 0.16);
+  padding: 0.28rem 0.45rem;
+  color: var(--cyan-soft);
+  background: rgb(var(--accent-rgb) / 0.04);
+  font: inherit;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.chat-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chat-offline button:hover,
+.chat-error__actions button:hover {
+  border-color: var(--cyan-dim);
+  background: var(--cyan-faint);
+}
+
+.chat-offline button:focus-visible,
+.chat-error__actions button:focus-visible,
+.chat-composer button:focus-visible,
+.chat-tabs button:focus-visible,
+.chat-jump-latest:focus-visible,
+.chat-code-block__bar button:focus-visible {
+  outline: 1px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.chat-tab__rename {
+  width: 1.45rem;
+  border: 0;
+  padding: 0;
+  color: var(--text-faint);
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.chat-tab__rename:hover,
+.chat-tab__rename:focus-visible {
+  color: var(--cyan-soft);
+}
+
+.chat-conversation-empty {
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  min-height: 100%;
+  padding: 1.5rem;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.chat-conversation-empty strong {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.chat-conversation-empty span {
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+/* Chat V2 containment: the floating shell never becomes a scrolling ancestor. */
+.chat-panel {
+  overscroll-behavior: none;
+}
+
+.chat-panel .floating-panel__content {
+  min-width: 0;
+  min-height: 0;
+  height: calc(100% - 50px);
+  max-height: calc(100% - 50px);
+  overflow: hidden;
+  overscroll-behavior: none;
+  contain: layout paint;
+}
+
+.chat-shell {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  overflow-anchor: none;
+}
+
+.chat-surface {
+  box-sizing: border-box;
+  max-height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  overflow-anchor: none;
+  padding: 0.75rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.16);
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.035), transparent 32%),
+    rgb(var(--panel-rgb) / 0.18);
+  box-shadow: inset 0 0 22px rgb(var(--accent-rgb) / 0.025);
+}
+
+.chat-messages {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  overflow-anchor: none;
+  scroll-padding-bottom: 1rem;
+  touch-action: pan-y;
+}
+
+.chat-composer {
+  position: relative;
+  z-index: 2;
+  min-height: 0;
+  overflow-anchor: none;
+  background: linear-gradient(180deg, transparent, rgb(var(--panel-rgb) / 0.08));
+}
+
+/*
+ * HUD shape rule: clipped components use a 1px outer edge layer plus an inset
+ * clipped fill. A normal CSS border does not follow diagonal clip-path edges.
+ * Reuse this construction for future cut-corner controls/panels.
+ */
+.chat-message--user {
+  margin-right: 0;
+  margin-left: auto;
+  text-align: left;
+}
+
+.chat-message--user .chat-message__role {
+  display: block;
+  text-align: right;
+}
+
+.chat-message--user p {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.32rem 0 0 auto;
+  padding: 0.62rem 0.78rem;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: rgb(var(--accent-rgb) / 0.2);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  text-align: left;
+}
+
+.chat-message--user p::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.025), transparent 48%),
+    rgb(var(--panel-rgb) / 0.16);
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+  pointer-events: none;
+}
+
+/* Lift the lower-right glowing edge above the resize affordance on Chat only. */
+.floating-panel.chat-panel::after {
+  bottom: 26px;
+}
+
+@container chat-surface (max-width: 410px) {
+  .chat-composer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chat-composer button {
+    min-height: 34px;
+  }
+
+  .chat-message {
+    max-width: 100%;
+  }
+
+  .chat-message__meta {
+    gap: 0.28rem;
+  }
+
+  .chat-offline,
+  .chat-error {
+    padding: 0.5rem;
+  }
+
+  .chat-surface {
+    padding: 0.6rem;
+  }
+}
+
+@container chat-surface (max-height: 320px) {
+  .chat-status {
+    font-size: 0.55rem;
+  }
+
+  .chat-composer {
+    padding-top: 0.45rem;
+  }
+}

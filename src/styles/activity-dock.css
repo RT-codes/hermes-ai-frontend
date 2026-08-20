@@ -1,0 +1,139 @@
+.brain-hud-lane {
+  position: absolute;
+  z-index: 24;
+  top: 7.15rem;
+  right: 2rem;
+  bottom: 2rem;
+  display: grid;
+  gap: 0.85rem;
+  width: min(420px, calc(100vw - var(--sidebar-width) - 5rem));
+  min-width: 320px;
+  max-width: min(680px, calc(100vw - var(--sidebar-width) - 5rem));
+  min-height: 0;
+  overflow: hidden;
+  resize: horizontal;
+  pointer-events: none;
+  transition: transform 180ms cubic-bezier(0.22, 0.78, 0.25, 1), width 180ms ease;
+}
+
+.brain-hud-lane--compute-bottom {
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'insight'
+    'compute';
+}
+
+.brain-hud-lane--compute-top {
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'compute'
+    'insight';
+}
+
+.brain-hud-lane__compute {
+  grid-area: compute;
+  min-width: 0;
+  pointer-events: auto;
+}
+
+.brain-hud-lane__insight {
+  grid-area: insight;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.brain-hud-lane__insight > .brain-hud-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.brain-hud-lane__insight .brain-hud-panel__content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.brain-is-inspecting .brain-hud-lane {
+  transform: translateX(calc(var(--sidebar-width) + 4rem + 100% - 100vw));
+}
+
+.sidebar-is-collapsed.brain-is-inspecting .brain-hud-lane {
+  transform: translateX(calc(var(--sidebar-width-collapsed) + 4rem + 100% - 100vw));
+}
+
+.floating-panel__sidecar {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  left: calc(100% + 0.75rem);
+  width: min(390px, calc(100vw - var(--panel-x) - var(--panel-width) - 1.5rem));
+  height: 100%;
+  min-width: 260px;
+  max-width: min(680px, calc(100vw - var(--panel-x) - var(--panel-width) - 1rem));
+  overflow: hidden;
+  resize: horizontal;
+  pointer-events: auto;
+  animation: activity-sidecar-enter 190ms cubic-bezier(0.22, 0.78, 0.25, 1) both;
+}
+
+.floating-panel__sidecar > .brain-hud-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+}
+
+.floating-panel__sidecar .brain-hud-panel__content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.floating-panel__sidecar .hermes-insight {
+  height: 100%;
+}
+
+.hermes-activity-panel {
+  min-height: 0;
+  transition: transform 180ms cubic-bezier(0.22, 0.78, 0.25, 1), opacity 160ms ease;
+}
+
+@keyframes activity-sidecar-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-14px) scaleX(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@media (max-height: 760px) {
+  .brain-hud-lane {
+    top: 6.4rem;
+    bottom: 1.5rem;
+    gap: 0.65rem;
+  }
+}
+
+@media (max-width: 1120px) {
+  .brain-hud-lane {
+    width: 360px;
+    max-width: calc(100vw - var(--sidebar-width) - 3.5rem);
+  }
+
+  .floating-panel__sidecar {
+    width: min(320px, calc(100vw - var(--panel-x) - var(--panel-width) - 1rem));
+    min-width: 230px;
+    left: calc(100% + 0.5rem);
+  }
+}
+
+@media (max-width: 860px) {
+  .floating-panel__sidecar {
+    display: none;
+  }
+}

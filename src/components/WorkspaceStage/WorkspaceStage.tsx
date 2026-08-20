@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useAppearance } from '../../context/AppearanceContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
+import { useConnectionSettings } from '../../context/ConnectionSettingsContext'
 import { BrainStage } from '../BrainStage/BrainStage'
 
 export type WorkspaceView =
@@ -14,6 +16,8 @@ export type WorkspaceView =
 type WorkspaceStageProps = {
   activeView: WorkspaceView
 }
+
+type SettingsTab = 'appearance' | 'graphics' | 'connection'
 
 const viewCopy: Record<Exclude<WorkspaceView, 'brain' | 'chat' | 'settings'>, { eyebrow: string; title: string; description: string }> = {
   memory: {
@@ -103,101 +107,163 @@ function ChatsWorkspace() {
   )
 }
 
+function AppearanceSettings() {
+  const { settings, updateSetting } = useAppearance()
+  return (
+    <div className="appearance-grid">
+      <label className="appearance-control">
+        <span>Interface scale</span>
+        <input type="range" min="0.85" max="1.4" step="0.05" value={settings.interfaceScale} onChange={(event) => updateSetting('interfaceScale', Number(event.target.value))} />
+        <output>{Math.round(settings.interfaceScale * 100)}%</output>
+      </label>
+      <label className="appearance-control">
+        <span>Interface font</span>
+        <select value={settings.interfaceFont} onChange={(event) => updateSetting('interfaceFont', event.target.value as typeof settings.interfaceFont)}>
+          <option value="modern">Modern sans</option>
+          <option value="humanist">Humanist</option>
+          <option value="technical">Technical</option>
+          <option value="mono">Monospace</option>
+        </select>
+        <output>{settings.interfaceFont.toUpperCase()}</output>
+      </label>
+      <label className="appearance-control">
+        <span>HUD / data font</span>
+        <select value={settings.hudFont} onChange={(event) => updateSetting('hudFont', event.target.value as typeof settings.hudFont)}>
+          <option value="technical">Technical</option>
+          <option value="mono">Monospace</option>
+          <option value="modern">Modern sans</option>
+        </select>
+        <output>{settings.hudFont.toUpperCase()}</output>
+      </label>
+      <label className="appearance-control appearance-control--color">
+        <span>Accent color</span>
+        <input type="color" value={settings.accentColor} onChange={(event) => updateSetting('accentColor', event.target.value)} />
+        <output>{settings.accentColor.toUpperCase()}</output>
+      </label>
+      <label className="appearance-control appearance-control--color">
+        <span>Background</span>
+        <input type="color" value={settings.backgroundColor} onChange={(event) => updateSetting('backgroundColor', event.target.value)} />
+        <output>{settings.backgroundColor.toUpperCase()}</output>
+      </label>
+      <label className="appearance-control appearance-control--color">
+        <span>Panel color</span>
+        <input type="color" value={settings.panelColor} onChange={(event) => updateSetting('panelColor', event.target.value)} />
+        <output>{settings.panelColor.toUpperCase()}</output>
+      </label>
+      <label className="appearance-control">
+        <span>Panel opacity</span>
+        <input type="range" min="0.2" max="0.92" step="0.01" value={settings.panelOpacity} onChange={(event) => updateSetting('panelOpacity', Number(event.target.value))} />
+        <output>{Math.round(settings.panelOpacity * 100)}%</output>
+      </label>
+      <label className="appearance-control appearance-control--color">
+        <span>Brain HUD color</span>
+        <input type="color" value={settings.brainHudColor} onChange={(event) => updateSetting('brainHudColor', event.target.value)} />
+        <output>{settings.brainHudColor.toUpperCase()}</output>
+      </label>
+      <label className="appearance-control">
+        <span>Brain HUD opacity</span>
+        <input type="range" min="0.25" max="0.96" step="0.01" value={settings.brainHudOpacity} onChange={(event) => updateSetting('brainHudOpacity', Number(event.target.value))} />
+        <output>{Math.round(settings.brainHudOpacity * 100)}%</output>
+      </label>
+      <label className="appearance-control">
+        <span>Panel blur</span>
+        <input type="range" min="0" max="42" step="1" value={settings.panelBlur} onChange={(event) => updateSetting('panelBlur', Number(event.target.value))} />
+        <output>{settings.panelBlur}px</output>
+      </label>
+      <label className="appearance-control">
+        <span>Workspace margin</span>
+        <input type="range" min="8" max="48" step="1" value={settings.workspaceMargin} onChange={(event) => updateSetting('workspaceMargin', Number(event.target.value))} />
+        <output>{settings.workspaceMargin}px</output>
+      </label>
+      <label className="appearance-control">
+        <span>HUD corner cut</span>
+        <input type="range" min="6" max="36" step="1" value={settings.cornerCut} onChange={(event) => updateSetting('cornerCut', Number(event.target.value))} />
+        <output>{settings.cornerCut}px</output>
+      </label>
+      <label className="appearance-control">
+        <span>Local compute position</span>
+        <select value={settings.computeHudPosition} onChange={(event) => updateSetting('computeHudPosition', event.target.value as 'top-right' | 'bottom-right')}>
+          <option value="bottom-right">Bottom right</option>
+          <option value="top-right">Top right</option>
+        </select>
+        <output>{settings.computeHudPosition === 'top-right' ? 'TOP' : 'BOTTOM'}</output>
+      </label>
+    </div>
+  )
+}
+
+function GraphicsSettings() {
+  const { settings, updateSetting } = useAppearance()
+  return (
+    <div className="appearance-grid">
+      <label className="appearance-control">
+        <span>Rubik thinking speed</span>
+        <input type="range" min="220" max="1800" step="20" value={settings.rubikTurnSpeedMs} onChange={(event) => updateSetting('rubikTurnSpeedMs', Number(event.target.value))} />
+        <output>{settings.rubikTurnSpeedMs}ms</output>
+      </label>
+      <div className="settings-note">
+        <strong>Graphics controls</strong>
+        <p>Future 3D Brain quality, FPS, effects, and GPU-budget controls belong here. Existing rendering behavior is unchanged.</p>
+      </div>
+    </div>
+  )
+}
+
+function ConnectionSettings() {
+  const { settings, updateSetting } = useConnectionSettings()
+  return (
+    <div className="connection-grid">
+      <label className="connection-control">
+        <span>Hermes API base path</span>
+        <input value={settings.apiBasePath} onChange={(event) => updateSetting('apiBasePath', event.target.value)} spellCheck={false} />
+        <small>Default: /hermes-api</small>
+      </label>
+      <label className="connection-control">
+        <span>API model</span>
+        <input value={settings.model} onChange={(event) => updateSetting('model', event.target.value)} spellCheck={false} />
+        <small>Logical model name sent to the Hermes gateway.</small>
+      </label>
+      <label className="connection-control">
+        <span>Request timeout</span>
+        <input type="number" min="10" max="1800" step="10" value={Math.round(settings.requestTimeoutMs / 1000)} onChange={(event) => updateSetting('requestTimeoutMs', Number(event.target.value) * 1000)} />
+        <small>{Math.round(settings.requestTimeoutMs / 1000)} seconds</small>
+      </label>
+      <div className="settings-note settings-note--wide">
+        <strong>Connection boundary</strong>
+        <p>Chat and runtime health checks consume this shared configuration instead of hardcoded component values. Sensitive credentials are intentionally not exposed here.</p>
+      </div>
+    </div>
+  )
+}
+
 function SettingsWorkspace() {
-  const { settings, updateSetting, resetAppearance } = useAppearance()
+  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
+  const { resetAppearance } = useAppearance()
+  const { resetConnection } = useConnectionSettings()
 
   return (
     <section className="workspace-stage workspace-stage--interactive" aria-label="Settings workspace">
       <div className="workspace-card workspace-card--settings">
         <div className="workspace-card__heading">
           <div>
-            <span className="workspace-placeholder__eyebrow">Appearance control plane</span>
-            <h2>Appearance</h2>
-            <p>These preferences update the control center live and stay saved in this browser.</p>
+            <span className="workspace-placeholder__eyebrow">Control center settings</span>
+            <h2>Settings</h2>
+            <p>Appearance, rendering behavior, and the frontend connection boundary are configured here.</p>
           </div>
-          <button className="workspace-action workspace-action--quiet" type="button" onClick={resetAppearance}>RESET</button>
+          <button className="workspace-action workspace-action--quiet" type="button" onClick={activeTab === 'connection' ? resetConnection : resetAppearance}>RESET</button>
         </div>
 
-        <div className="appearance-grid">
-          <label className="appearance-control appearance-control--color">
-            <span>Accent color</span>
-            <input type="color" value={settings.accentColor} onChange={(event) => updateSetting('accentColor', event.target.value)} />
-            <output>{settings.accentColor.toUpperCase()}</output>
-          </label>
-
-          <label className="appearance-control appearance-control--color">
-            <span>Background</span>
-            <input type="color" value={settings.backgroundColor} onChange={(event) => updateSetting('backgroundColor', event.target.value)} />
-            <output>{settings.backgroundColor.toUpperCase()}</output>
-          </label>
-
-          <label className="appearance-control appearance-control--color">
-            <span>Panel color</span>
-            <input type="color" value={settings.panelColor} onChange={(event) => updateSetting('panelColor', event.target.value)} />
-            <output>{settings.panelColor.toUpperCase()}</output>
-          </label>
-
-          <label className="appearance-control">
-            <span>Panel opacity</span>
-            <input type="range" min="0.2" max="0.92" step="0.01" value={settings.panelOpacity} onChange={(event) => updateSetting('panelOpacity', Number(event.target.value))} />
-            <output>{Math.round(settings.panelOpacity * 100)}%</output>
-          </label>
-
-          <label className="appearance-control appearance-control--color">
-            <span>Brain HUD color</span>
-            <input type="color" value={settings.brainHudColor} onChange={(event) => updateSetting('brainHudColor', event.target.value)} />
-            <output>{settings.brainHudColor.toUpperCase()}</output>
-          </label>
-
-          <label className="appearance-control">
-            <span>Brain HUD opacity</span>
-            <input type="range" min="0.25" max="0.96" step="0.01" value={settings.brainHudOpacity} onChange={(event) => updateSetting('brainHudOpacity', Number(event.target.value))} />
-            <output>{Math.round(settings.brainHudOpacity * 100)}%</output>
-          </label>
-
-          <label className="appearance-control">
-            <span>Rubik thinking speed</span>
-            <input
-              type="range"
-              min="220"
-              max="1800"
-              step="20"
-              value={settings.rubikTurnSpeedMs}
-              onChange={(event) => updateSetting('rubikTurnSpeedMs', Number(event.target.value))}
-            />
-            <output>{settings.rubikTurnSpeedMs}ms</output>
-          </label>
-
-          <label className="appearance-control">
-            <span>Panel blur</span>
-            <input type="range" min="0" max="42" step="1" value={settings.panelBlur} onChange={(event) => updateSetting('panelBlur', Number(event.target.value))} />
-            <output>{settings.panelBlur}px</output>
-          </label>
-
-          <label className="appearance-control">
-            <span>Workspace margin</span>
-            <input type="range" min="8" max="48" step="1" value={settings.workspaceMargin} onChange={(event) => updateSetting('workspaceMargin', Number(event.target.value))} />
-            <output>{settings.workspaceMargin}px</output>
-          </label>
-
-          <label className="appearance-control">
-            <span>HUD corner cut</span>
-            <input type="range" min="6" max="36" step="1" value={settings.cornerCut} onChange={(event) => updateSetting('cornerCut', Number(event.target.value))} />
-            <output>{settings.cornerCut}px</output>
-          </label>
-
-          <label className="appearance-control">
-            <span>Local compute position</span>
-            <select
-              value={settings.computeHudPosition}
-              onChange={(event) => updateSetting('computeHudPosition', event.target.value as 'top-right' | 'bottom-right')}
-            >
-              <option value="bottom-right">Bottom right</option>
-              <option value="top-right">Top right</option>
-            </select>
-            <output>{settings.computeHudPosition === 'top-right' ? 'TOP' : 'BOTTOM'}</output>
-          </label>
+        <div className="settings-tabs" role="tablist" aria-label="Settings sections">
+          {(['appearance', 'graphics', 'connection'] as SettingsTab[]).map((tab) => (
+            <button className={activeTab === tab ? 'is-active' : ''} type="button" role="tab" aria-selected={activeTab === tab} key={tab} onClick={() => setActiveTab(tab)}>
+              {tab === 'connection' ? 'CONNECTION DETAILS' : tab.toUpperCase()}
+            </button>
+          ))}
         </div>
+
+        {activeTab === 'appearance' && <AppearanceSettings />}
+        {activeTab === 'graphics' && <GraphicsSettings />}
+        {activeTab === 'connection' && <ConnectionSettings />}
       </div>
     </section>
   )

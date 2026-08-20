@@ -160,6 +160,7 @@
 .chat-message {
   max-width: 92%;
   margin-bottom: 0.85rem;
+  overflow-wrap: anywhere;
 }
 
 .chat-message--user {
@@ -181,6 +182,43 @@
 }
 
 .chat-message--user p { color: var(--cyan-soft); }
+
+.chat-markdown {
+  min-width: 0;
+  color: var(--text-primary);
+  line-height: 1.55;
+  text-align: left;
+}
+
+.chat-markdown > :first-child { margin-top: 0.25rem; }
+.chat-markdown > :last-child { margin-bottom: 0; }
+.chat-markdown h1,
+.chat-markdown h2,
+.chat-markdown h3,
+.chat-markdown h4,
+.chat-markdown h5,
+.chat-markdown h6 { margin: 0.9rem 0 0.35rem; color: var(--text-primary); line-height: 1.25; }
+.chat-markdown h1 { font-size: 1.15rem; }
+.chat-markdown h2 { font-size: 1.05rem; }
+.chat-markdown h3 { font-size: 0.95rem; }
+.chat-markdown ul,
+.chat-markdown ol { margin: 0.45rem 0; padding-left: 1.35rem; }
+.chat-markdown li { margin: 0.2rem 0; }
+.chat-markdown blockquote { margin: 0.6rem 0; padding: 0.15rem 0 0.15rem 0.75rem; border-left: 2px solid var(--cyan-dim); color: var(--text-muted); }
+.chat-markdown hr { border: 0; border-top: 1px solid rgb(var(--accent-rgb) / 0.16); margin: 0.8rem 0; }
+.chat-markdown a { color: var(--cyan-soft); text-decoration: underline; text-underline-offset: 0.15em; }
+.chat-markdown :not(pre) > code { padding: 0.08rem 0.28rem; border: 1px solid rgb(var(--accent-rgb) / 0.14); background: rgb(0 0 0 / 0.28); color: var(--cyan-soft); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9em; }
+
+.chat-code-block { min-width: 0; margin: 0.65rem 0; border: 1px solid rgb(var(--accent-rgb) / 0.14); background: rgb(0 0 0 / 0.3); }
+.chat-code-block__bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.35rem 0.55rem; border-bottom: 1px solid rgb(var(--accent-rgb) / 0.12); color: var(--text-faint); font-size: 0.52rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.chat-code-block__bar button { border: 0; padding: 0; color: var(--cyan-soft); background: transparent; font: inherit; cursor: pointer; }
+.chat-code-block pre { max-width: 100%; margin: 0; padding: 0.7rem; overflow-x: auto; white-space: pre; }
+.chat-code-block code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.72rem; }
+.chat-markdown__table-wrap { max-width: 100%; margin: 0.65rem 0; overflow-x: auto; }
+.chat-markdown table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.chat-markdown th,
+.chat-markdown td { padding: 0.42rem 0.55rem; border: 1px solid rgb(var(--accent-rgb) / 0.14); text-align: left; vertical-align: top; }
+.chat-markdown th { color: var(--cyan-soft); background: var(--cyan-faint); }
 
 .chat-error {
   padding: 0.6rem 0.75rem;
@@ -232,6 +270,18 @@
 .chat-composer button:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+.chat-jump-latest {
+  justify-self: center;
+  border: 1px solid var(--cyan-dim);
+  padding: 0.35rem 0.6rem;
+  color: var(--cyan-soft);
+  background: rgb(var(--panel-rgb) / 0.88);
+  font: inherit;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
 }
 
 /* Chat stays above brain/HUD content, but below the fixed sidebar (z-index 60). */
