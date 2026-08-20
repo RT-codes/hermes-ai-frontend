@@ -62,6 +62,7 @@ function MessageActions({
 export function ChatSurface({ conversationId }: ChatSurfaceProps) {
   const {
     sessions,
+    activityBySession,
     drafts,
     setDraft,
     clearDraft,
@@ -79,6 +80,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
   const input = drafts[conversationId] ?? ''
   const latestContent = conversation?.messages.at(-1)?.content ?? ''
   const selectedRequestId = selectedRequestBySession[conversationId] ?? null
+  const conversationActivity = activityBySession[conversationId] ?? []
 
   useEffect(() => {
     const textarea = textareaRef.current
@@ -177,6 +179,14 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
         )}
         {conversation.messages.map((message) => {
           const traceSelected = Boolean(message.requestId && selectedRequestId === message.requestId)
+          const reasoningText = message.role === 'assistant' && message.requestId
+            ? conversationActivity
+                .filter((event) => event.requestId === message.requestId && event.kind === 'reasoning' && event.detail)
+                .map((event) => event.detail ?? '')
+                .join('')
+                .trim()
+            : ''
+
           return (
             <div className={`chat-message chat-message--${message.role} ${traceSelected ? 'is-trace-selected' : ''}`} key={message.id} data-status={message.status}>
               <span className="chat-message__role">{message.role === 'user' ? 'YOU' : 'HERMES'}</span>
@@ -188,6 +198,17 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
                   ? <MarkdownMessage content={message.content || (isBusy ? '…' : '')} />
                   : <p>{message.content}</p>}
               </div>
+
+              {reasoningText && (
+                <details className="chat-reasoning-disclosure">
+                  <summary>
+                    <span>MODEL REASONING</span>
+                    <small>{reasoningText.length.toLocaleString()} CHARS</small>
+                  </summary>
+                  <pre>{reasoningText}</pre>
+                </details>
+              )}
+
               <MessageActions
                 message={message}
                 busy={isBusy}
