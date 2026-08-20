@@ -13,6 +13,8 @@ type HermesChunk = {
   error?: { message?: string } | string
 }
 
+const HERMES_SESSION_KEY = 'household'
+
 function parseSseEvent(event: string, onDelta: (delta: string) => void) {
   const dataLines = event
     .split(/\r?\n/)
@@ -66,7 +68,7 @@ export async function streamHermesChat({ messages, sessionId, onDelta, signal }:
         headers: {
           'Content-Type': 'application/json',
           'X-Hermes-Session-Id': sessionId,
-          'X-Hermes-Session-Key': connection.sessionKey,
+          'X-Hermes-Session-Key': HERMES_SESSION_KEY,
         },
         body: JSON.stringify({
           model: connection.model,
