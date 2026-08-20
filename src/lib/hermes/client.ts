@@ -49,6 +49,18 @@ function parseJsonPayload(payload: string) {
   }
 }
 
+function payloadMessage(payload: Record<string, unknown>) {
+  for (const key of ['message', 'error', 'detail']) {
+    const value = payload[key]
+    if (typeof value === 'string' && value.trim()) return value.trim()
+    if (value && typeof value === 'object') {
+      const nested = (value as Record<string, unknown>).message
+      if (typeof nested === 'string' && nested.trim()) return nested.trim()
+    }
+  }
+  return ''
+}
+
 function parseOpenAiSseEvent(block: string, onDelta: (delta: string) => void, onEvent?: (event: HermesNativeEvent) => void) {
   const name = eventName(block)
   const payloadText = eventData(block)
@@ -77,7 +89,12 @@ function parseNativeSessionEvent(block: string, onDelta: (delta: string) => void
   if (!type || !payload) return
 
   onEvent?.({ type, payload })
-  if (type === 'assistant.delta') {
+
+  if (type === 'error' || type === 'run.failed') {
+    throw new Error(payloadMessage(payload) || 'Hermes reported that the agent turn failed.')
+  }
+
+  if (type === 'assistant.delta' || type === 'message.delta') {
     const delta = payload.delta
     if (typeof delta === 'string' && delta) onDelta(delta)
   }
