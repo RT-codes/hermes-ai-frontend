@@ -113,13 +113,46 @@
   padding: clamp(1.25rem, 2.4vw, 2.25rem);
 }
 
+/* Compact HUD-style banner rather than a large generic sticky heading. */
 .workspace-stage[aria-label='Settings workspace'] .workspace-card__heading {
   position: sticky;
   z-index: 2;
   top: calc(-1 * clamp(1.25rem, 2.4vw, 2.25rem));
-  padding-top: clamp(1.25rem, 2.4vw, 2.25rem);
-  background: linear-gradient(180deg, rgb(var(--brain-hud-rgb) / 0.94) 0%, rgb(var(--brain-hud-rgb) / 0.82) 78%, transparent 100%);
-  backdrop-filter: blur(var(--blur-panel));
+  isolation: isolate;
+  align-items: center;
+  min-height: 86px;
+  margin: 0 0 0.95rem;
+  padding: 1rem 1.15rem;
+  border: 0;
+  background: rgb(var(--accent-rgb) / 0.3);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.2);
+}
+
+.workspace-stage[aria-label='Settings workspace'] .workspace-card__heading::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 1px;
+  clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 11px 100%, 0 calc(100% - 11px));
+  background:
+    linear-gradient(115deg, rgb(var(--accent-rgb) / 0.07), transparent 42%),
+    rgb(var(--brain-hud-rgb) / 0.9);
+  backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+}
+
+.workspace-stage[aria-label='Settings workspace'] .workspace-card__heading h2 {
+  margin-top: 0.25rem;
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+  letter-spacing: 0.05em;
+}
+
+.workspace-stage[aria-label='Settings workspace'] .workspace-card__heading p {
+  max-width: 48rem;
+  margin-top: 0.45rem;
+  font-size: 0.68rem;
+  line-height: 1.45;
 }
 
 .workspace-stage[aria-label='Settings workspace'] .appearance-grid,
@@ -147,7 +180,7 @@
 
   .workspace-stage[aria-label='Settings workspace'] .workspace-card__heading {
     position: static;
-    background: transparent;
-    backdrop-filter: none;
+    min-height: 0;
+    padding: 0.85rem;
   }
 }
