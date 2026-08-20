@@ -11,6 +11,7 @@ import { WorkspaceStage, type WorkspaceView } from './components/WorkspaceStage/
 import { AppearanceProvider, useAppearance } from './context/AppearanceContext'
 import { BrainSceneProvider } from './context/BrainSceneContext'
 import { ChatSessionsProvider, useChatSessions } from './context/ChatSessionsContext'
+import { ConnectionSettingsProvider } from './context/ConnectionSettingsContext'
 import { HouseholdProvider } from './context/HouseholdContext'
 import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
 import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
@@ -80,15 +81,17 @@ function App() {
   return (
     <HouseholdProvider>
       <AppearanceProvider>
-        <ChatSessionsProvider>
-          <RuntimeStatusProvider>
-            <SystemTelemetryProvider>
-              <BrainSceneProvider>
-                <HermesHome />
-              </BrainSceneProvider>
-            </SystemTelemetryProvider>
-          </RuntimeStatusProvider>
-        </ChatSessionsProvider>
+        <ConnectionSettingsProvider>
+          <ChatSessionsProvider>
+            <RuntimeStatusProvider>
+              <SystemTelemetryProvider>
+                <BrainSceneProvider>
+                  <HermesHome />
+                </BrainSceneProvider>
+              </SystemTelemetryProvider>
+            </RuntimeStatusProvider>
+          </ChatSessionsProvider>
+        </ConnectionSettingsProvider>
       </AppearanceProvider>
     </HouseholdProvider>
   )
