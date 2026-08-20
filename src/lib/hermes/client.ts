@@ -61,18 +61,46 @@ function payloadMessage(payload: Record<string, unknown>) {
   return ''
 }
 
+function payloadText(payload: Record<string, unknown>) {
+  for (const key of ['delta', 'text', 'content', 'reasoning', 'thinking', 'preview']) {
+    const value = payload[key]
+    if (typeof value === 'string' && value) return value
+  }
+  return ''
+}
+
+function normalizeNativeEvent(type: string, payload: Record<string, unknown>): HermesNativeEvent {
+  if (type === 'thinking.delta' || type === 'reasoning.delta' || type === 'reasoning.available') {
+    return {
+      type: 'tool.progress',
+      payload: {
+        ...payload,
+        tool_name: '_thinking',
+        delta: payloadText(payload),
+        source_event: type,
+      },
+    }
+  }
+
+  if (type === 'tool.start') return { type: 'tool.started', payload }
+  if (type === 'tool.complete') return { type: 'tool.completed', payload }
+  if (type === 'tool.fail') return { type: 'tool.failed', payload }
+
+  return { type, payload }
+}
+
 function parseOpenAiSseEvent(block: string, onDelta: (delta: string) => void, onEvent?: (event: HermesNativeEvent) => void) {
   const name = eventName(block)
-  const payloadText = eventData(block)
-  if (!payloadText || payloadText === '[DONE]') return
+  const payloadTextValue = eventData(block)
+  if (!payloadTextValue || payloadTextValue === '[DONE]') return
 
   if (name === 'hermes.tool.progress') {
-    const payload = parseJsonPayload(payloadText)
+    const payload = parseJsonPayload(payloadTextValue)
     if (payload) onEvent?.({ type: name, payload })
     return
   }
 
-  const chunk = parseJsonPayload(payloadText) as HermesChunk | null
+  const chunk = parseJsonPayload(payloadTextValue) as HermesChunk | null
   if (!chunk) return
   if (chunk.error) {
     const message = typeof chunk.error === 'string' ? chunk.error : chunk.error.message
@@ -88,7 +116,8 @@ function parseNativeSessionEvent(block: string, onDelta: (delta: string) => void
   const payload = parseJsonPayload(eventData(block))
   if (!type || !payload) return
 
-  onEvent?.({ type, payload })
+  const normalized = normalizeNativeEvent(type, payload)
+  onEvent?.(normalized)
 
   if (type === 'error' || type === 'run.failed') {
     throw new Error(payloadMessage(payload) || 'Hermes reported that the agent turn failed.')
