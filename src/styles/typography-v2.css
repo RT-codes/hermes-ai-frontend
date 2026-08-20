@@ -1,0 +1,198 @@
+/*
+ * Chat V2 typography layer.
+ *
+ * The base visual language intentionally uses compact HUD typography, but a
+ * number of legacy 0.4–0.6rem values became too small on high-DPI / large
+ * desktop canvases. Keep the density while giving the user one global scale
+ * control and a separate font personality for data-heavy surfaces.
+ */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui);
+}
+
+.brain-hud-panel,
+.hermes-insight,
+.hardware-hud-panel,
+.system-runtime-list,
+.status-pill,
+.brain-scene-help,
+.brain-graph__phase-label,
+.panel-label,
+.sidebar__brand,
+.chat-message__meta,
+.chat-status {
+  font-family: var(--font-hud);
+}
+
+/* Give the most information-dense HUD text a sane 100% baseline. */
+.brain-hud-panel__header {
+  font-size: 0.64rem;
+}
+
+.brain-hud-panel__header small {
+  font-size: 0.55rem;
+}
+
+.hermes-activity__headline strong {
+  font-size: 0.7rem;
+}
+
+.hermes-activity__headline span:not(.activity-dot),
+.hermes-activity__headline small {
+  font-size: 0.59rem;
+}
+
+.hermes-activity__session {
+  font-size: 0.56rem;
+}
+
+.hermes-insight__section-heading {
+  font-size: 0.57rem;
+}
+
+.hermes-insight__section-heading small {
+  font-size: 0.5rem;
+}
+
+.hermes-insight__reasoning pre {
+  font-family: var(--font-hud);
+  font-size: 0.68rem;
+  line-height: 1.58;
+}
+
+.hermes-insight__placeholder strong {
+  font-size: 0.66rem;
+}
+
+.hermes-insight__placeholder p {
+  font-size: 0.59rem;
+}
+
+.hermes-tool-event strong {
+  font-size: 0.61rem;
+}
+
+.hermes-tool-event time {
+  font-size: 0.49rem;
+}
+
+.hermes-tool-event p {
+  font-family: var(--font-hud);
+  font-size: 0.55rem;
+  line-height: 1.45;
+}
+
+.hermes-activity-event__copy strong {
+  font-size: 0.62rem;
+}
+
+.hermes-activity-event__copy time,
+.hermes-activity-event__copy small {
+  font-size: 0.5rem;
+}
+
+.hermes-activity-event__copy p,
+.hermes-activity__empty-row,
+.hermes-activity__footer {
+  font-size: 0.56rem;
+}
+
+.hardware-hud__identity span,
+.hardware-hud__footer {
+  font-size: 0.6rem;
+}
+
+.hardware-hud__metrics span,
+.telemetry-graph-row > span {
+  font-size: 0.56rem;
+}
+
+.hardware-hud__metrics strong,
+.telemetry-graph-row > strong {
+  font-size: 0.63rem;
+}
+
+/*
+ * Local Compute is a fixed Brain HUD panel, not a resizable window. Its old
+ * lower-right cut resembled the FloatingPanel resize handle, so square that
+ * corner while retaining the top-left HUD cut and one-pixel clipped edge.
+ */
+.hardware-hud-panel .brain-hud-panel__surface {
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+}
+
+.hardware-hud-panel .brain-hud-panel__surface::after {
+  clip-path: inherit;
+}
+
+/* Per-response reasoning disclosure. Only rendered for real model-emitted text. */
+.chat-reasoning-disclosure {
+  margin-top: 0.62rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.12);
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.025), transparent 44%),
+    rgb(var(--brain-hud-rgb) / 0.22);
+  font-family: var(--font-hud);
+}
+
+.chat-reasoning-disclosure summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 32px;
+  padding: 0.42rem 0.62rem;
+  color: var(--cyan-soft);
+  font-size: 0.57rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.chat-reasoning-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.chat-reasoning-disclosure summary::before {
+  content: '▸';
+  margin-right: -0.3rem;
+  color: var(--cyan-dim);
+  transition: transform 140ms ease;
+}
+
+.chat-reasoning-disclosure[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.chat-reasoning-disclosure summary small {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 0.49rem;
+  letter-spacing: 0.08em;
+}
+
+.chat-reasoning-disclosure pre {
+  max-height: 18rem;
+  margin: 0;
+  overflow: auto;
+  padding: 0.72rem;
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+  color: var(--text-muted);
+  background: rgb(0 0 0 / 0.12);
+  font: 0.68rem/1.58 var(--font-hud);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan-dim) transparent;
+}
+
+.chat-reasoning-disclosure summary:hover,
+.chat-reasoning-disclosure summary:focus-visible {
+  background: rgb(var(--accent-rgb) / 0.045);
+  outline: none;
+}
