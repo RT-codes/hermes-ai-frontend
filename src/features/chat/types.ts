@@ -15,6 +15,20 @@ export type ChatMessage = {
 
 export type ChatConnectionState = 'idle' | 'connecting' | 'streaming' | 'error'
 
+export type ChatActivityKind = 'session' | 'connection' | 'generation' | 'tool' | 'reasoning' | 'error'
+export type ChatActivityState = 'info' | 'active' | 'success' | 'warning' | 'error'
+
+export type ChatActivityEvent = {
+  id: string
+  conversationId: string
+  requestId?: string | null
+  kind: ChatActivityKind
+  state: ChatActivityState
+  label: string
+  detail?: string | null
+  createdAt: number
+}
+
 export type ChatConversation = {
   id: string
   title: string
