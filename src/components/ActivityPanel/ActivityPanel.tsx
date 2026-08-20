@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useChatSessions } from '../../context/ChatSessionsContext'
+import { useInsightSelection } from '../../context/InsightSelectionContext'
 import { useRuntimeStatus } from '../../context/RuntimeStatusContext'
 
 function activityLabel(state: string) {
@@ -17,19 +18,37 @@ function eventTime(createdAt: number) {
 
 export function ActivityPanel() {
   const { activeSession, activeActivity } = useChatSessions()
+  const { selectedRequestBySession, clearRequestTrace } = useInsightSelection()
   const { hermesOnline } = useRuntimeStatus()
 
+  const isBusy = activeSession?.connectionState === 'connecting' || activeSession?.connectionState === 'streaming'
+  const selectedRequestId = activeSession ? selectedRequestBySession[activeSession.id] ?? null : null
+  const latestAssistant = useMemo(
+    () => activeSession ? [...activeSession.messages].reverse().find((message) => message.role === 'assistant' && message.requestId) ?? null : null,
+    [activeSession],
+  )
+  const traceRequestId = selectedRequestId ?? latestAssistant?.requestId ?? null
+  const traceEvents = useMemo(
+    () => traceRequestId ? activeActivity.filter((event) => event.requestId === traceRequestId) : activeActivity,
+    [activeActivity, traceRequestId],
+  )
   const reasoningEvents = useMemo(
-    () => activeActivity.filter((event) => event.kind === 'reasoning' && event.detail),
-    [activeActivity],
+    () => traceEvents.filter((event) => event.kind === 'reasoning' && event.detail),
+    [traceEvents],
   )
   const toolEvents = useMemo(
-    () => activeActivity.filter((event) => event.kind === 'tool').slice(-8).reverse(),
-    [activeActivity],
+    () => traceEvents.filter((event) => event.kind === 'tool').slice(-10).reverse(),
+    [traceEvents],
   )
   const runtimeEvents = useMemo(
-    () => activeActivity.filter((event) => event.kind !== 'reasoning' && event.kind !== 'tool').slice(-7).reverse(),
-    [activeActivity],
+    () => traceEvents.filter((event) => event.kind !== 'reasoning' && event.kind !== 'tool').slice(-9).reverse(),
+    [traceEvents],
+  )
+  const verifiedTraceLines = useMemo(
+    () => traceEvents
+      .filter((event) => event.kind !== 'reasoning')
+      .map((event) => `${eventTime(event.createdAt)}  ${event.label}${event.detail ? ` — ${event.detail}` : ''}`),
+    [traceEvents],
   )
 
   if (!activeSession) {
@@ -50,12 +69,16 @@ export function ActivityPanel() {
     )
   }
 
-  const isBusy = activeSession.connectionState === 'connecting' || activeSession.connectionState === 'streaming'
-  const reasoningText = reasoningEvents.map((event) => event.detail).filter(Boolean).join('\n\n')
+  const reasoningText = reasoningEvents.map((event) => event.detail ?? '').join('')
   const nativeSession = activeSession.metadata?.nativeSession === true
+  const historical = Boolean(selectedRequestId)
+  const traceMode = historical ? 'HISTORICAL TRACE' : isBusy ? 'LIVE TRACE' : traceRequestId ? 'LATEST TRACE' : 'SESSION TRACE'
+  const selectedAssistant = historical
+    ? activeSession.messages.find((message) => message.role === 'assistant' && message.requestId === selectedRequestId) ?? null
+    : latestAssistant
 
   return (
-    <div className="hermes-insight" data-session-id={activeSession.id}>
+    <div className="hermes-insight" data-session-id={activeSession.id} data-trace-request-id={traceRequestId ?? undefined}>
       <div className="hermes-activity__headline">
         <span className={`activity-dot ${activeSession.connectionState === 'error' ? 'error' : isBusy ? 'busy' : hermesOnline ? 'active' : 'error'}`} />
         <div>
@@ -65,30 +88,51 @@ export function ActivityPanel() {
         <small>{nativeSession ? 'NATIVE' : 'COMPAT'}</small>
       </div>
 
-      <div className="hermes-activity__session">
-        <span>SESSION</span>
-        <code title={activeSession.hermesSessionId ?? activeSession.id}>{(activeSession.hermesSessionId ?? activeSession.id).slice(0, 8)}</code>
+      <div className="hermes-activity__session hermes-activity__session--trace">
+        <div>
+          <span>SESSION</span>
+          <code title={activeSession.hermesSessionId ?? activeSession.id}>{(activeSession.hermesSessionId ?? activeSession.id).slice(0, 8)}</code>
+        </div>
+        <div>
+          <span>{traceMode}</span>
+          <code title={traceRequestId ?? 'No response selected'}>{traceRequestId ? traceRequestId.slice(0, 8) : '—'}</code>
+        </div>
+        {historical && (
+          <button type="button" onClick={() => clearRequestTrace(activeSession.id)}>RETURN LIVE</button>
+        )}
       </div>
 
       <section className="hermes-insight__working" aria-label="Hermes reasoning and working trace">
         <div className="hermes-insight__section-heading">
           <span>WORKING TRACE</span>
-          <small>{reasoningEvents.length ? `${reasoningEvents.length} SIGNAL${reasoningEvents.length === 1 ? '' : 'S'}` : nativeSession ? 'LIVE WHEN AVAILABLE' : 'LIMITED TRANSPORT'}</small>
+          <small>{reasoningEvents.length ? `${reasoningEvents.length} SIGNAL${reasoningEvents.length === 1 ? '' : 'S'}` : traceMode}</small>
         </div>
         <div className="hermes-insight__reasoning" aria-live="polite">
           {reasoningText ? (
             <pre>{reasoningText}</pre>
+          ) : verifiedTraceLines.length ? (
+            <div className="hermes-insight__verified-trace">
+              <strong>{nativeSession ? 'No separate model reasoning text was emitted for this response.' : 'Compatibility transport does not expose separate model reasoning.'}</strong>
+              <p>Showing the verified Hermes execution trace instead; these lines come from actual session events, not generated thoughts.</p>
+              <pre>{verifiedTraceLines.join('\n')}</pre>
+            </div>
           ) : (
             <div className="hermes-insight__placeholder">
-              <strong>{isBusy ? 'Hermes is working…' : 'No reasoning text published for this turn.'}</strong>
+              <strong>{isBusy && !historical ? 'Waiting for Hermes working signals…' : 'No trace events recorded for this response.'}</strong>
               <p>
                 {nativeSession
-                  ? 'Native Hermes events are active. This area fills only when Hermes explicitly publishes reasoning/working text; tools and lifecycle events still appear below.'
-                  : 'This turn is using compatibility transport. Tool lifecycle can still be observed, but the compatibility stream does not publish the richer reasoning text used by Working Trace.'}
+                  ? 'Reasoning appears here when Hermes publishes it. Tool and lifecycle evidence is shown as a verified trace when separate reasoning is unavailable.'
+                  : 'This conversation is using compatibility transport. Start a new native chat for richer per-response Insight telemetry.'}
               </p>
             </div>
           )}
         </div>
+        {selectedAssistant?.content && (
+          <div className="hermes-insight__response-context" title={selectedAssistant.content}>
+            <span>RESPONSE</span>
+            <p>{selectedAssistant.content.replace(/\s+/g, ' ').slice(0, 180)}{selectedAssistant.content.length > 180 ? '…' : ''}</p>
+          </div>
+        )}
       </section>
 
       <section className="hermes-insight__tools" aria-label="Hermes tool activity">
@@ -98,7 +142,7 @@ export function ActivityPanel() {
         </div>
         <div className="hermes-insight__tool-list">
           {toolEvents.length === 0 ? (
-            <div className="hermes-activity__empty-row">No tool calls recorded for this session yet.</div>
+            <div className="hermes-activity__empty-row">No tool calls recorded for this response.</div>
           ) : toolEvents.map((event) => (
             <article className={`hermes-tool-event hermes-tool-event--${event.state}`} key={event.id}>
               <span className="hermes-tool-event__dot" />
@@ -114,11 +158,11 @@ export function ActivityPanel() {
       <section className="hermes-insight__runtime" aria-label="Hermes runtime timeline">
         <div className="hermes-insight__section-heading">
           <span>ACTIVITY</span>
-          <small>SESSION PINNED</small>
+          <small>{historical ? 'RESPONSE PINNED' : 'SESSION PINNED'}</small>
         </div>
         <div className="hermes-activity__timeline">
           {runtimeEvents.length === 0 ? (
-            <div className="hermes-activity__empty-row">No runtime activity recorded yet.</div>
+            <div className="hermes-activity__empty-row">No runtime activity recorded for this response.</div>
           ) : runtimeEvents.map((event) => (
             <div className={`hermes-activity-event hermes-activity-event--${event.state}`} key={event.id}>
               <span className="hermes-activity-event__rail" />
