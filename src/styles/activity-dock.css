@@ -1,11 +1,30 @@
 .brain-hud-stack.brain-hud-stack--middle {
-  top: 50%;
-  bottom: auto;
-  transform: translateY(-50%);
+  top: 12rem;
+  bottom: 11rem;
+  width: min(440px, calc(100vw - var(--sidebar-width) - 5rem));
+  min-width: 320px;
+  max-width: min(680px, calc(100vw - var(--sidebar-width) - 5rem));
+  height: auto;
+  transform: none;
+  resize: horizontal;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.brain-hud-stack.brain-hud-stack--middle > .brain-hud-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.brain-hud-stack.brain-hud-stack--middle .brain-hud-panel__content {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .brain-is-inspecting .brain-hud-stack.brain-hud-stack--middle {
-  transform: translateX(calc(var(--sidebar-width) + 4rem + 100% - 100vw)) translateY(-50%);
+  transform: translateX(calc(var(--sidebar-width) + 4rem + 100% - 100vw));
 }
 
 .floating-panel__sidecar {
@@ -13,9 +32,12 @@
   z-index: 5;
   top: 0;
   left: calc(100% + 0.75rem);
-  width: min(330px, calc(100vw - var(--panel-x) - var(--panel-width) - 1.5rem));
+  width: min(390px, calc(100vw - var(--panel-x) - var(--panel-width) - 1.5rem));
   height: 100%;
-  min-width: 250px;
+  min-width: 260px;
+  max-width: min(680px, calc(100vw - var(--panel-x) - var(--panel-width) - 1rem));
+  overflow: hidden;
+  resize: horizontal;
   pointer-events: auto;
   animation: activity-sidecar-enter 190ms cubic-bezier(0.22, 0.78, 0.25, 1) both;
 }
@@ -31,17 +53,12 @@
   overflow: hidden;
 }
 
-.floating-panel__sidecar .hermes-activity {
+.floating-panel__sidecar .hermes-insight {
   height: 100%;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-}
-
-.floating-panel__sidecar .hermes-activity__timeline {
-  max-height: none;
-  min-height: 0;
 }
 
 .hermes-activity-panel {
+  min-height: 0;
   transition: transform 180ms cubic-bezier(0.22, 0.78, 0.25, 1), opacity 160ms ease;
 }
 
@@ -56,10 +73,22 @@
   }
 }
 
+@media (max-height: 760px) {
+  .brain-hud-stack.brain-hud-stack--middle {
+    top: 10.5rem;
+    bottom: 9.5rem;
+  }
+}
+
 @media (max-width: 1120px) {
+  .brain-hud-stack.brain-hud-stack--middle {
+    width: 360px;
+    max-width: calc(100vw - var(--sidebar-width) - 3.5rem);
+  }
+
   .floating-panel__sidecar {
-    width: min(290px, calc(100vw - var(--panel-x) - var(--panel-width) - 1rem));
-    min-width: 220px;
+    width: min(320px, calc(100vw - var(--panel-x) - var(--panel-width) - 1rem));
+    min-width: 230px;
     left: calc(100% + 0.5rem);
   }
 }
