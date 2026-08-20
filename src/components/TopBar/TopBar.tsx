@@ -1,4 +1,6 @@
 import { useRuntimeStatus } from '../../context/RuntimeStatusContext'
+import { BrainHudPanel } from '../BrainHudPanel/BrainHudPanel'
+import { SystemPanel } from '../SystemPanel/SystemPanel'
 
 export function TopBar() {
   const { hermesOnline, hindsightOnline } = useRuntimeStatus()
@@ -11,9 +13,21 @@ export function TopBar() {
         <h1>Control Center</h1>
       </div>
 
-      <div className={`status-pill ${healthy ? 'is-online' : 'is-degraded'}`}>
-        <span className="status-dot" />
-        {healthy ? 'System Online' : 'System Degraded'}
+      <div className="system-status-menu">
+        <button
+          className={`status-pill ${healthy ? 'is-online' : 'is-degraded'}`}
+          type="button"
+          aria-label="Show system status details"
+        >
+          <span className="status-dot" />
+          {healthy ? 'System Online' : 'System Degraded'}
+        </button>
+
+        <div className="system-status-flyout" role="status" aria-label="System status details">
+          <BrainHudPanel title="SYSTEM">
+            <SystemPanel />
+          </BrainHudPanel>
+        </div>
       </div>
     </header>
   )
