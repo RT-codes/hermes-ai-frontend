@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import type { ReactNode } from 'react'
 import { browserChatPersistence } from '../features/chat/persistence'
 import type { ChatActivityEvent, ChatActivityKind, ChatActivityState, ChatConversation, ChatMessage, StoredChatState } from '../features/chat/types'
-import { streamHermesChat } from '../lib/hermes/client'
+import { streamHermesChat, type HermesNativeEvent } from '../lib/hermes/client'
 
 type ChatSessionsContextValue = {
   sessions: ChatConversation[]
@@ -28,7 +28,7 @@ type ChatSessionsContextValue = {
 }
 
 const ChatSessionsContext = createContext<ChatSessionsContextValue | null>(null)
-const MAX_ACTIVITY_EVENTS = 40
+const MAX_ACTIVITY_EVENTS = 80
 
 function createMessage(conversationId: string, role: ChatMessage['role'], content: string, status: ChatMessage['status'] = 'completed'): ChatMessage {
   return {
@@ -55,6 +55,7 @@ function createFreshSession(index = 1): ChatConversation {
     createdAt: now,
     updatedAt: now,
     hermesSessionId: id,
+    metadata: { nativeSession: true },
   }
 }
 
@@ -86,6 +87,21 @@ function loadStoredState(): StoredChatState {
 function deriveConversationTitle(content: string) {
   const compact = content.replace(/\s+/g, ' ').trim()
   return compact.length <= 30 ? compact : `${compact.slice(0, 29)}…`
+}
+
+function payloadString(payload: Record<string, unknown>, key: string) {
+  const value = payload[key]
+  return typeof value === 'string' ? value : ''
+}
+
+function compactJson(value: unknown) {
+  if (value == null) return ''
+  try {
+    const text = typeof value === 'string' ? value : JSON.stringify(value)
+    return text.length > 260 ? `${text.slice(0, 257)}…` : text
+  } catch {
+    return ''
+  }
 }
 
 export function ChatSessionsProvider({ children }: { children: ReactNode }) {
@@ -133,12 +149,80 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     }))
   }
 
+  function mapHermesEvent(sessionId: string, requestId: string, event: HermesNativeEvent) {
+    const { type, payload } = event
+
+    if (type === 'transport.fallback') {
+      appendActivity(sessionId, 'connection', 'warning', 'Compatibility transport', 'Native Hermes session events are unavailable for this conversation; using Chat Completions.', requestId)
+      return
+    }
+
+    if (type === 'run.started') {
+      appendActivity(sessionId, 'generation', 'active', 'Agent run started', 'Hermes accepted the turn and started agent execution.', requestId)
+      return
+    }
+
+    if (type === 'message.started') {
+      appendActivity(sessionId, 'generation', 'active', 'Assistant stream opened', 'Waiting for model or tool output.', requestId)
+      return
+    }
+
+    if (type === 'tool.progress') {
+      const toolName = payloadString(payload, 'tool_name') || payloadString(payload, 'tool')
+      const reasoning = payloadString(payload, 'delta')
+      if (toolName === '_thinking' || reasoning) {
+        if (reasoning) appendActivity(sessionId, 'reasoning', 'active', 'Hermes reasoning', reasoning, requestId)
+        return
+      }
+      const detail = payloadString(payload, 'preview') || payloadString(payload, 'label') || compactJson(payload.args)
+      appendActivity(sessionId, 'tool', 'active', toolName ? `Tool · ${toolName}` : 'Tool progress', detail || null, requestId)
+      return
+    }
+
+    if (type === 'hermes.tool.progress') {
+      const toolName = payloadString(payload, 'tool') || 'tool'
+      const status = payloadString(payload, 'status')
+      const detail = payloadString(payload, 'label')
+      appendActivity(sessionId, 'tool', status === 'completed' ? 'success' : 'active', `${status === 'completed' ? 'Tool complete' : 'Tool'} · ${toolName}`, detail || null, requestId)
+      return
+    }
+
+    if (type === 'tool.started' || type === 'tool.completed' || type === 'tool.failed') {
+      const toolName = payloadString(payload, 'tool_name') || 'tool'
+      const detail = payloadString(payload, 'preview') || compactJson(payload.args)
+      appendActivity(
+        sessionId,
+        'tool',
+        type === 'tool.completed' ? 'success' : type === 'tool.failed' ? 'error' : 'active',
+        `${type === 'tool.completed' ? 'Tool complete' : type === 'tool.failed' ? 'Tool failed' : 'Tool'} · ${toolName}`,
+        detail || null,
+        requestId,
+      )
+      return
+    }
+
+    if (type === 'assistant.completed') {
+      appendActivity(sessionId, 'generation', 'success', 'Assistant output complete', 'Hermes finalized the assistant message.', requestId)
+      return
+    }
+
+    if (type === 'run.completed') {
+      const usage = payload.usage && typeof payload.usage === 'object' ? compactJson(payload.usage) : ''
+      appendActivity(sessionId, 'generation', 'success', 'Agent run complete', usage || 'Turn completed successfully.', requestId)
+      return
+    }
+
+    if (type === 'error') {
+      appendActivity(sessionId, 'error', 'error', 'Hermes runtime error', payloadString(payload, 'message') || 'The native session stream reported an error.', requestId)
+    }
+  }
+
   function createSession() {
     const session = createFreshSession(sessionsRef.current.length + 1)
     setSessions((current) => [...current, session])
     setOpenTabIds((current) => [...current, session.id])
     setActiveSessionId(session.id)
-    appendActivity(session.id, 'session', 'success', 'Session ready', 'New Hermes conversation created.')
+    appendActivity(session.id, 'session', 'success', 'Session ready', 'New Hermes-native conversation created.')
     return session.id
   }
 
@@ -210,17 +294,26 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     setDrafts((current) => ({ ...current, [sessionId]: '' }))
   }
 
-  async function runAssistantGeneration(sessionId: string, requestMessages: ChatMessage[], assistantId: string, requestId: string, hermesSessionId: string) {
+  async function runAssistantGeneration(
+    sessionId: string,
+    requestMessages: ChatMessage[],
+    assistantId: string,
+    requestId: string,
+    hermesSessionId: string,
+    preferNativeSession: boolean,
+  ) {
     const controller = new AbortController()
     controllersRef.current.set(sessionId, controller)
     firstDeltaSeenRef.current.delete(requestId)
-    appendActivity(sessionId, 'connection', 'active', 'Connecting to Hermes', 'Opening response stream.', requestId)
+    appendActivity(sessionId, 'connection', 'active', 'Connecting to Hermes', preferNativeSession ? 'Opening native session event stream.' : 'Opening compatibility response stream.', requestId)
 
     try {
       await streamHermesChat({
         messages: requestMessages,
         sessionId: hermesSessionId,
+        preferNativeSession,
         signal: controller.signal,
+        onEvent: (event) => mapHermesEvent(sessionId, requestId, event),
         onDelta: (delta) => {
           if (!firstDeltaSeenRef.current.has(requestId)) {
             firstDeltaSeenRef.current.add(requestId)
@@ -286,8 +379,9 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     const requestMessages = [...session.messages, userMessage].filter((message) => !message.id.startsWith('welcome-'))
     const nextTitle = session.title.startsWith('New chat') ? deriveConversationTitle(trimmed) : session.title
     const hermesSessionId = session.hermesSessionId ?? session.id
+    const preferNativeSession = session.metadata?.nativeSession === true
 
-    appendActivity(sessionId, 'generation', 'info', 'Request queued', 'Message handed to the Hermes client.', requestId)
+    appendActivity(sessionId, 'generation', 'info', 'Request queued', preferNativeSession ? 'Message handed to Hermes native session transport.' : 'Message handed to compatibility transport.', requestId)
     patchSession(sessionId, (current) => ({
       ...current,
       title: nextTitle,
@@ -297,7 +391,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
       updatedAt: Date.now(),
     }))
 
-    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, hermesSessionId)
+    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, hermesSessionId, preferNativeSession)
   }
 
   async function regenerateFromUser(sessionId: string, userMessageId: string) {
@@ -319,17 +413,18 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     }
     const requestMessages = history.filter((message) => !message.id.startsWith('welcome-'))
 
-    appendActivity(sessionId, 'session', 'info', 'Fresh Hermes session', 'Regeneration is replaying visible history against a new backend session.', requestId)
+    appendActivity(sessionId, 'session', 'info', 'Fresh compatibility session', 'Regeneration replays visible history so the rewritten answer keeps the expected context.', requestId)
     patchSession(sessionId, (current) => ({
       ...current,
       hermesSessionId: nextHermesSessionId,
+      metadata: { ...current.metadata, nativeSession: false },
       messages: [...history, assistantMessage],
       connectionState: 'connecting',
       error: null,
       updatedAt: Date.now(),
     }))
 
-    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, nextHermesSessionId)
+    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, nextHermesSessionId, false)
   }
 
   async function retryResponse(sessionId: string, assistantMessageId: string) {
