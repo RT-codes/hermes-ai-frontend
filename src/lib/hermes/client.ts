@@ -16,7 +16,14 @@ type StreamHermesChatOptions = {
 }
 
 type HermesChunk = {
-  choices?: Array<{ delta?: { content?: string } }>
+  choices?: Array<{
+    delta?: {
+      content?: string
+      reasoning?: string
+      reasoning_content?: string
+      thinking?: string
+    }
+  }>
   error?: { message?: string } | string
 }
 
@@ -62,7 +69,7 @@ function payloadMessage(payload: Record<string, unknown>) {
 }
 
 function payloadText(payload: Record<string, unknown>) {
-  for (const key of ['delta', 'text', 'content', 'reasoning', 'thinking', 'preview']) {
+  for (const key of ['delta', 'text', 'content', 'reasoning', 'reasoning_content', 'thinking', 'preview']) {
     const value = payload[key]
     if (typeof value === 'string' && value) return value
   }
@@ -107,8 +114,25 @@ function parseOpenAiSseEvent(block: string, onDelta: (delta: string) => void, on
     throw new Error(message || 'Hermes returned a streaming error. Retry the response.')
   }
 
-  const delta = chunk.choices?.[0]?.delta?.content
-  if (delta) onDelta(delta)
+  const delta = chunk.choices?.[0]?.delta
+  if (!delta) return
+
+  // Ollama/Qwen currently uses `reasoning` on the OpenAI-compatible stream,
+  // while other providers commonly use `reasoning_content`. Accept both, plus
+  // `thinking`, and normalize them into the same Insight reasoning channel.
+  const reasoning = delta.reasoning ?? delta.reasoning_content ?? delta.thinking
+  if (reasoning) {
+    onEvent?.({
+      type: 'tool.progress',
+      payload: {
+        tool_name: '_thinking',
+        delta: reasoning,
+        source_event: delta.reasoning ? 'openai.reasoning' : delta.reasoning_content ? 'openai.reasoning_content' : 'openai.thinking',
+      },
+    })
+  }
+
+  if (delta.content) onDelta(delta.content)
 }
 
 function parseNativeSessionEvent(block: string, onDelta: (delta: string) => void, onEvent?: (event: HermesNativeEvent) => void) {
@@ -169,7 +193,6 @@ async function openNativeSessionStream(
       message,
       model,
       model_options: {
-        reasoning: { enabled: true, effort: 'medium' },
         reasoning_effort: 'medium',
       },
     }),
@@ -199,7 +222,6 @@ async function openCompatibilityStream(
       model,
       stream: true,
       model_options: {
-        reasoning: { enabled: true, effort: 'medium' },
         reasoning_effort: 'medium',
       },
       messages: messages.map(({ role, content }) => ({ role, content })),
