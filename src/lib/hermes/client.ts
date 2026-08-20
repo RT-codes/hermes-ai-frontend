@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../../features/chat/types'
+import { getHermesConnectionSettings } from '../../features/settings/connection'
 
 type StreamHermesChatOptions = {
   messages: ChatMessage[]
@@ -11,8 +12,6 @@ type HermesChunk = {
   choices?: Array<{ delta?: { content?: string } }>
   error?: { message?: string } | string
 }
-
-const REQUEST_TIMEOUT_MS = 10 * 60 * 1000
 
 function parseSseEvent(event: string, onDelta: (delta: string) => void) {
   const dataLines = event
@@ -49,6 +48,7 @@ function httpError(status: number, detail: string) {
 }
 
 export async function streamHermesChat({ messages, sessionId, onDelta, signal }: StreamHermesChatOptions) {
+  const connection = getHermesConnectionSettings()
   const requestController = new AbortController()
   let timedOut = false
   const relayAbort = () => requestController.abort()
@@ -56,20 +56,20 @@ export async function streamHermesChat({ messages, sessionId, onDelta, signal }:
   const timeout = window.setTimeout(() => {
     timedOut = true
     requestController.abort()
-  }, REQUEST_TIMEOUT_MS)
+  }, connection.requestTimeoutMs)
 
   try {
     let response: Response
     try {
-      response = await fetch('/hermes-api/v1/chat/completions', {
+      response = await fetch(`${connection.apiBasePath}/v1/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Hermes-Session-Id': sessionId,
-          'X-Hermes-Session-Key': 'household',
+          'X-Hermes-Session-Key': connection.sessionKey,
         },
         body: JSON.stringify({
-          model: 'hermes-agent',
+          model: connection.model,
           stream: true,
           messages: messages.map(({ role, content }) => ({ role, content })),
         }),
