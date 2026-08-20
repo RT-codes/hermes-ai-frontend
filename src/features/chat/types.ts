@@ -45,4 +45,5 @@ export type StoredChatState = {
   sessions: ChatConversation[]
   openTabIds: string[]
   activeSessionId: string | null
+  activityBySession?: Record<string, ChatActivityEvent[]>
 }
