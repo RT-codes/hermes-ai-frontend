@@ -73,18 +73,18 @@ export function ActivityPanel() {
       <section className="hermes-insight__working" aria-label="Hermes reasoning and working trace">
         <div className="hermes-insight__section-heading">
           <span>WORKING TRACE</span>
-          <small>{reasoningEvents.length ? `${reasoningEvents.length} SIGNAL${reasoningEvents.length === 1 ? '' : 'S'}` : 'LIVE WHEN AVAILABLE'}</small>
+          <small>{reasoningEvents.length ? `${reasoningEvents.length} SIGNAL${reasoningEvents.length === 1 ? '' : 'S'}` : nativeSession ? 'LIVE WHEN AVAILABLE' : 'LIMITED TRANSPORT'}</small>
         </div>
         <div className="hermes-insight__reasoning" aria-live="polite">
           {reasoningText ? (
             <pre>{reasoningText}</pre>
           ) : (
             <div className="hermes-insight__placeholder">
-              <strong>{isBusy ? 'Hermes is working…' : 'No reasoning text emitted for this turn.'}</strong>
+              <strong>{isBusy ? 'Hermes is working…' : 'No reasoning text published for this turn.'}</strong>
               <p>
                 {nativeSession
-                  ? 'This panel only shows reasoning text Hermes explicitly publishes. Tool and lifecycle events still appear below.'
-                  : 'This saved conversation predates the native session transport. New chats use richer Hermes events automatically.'}
+                  ? 'Native Hermes events are active. This area fills only when Hermes explicitly publishes reasoning/working text; tools and lifecycle events still appear below.'
+                  : 'This turn is using compatibility transport. Tool lifecycle can still be observed, but the compatibility stream does not publish the richer reasoning text used by Working Trace.'}
               </p>
             </div>
           )}
