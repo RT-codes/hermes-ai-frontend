@@ -111,6 +111,30 @@ function AppearanceSettings() {
   const { settings, updateSetting } = useAppearance()
   return (
     <div className="appearance-grid">
+      <label className="appearance-control">
+        <span>Interface scale</span>
+        <input type="range" min="0.85" max="1.4" step="0.05" value={settings.interfaceScale} onChange={(event) => updateSetting('interfaceScale', Number(event.target.value))} />
+        <output>{Math.round(settings.interfaceScale * 100)}%</output>
+      </label>
+      <label className="appearance-control">
+        <span>Interface font</span>
+        <select value={settings.interfaceFont} onChange={(event) => updateSetting('interfaceFont', event.target.value as typeof settings.interfaceFont)}>
+          <option value="modern">Modern sans</option>
+          <option value="humanist">Humanist</option>
+          <option value="technical">Technical</option>
+          <option value="mono">Monospace</option>
+        </select>
+        <output>{settings.interfaceFont.toUpperCase()}</output>
+      </label>
+      <label className="appearance-control">
+        <span>HUD / data font</span>
+        <select value={settings.hudFont} onChange={(event) => updateSetting('hudFont', event.target.value as typeof settings.hudFont)}>
+          <option value="technical">Technical</option>
+          <option value="mono">Monospace</option>
+          <option value="modern">Modern sans</option>
+        </select>
+        <output>{settings.hudFont.toUpperCase()}</output>
+      </label>
       <label className="appearance-control appearance-control--color">
         <span>Accent color</span>
         <input type="color" value={settings.accentColor} onChange={(event) => updateSetting('accentColor', event.target.value)} />
