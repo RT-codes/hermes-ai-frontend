@@ -28,6 +28,7 @@ import './styles/system-flyout.css'
 import './styles/brain.css'
 import './styles/brain-phase2.css'
 import './styles/brain-final-polish.css'
+import './styles/typography-v2.css'
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
