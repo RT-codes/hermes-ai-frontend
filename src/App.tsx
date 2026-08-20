@@ -12,6 +12,7 @@ import { BrainSceneProvider } from './context/BrainSceneContext'
 import { ChatSessionsProvider, useChatSessions } from './context/ChatSessionsContext'
 import { ConnectionSettingsProvider } from './context/ConnectionSettingsContext'
 import { HouseholdProvider } from './context/HouseholdContext'
+import { InsightSelectionProvider } from './context/InsightSelectionContext'
 import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
 import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
 import './styles/layout.css'
@@ -87,13 +88,15 @@ function App() {
       <AppearanceProvider>
         <ConnectionSettingsProvider>
           <ChatSessionsProvider>
-            <RuntimeStatusProvider>
-              <SystemTelemetryProvider>
-                <BrainSceneProvider>
-                  <HermesHome />
-                </BrainSceneProvider>
-              </SystemTelemetryProvider>
-            </RuntimeStatusProvider>
+            <InsightSelectionProvider>
+              <RuntimeStatusProvider>
+                <SystemTelemetryProvider>
+                  <BrainSceneProvider>
+                    <HermesHome />
+                  </BrainSceneProvider>
+                </SystemTelemetryProvider>
+              </RuntimeStatusProvider>
+            </InsightSelectionProvider>
           </ChatSessionsProvider>
         </ConnectionSettingsProvider>
       </AppearanceProvider>
