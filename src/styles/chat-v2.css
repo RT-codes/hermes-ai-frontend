@@ -152,23 +152,38 @@
   line-height: 1.45;
 }
 
-/* Chat V2 HUD polish: keep the floating shell fixed and make the chat surface the contained inner frame. */
+/* Chat V2 containment: the floating shell never becomes a scrolling ancestor. */
+.chat-panel {
+  overscroll-behavior: none;
+}
+
 .chat-panel .floating-panel__content {
   min-width: 0;
   min-height: 0;
+  height: calc(100% - 50px);
+  max-height: calc(100% - 50px);
   overflow: hidden;
+  overscroll-behavior: none;
+  contain: layout paint;
 }
 
 .chat-shell {
   width: 100%;
+  height: 100%;
+  max-height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  overscroll-behavior: none;
+  overflow-anchor: none;
 }
 
 .chat-surface {
   box-sizing: border-box;
+  max-height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
+  overflow-anchor: none;
   padding: 0.75rem;
   border: 1px solid rgb(var(--accent-rgb) / 0.16);
   background:
@@ -180,7 +195,20 @@
 .chat-messages {
   min-width: 0;
   min-height: 0;
-  overscroll-behavior: contain;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  overflow-anchor: none;
+  scroll-padding-bottom: 1rem;
+  touch-action: pan-y;
+}
+
+.chat-composer {
+  position: relative;
+  z-index: 2;
+  min-height: 0;
+  overflow-anchor: none;
+  background: linear-gradient(180deg, transparent, rgb(var(--panel-rgb) / 0.08));
 }
 
 /*
