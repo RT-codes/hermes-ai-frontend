@@ -22,6 +22,7 @@ import './styles/workspace.css'
 import './styles/settings-v2.css'
 import './styles/telemetry.css'
 import './styles/activity-dock.css'
+import './styles/insight.css'
 import './styles/brain.css'
 import './styles/brain-phase2.css'
 import './styles/brain-final-polish.css'
@@ -34,7 +35,7 @@ function HermesHome() {
   const computeAtTop = settings.computeHudPosition === 'top-right'
 
   const activityHud = (
-    <BrainHudPanel title="HERMES ACTIVITY" className="hermes-activity-panel">
+    <BrainHudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
       <ActivityPanel />
     </BrainHudPanel>
   )
