@@ -26,7 +26,7 @@
   text-transform: uppercase;
 }
 
-.chat-message--user .chat-message__meta { justify-content: flex-end; }
+.chat-message--user .chat-message__meta { justify-content: flex-start; }
 
 .chat-message__meta button {
   border: 0;
@@ -152,6 +152,63 @@
   line-height: 1.45;
 }
 
+/* Chat V2 HUD polish: keep the floating shell fixed and make the chat surface the contained inner frame. */
+.chat-panel .floating-panel__content {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chat-shell {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chat-surface {
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 0.75rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.16);
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.035), transparent 32%),
+    rgb(var(--panel-rgb) / 0.18);
+  box-shadow: inset 0 0 22px rgb(var(--accent-rgb) / 0.025);
+}
+
+.chat-messages {
+  min-width: 0;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+/* User messages use the same restrained cut-corner HUD language as the Brain panels. */
+.chat-message--user {
+  margin-right: auto;
+  margin-left: 0;
+  text-align: left;
+}
+
+.chat-message--user p {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.32rem;
+  padding: 0.62rem 0.78rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.18);
+  color: var(--text-primary);
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.08), transparent 48%),
+    rgb(var(--panel-rgb) / 0.34);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  box-shadow: inset 0 0 18px rgb(var(--accent-rgb) / 0.035);
+}
+
+/* Lift the lower-right glowing edge above the resize affordance on Chat only. */
+.floating-panel.chat-panel::after {
+  bottom: 26px;
+}
+
 @container chat-surface (max-width: 410px) {
   .chat-composer {
     grid-template-columns: minmax(0, 1fr);
@@ -172,6 +229,10 @@
   .chat-offline,
   .chat-error {
     padding: 0.5rem;
+  }
+
+  .chat-surface {
+    padding: 0.6rem;
   }
 }
 
