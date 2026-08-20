@@ -28,7 +28,7 @@ type ChatSessionsContextValue = {
 }
 
 const ChatSessionsContext = createContext<ChatSessionsContextValue | null>(null)
-const MAX_ACTIVITY_EVENTS = 80
+const MAX_ACTIVITY_EVENTS = 240
 
 function createMessage(conversationId: string, role: ChatMessage['role'], content: string, status: ChatMessage['status'] = 'completed'): ChatMessage {
   return {
@@ -72,16 +72,35 @@ function normalizeStoredSession(session: ChatConversation): ChatConversation {
       createdAt: message.createdAt ?? now,
       status: message.status === 'streaming' || message.status === 'sending' || message.status === 'queued' ? 'completed' : (message.status ?? 'completed'),
       error: null,
-      requestId: null,
+      requestId: typeof message.requestId === 'string' ? message.requestId : null,
     })),
   }
 }
 
+function normalizeStoredActivity(value: StoredChatState['activityBySession']) {
+  if (!value || typeof value !== 'object') return {}
+  return Object.fromEntries(
+    Object.entries(value).map(([sessionId, events]) => [
+      sessionId,
+      Array.isArray(events)
+        ? events
+            .filter((event): event is ChatActivityEvent => Boolean(event && typeof event === 'object' && typeof event.id === 'string'))
+            .slice(-MAX_ACTIVITY_EVENTS)
+        : [],
+    ]),
+  )
+}
+
 function loadStoredState(): StoredChatState {
   const persisted = browserChatPersistence.loadState()
-  if (!persisted) return { sessions: [], openTabIds: [], activeSessionId: null }
+  if (!persisted) return { sessions: [], openTabIds: [], activeSessionId: null, activityBySession: {} }
   const sessions = Array.isArray(persisted.sessions) ? persisted.sessions.map(normalizeStoredSession) : []
-  return { sessions, openTabIds: [], activeSessionId: null }
+  return {
+    sessions,
+    openTabIds: [],
+    activeSessionId: null,
+    activityBySession: normalizeStoredActivity(persisted.activityBySession),
+  }
 }
 
 function deriveConversationTitle(content: string) {
@@ -109,7 +128,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<ChatConversation[]>(initial.sessions)
   const [openTabIds, setOpenTabIds] = useState<string[]>(initial.openTabIds)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(initial.activeSessionId)
-  const [activityBySession, setActivityBySession] = useState<Record<string, ChatActivityEvent[]>>({})
+  const [activityBySession, setActivityBySession] = useState<Record<string, ChatActivityEvent[]>>(initial.activityBySession ?? {})
   const [drafts, setDrafts] = useState<Record<string, string>>(() => browserChatPersistence.loadDrafts())
   const sessionsRef = useRef(sessions)
   const controllersRef = useRef(new Map<string, AbortController>())
@@ -117,8 +136,8 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { sessionsRef.current = sessions }, [sessions])
   useEffect(() => {
-    browserChatPersistence.saveState({ sessions, openTabIds, activeSessionId })
-  }, [activeSessionId, openTabIds, sessions])
+    browserChatPersistence.saveState({ sessions, openTabIds, activeSessionId, activityBySession })
+  }, [activeSessionId, activityBySession, openTabIds, sessions])
   useEffect(() => { browserChatPersistence.saveDrafts(drafts) }, [drafts])
   useEffect(() => () => {
     controllersRef.current.forEach((controller) => controller.abort())
