@@ -1,14 +1,12 @@
 export type HermesConnectionSettings = {
   apiBasePath: string
   model: string
-  sessionKey: string
   requestTimeoutMs: number
 }
 
 export const defaultHermesConnectionSettings: HermesConnectionSettings = {
   apiBasePath: '/hermes-api',
   model: 'hermes-agent',
-  sessionKey: 'household',
   requestTimeoutMs: 10 * 60 * 1000,
 }
 
@@ -25,7 +23,6 @@ export function normalizeConnectionSettings(settings: HermesConnectionSettings):
   return {
     apiBasePath: normalizeBasePath(settings.apiBasePath),
     model: settings.model.trim() || defaultHermesConnectionSettings.model,
-    sessionKey: settings.sessionKey.trim() || defaultHermesConnectionSettings.sessionKey,
     requestTimeoutMs: Math.max(10_000, Math.min(30 * 60 * 1000, Number(settings.requestTimeoutMs) || defaultHermesConnectionSettings.requestTimeoutMs)),
   }
 }
