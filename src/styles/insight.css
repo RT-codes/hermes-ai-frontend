@@ -1,0 +1,193 @@
+.hermes-insight {
+  display: grid;
+  grid-template-rows: auto auto minmax(9rem, 1.8fr) minmax(4.5rem, 0.8fr) minmax(4.5rem, 0.8fr);
+  gap: 0.55rem;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.hermes-insight--empty {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.hermes-insight__working,
+.hermes-insight__tools,
+.hermes-insight__runtime {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+  padding-top: 0.45rem;
+}
+
+.hermes-insight__working {
+  border: 1px solid rgb(var(--accent-rgb) / 0.12);
+  padding: 0.55rem;
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.035), transparent 42%),
+    rgb(var(--brain-hud-rgb) / 0.32);
+}
+
+.hermes-insight__working--empty {
+  align-content: start;
+}
+
+.hermes-insight__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 0;
+  padding-bottom: 0.38rem;
+  color: var(--cyan-soft);
+  font-size: 0.49rem;
+  letter-spacing: 0.14em;
+}
+
+.hermes-insight__section-heading small {
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: 0.43rem;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hermes-insight__reasoning {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.48rem 0.5rem;
+  border-left: 1px solid rgb(var(--accent-rgb) / 0.2);
+  background: rgb(0 0 0 / 0.15);
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan-dim) transparent;
+}
+
+.hermes-insight__reasoning pre {
+  margin: 0;
+  color: var(--text-muted);
+  font: 0.59rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.hermes-insight__placeholder {
+  display: grid;
+  gap: 0.38rem;
+  min-height: 100%;
+  align-content: center;
+  color: var(--text-faint);
+}
+
+.hermes-insight__placeholder strong {
+  color: var(--text-muted);
+  font-size: 0.59rem;
+  font-weight: 500;
+}
+
+.hermes-insight__placeholder p {
+  max-width: 46rem;
+  margin: 0;
+  font-size: 0.52rem;
+  line-height: 1.5;
+}
+
+.hermes-insight__tool-list,
+.hermes-insight__runtime .hermes-activity__timeline {
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan-dim) transparent;
+}
+
+.hermes-insight__tool-list {
+  display: grid;
+  align-content: start;
+  gap: 0.28rem;
+}
+
+.hermes-tool-event {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: start;
+  min-width: 0;
+  padding: 0.38rem 0.45rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.1);
+  background: rgb(var(--panel-rgb) / 0.16);
+}
+
+.hermes-tool-event__dot {
+  width: 0.34rem;
+  height: 0.34rem;
+  margin-top: 0.24rem;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 7px rgb(var(--accent-rgb) / 0.42);
+}
+
+.hermes-tool-event--success .hermes-tool-event__dot {
+  background: var(--status-online);
+  box-shadow: 0 0 7px rgb(102 240 192 / 0.3);
+}
+
+.hermes-tool-event--error .hermes-tool-event__dot {
+  background: #ff6f8f;
+  box-shadow: 0 0 7px rgb(255 111 143 / 0.3);
+}
+
+.hermes-tool-event > div {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
+.hermes-tool-event > div > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hermes-tool-event strong {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.54rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hermes-tool-event time {
+  color: var(--text-faint);
+  font-size: 0.42rem;
+  white-space: nowrap;
+}
+
+.hermes-tool-event p {
+  margin: 0;
+  color: var(--text-faint);
+  font: 0.48rem/1.38 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.brain-hud-stack--middle .hermes-activity__headline,
+.floating-panel__sidecar .hermes-activity__headline {
+  flex: 0 0 auto;
+}
+
+.brain-hud-stack--middle .hermes-insight,
+.floating-panel__sidecar .hermes-insight {
+  overflow: hidden;
+}
+
+@media (max-height: 700px) {
+  .hermes-insight {
+    grid-template-rows: auto auto minmax(7rem, 1.5fr) minmax(3.5rem, 0.65fr) minmax(3.5rem, 0.65fr);
+    gap: 0.4rem;
+  }
+}
