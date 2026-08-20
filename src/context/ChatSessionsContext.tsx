@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { browserChatPersistence } from '../features/chat/persistence'
-import type { ChatConversation, ChatMessage, StoredChatState } from '../features/chat/types'
+import type { ChatActivityEvent, ChatActivityKind, ChatActivityState, ChatConversation, ChatMessage, StoredChatState } from '../features/chat/types'
 import { streamHermesChat } from '../lib/hermes/client'
 
 type ChatSessionsContextValue = {
@@ -9,6 +9,8 @@ type ChatSessionsContextValue = {
   openTabIds: string[]
   activeSessionId: string | null
   activeSession: ChatConversation | null
+  activityBySession: Record<string, ChatActivityEvent[]>
+  activeActivity: ChatActivityEvent[]
   drafts: Record<string, string>
   createSession: () => string
   openSession: (sessionId: string) => void
@@ -26,6 +28,7 @@ type ChatSessionsContextValue = {
 }
 
 const ChatSessionsContext = createContext<ChatSessionsContextValue | null>(null)
+const MAX_ACTIVITY_EVENTS = 40
 
 function createMessage(conversationId: string, role: ChatMessage['role'], content: string, status: ChatMessage['status'] = 'completed'): ChatMessage {
   return {
@@ -90,9 +93,11 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<ChatConversation[]>(initial.sessions)
   const [openTabIds, setOpenTabIds] = useState<string[]>(initial.openTabIds)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(initial.activeSessionId)
+  const [activityBySession, setActivityBySession] = useState<Record<string, ChatActivityEvent[]>>({})
   const [drafts, setDrafts] = useState<Record<string, string>>(() => browserChatPersistence.loadDrafts())
   const sessionsRef = useRef(sessions)
   const controllersRef = useRef(new Map<string, AbortController>())
+  const firstDeltaSeenRef = useRef(new Set<string>())
 
   useEffect(() => { sessionsRef.current = sessions }, [sessions])
   useEffect(() => {
@@ -105,9 +110,27 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const activeSession = sessions.find((session) => session.id === activeSessionId) ?? null
+  const activeActivity = activeSessionId ? activityBySession[activeSessionId] ?? [] : []
 
   function patchSession(sessionId: string, patch: (session: ChatConversation) => ChatConversation) {
     setSessions((current) => current.map((session) => session.id === sessionId ? patch(session) : session))
+  }
+
+  function appendActivity(sessionId: string, kind: ChatActivityKind, state: ChatActivityState, label: string, detail?: string | null, requestId?: string | null) {
+    const event: ChatActivityEvent = {
+      id: crypto.randomUUID(),
+      conversationId: sessionId,
+      requestId: requestId ?? null,
+      kind,
+      state,
+      label,
+      detail: detail ?? null,
+      createdAt: Date.now(),
+    }
+    setActivityBySession((current) => ({
+      ...current,
+      [sessionId]: [...(current[sessionId] ?? []), event].slice(-MAX_ACTIVITY_EVENTS),
+    }))
   }
 
   function createSession() {
@@ -115,6 +138,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     setSessions((current) => [...current, session])
     setOpenTabIds((current) => [...current, session.id])
     setActiveSessionId(session.id)
+    appendActivity(session.id, 'session', 'success', 'Session ready', 'New Hermes conversation created.')
     return session.id
   }
 
@@ -146,12 +170,20 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   }
 
   function cancelGeneration(sessionId: string) {
-    controllersRef.current.get(sessionId)?.abort()
+    const controller = controllersRef.current.get(sessionId)
+    if (!controller) return
+    appendActivity(sessionId, 'generation', 'warning', 'Stopping response', 'Cancellation requested for the active generation.')
+    controller.abort()
   }
 
   function deleteSession(sessionId: string) {
     cancelGeneration(sessionId)
     setDrafts((current) => {
+      const next = { ...current }
+      delete next[sessionId]
+      return next
+    })
+    setActivityBySession((current) => {
       const next = { ...current }
       delete next[sessionId]
       return next
@@ -181,6 +213,8 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   async function runAssistantGeneration(sessionId: string, requestMessages: ChatMessage[], assistantId: string, requestId: string, hermesSessionId: string) {
     const controller = new AbortController()
     controllersRef.current.set(sessionId, controller)
+    firstDeltaSeenRef.current.delete(requestId)
+    appendActivity(sessionId, 'connection', 'active', 'Connecting to Hermes', 'Opening response stream.', requestId)
 
     try {
       await streamHermesChat({
@@ -188,6 +222,10 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
         sessionId: hermesSessionId,
         signal: controller.signal,
         onDelta: (delta) => {
+          if (!firstDeltaSeenRef.current.has(requestId)) {
+            firstDeltaSeenRef.current.add(requestId)
+            appendActivity(sessionId, 'generation', 'active', 'Hermes responding', 'First response token received.', requestId)
+          }
           patchSession(sessionId, (current) => ({
             ...current,
             connectionState: 'streaming',
@@ -198,6 +236,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
           }))
         },
       })
+      appendActivity(sessionId, 'generation', 'success', 'Response complete', 'Hermes finished the current response.', requestId)
       patchSession(sessionId, (current) => ({
         ...current,
         connectionState: 'idle',
@@ -208,6 +247,14 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     } catch (caughtError) {
       const aborted = controller.signal.aborted
       const error = caughtError instanceof Error ? caughtError.message : 'Unable to reach Hermes'
+      appendActivity(
+        sessionId,
+        aborted ? 'generation' : 'error',
+        aborted ? 'warning' : 'error',
+        aborted ? 'Response stopped' : 'Hermes request failed',
+        aborted ? 'Partial response preserved.' : error,
+        requestId,
+      )
       patchSession(sessionId, (current) => ({
         ...current,
         connectionState: aborted ? 'idle' : 'error',
@@ -218,6 +265,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
         updatedAt: Date.now(),
       }))
     } finally {
+      firstDeltaSeenRef.current.delete(requestId)
       if (controllersRef.current.get(sessionId) === controller) controllersRef.current.delete(sessionId)
     }
   }
@@ -239,6 +287,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     const nextTitle = session.title.startsWith('New chat') ? deriveConversationTitle(trimmed) : session.title
     const hermesSessionId = session.hermesSessionId ?? session.id
 
+    appendActivity(sessionId, 'generation', 'info', 'Request queued', 'Message handed to the Hermes client.', requestId)
     patchSession(sessionId, (current) => ({
       ...current,
       title: nextTitle,
@@ -270,6 +319,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     }
     const requestMessages = history.filter((message) => !message.id.startsWith('welcome-'))
 
+    appendActivity(sessionId, 'session', 'info', 'Fresh Hermes session', 'Regeneration is replaying visible history against a new backend session.', requestId)
     patchSession(sessionId, (current) => ({
       ...current,
       hermesSessionId: nextHermesSessionId,
@@ -300,6 +350,8 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     openTabIds,
     activeSessionId,
     activeSession,
+    activityBySession,
+    activeActivity,
     drafts,
     createSession,
     openSession,
