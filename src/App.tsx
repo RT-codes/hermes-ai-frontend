@@ -5,7 +5,6 @@ import { ChatPanel } from './components/ChatPanel/ChatPanel'
 import { FloatingPanel } from './components/FloatingPanel/FloatingPanel'
 import { HardwareTelemetryHud } from './components/HardwareTelemetryHud/HardwareTelemetryHud'
 import { Sidebar } from './components/Sidebar/Sidebar'
-import { SystemPanel } from './components/SystemPanel/SystemPanel'
 import { TopBar } from './components/TopBar/TopBar'
 import { WorkspaceStage, type WorkspaceView } from './components/WorkspaceStage/WorkspaceStage'
 import { AppearanceProvider, useAppearance } from './context/AppearanceContext'
@@ -59,14 +58,8 @@ function HermesHome() {
             <HardwareTelemetryHud />
           </div>
 
-          <div className="brain-hud-stack brain-hud-stack--middle">
+          <div className={`brain-hud-stack brain-hud-stack--middle ${computeAtTop ? 'brain-hud-stack--middle-compute-top' : 'brain-hud-stack--middle-compute-bottom'}`}>
             {activityHud}
-          </div>
-
-          <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--bottom' : 'brain-hud-stack--top'}`}>
-            <BrainHudPanel title="SYSTEM">
-              <SystemPanel />
-            </BrainHudPanel>
           </div>
         </>
       )}
