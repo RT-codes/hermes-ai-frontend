@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
+export type InterfaceFontPreset = 'modern' | 'humanist' | 'technical' | 'mono'
+export type HudFontPreset = 'technical' | 'mono' | 'modern'
+
 export type AppearanceSettings = {
   accentColor: string
   backgroundColor: string
@@ -13,6 +16,9 @@ export type AppearanceSettings = {
   brainHudColor: string
   brainHudOpacity: number
   rubikTurnSpeedMs: number
+  interfaceScale: number
+  interfaceFont: InterfaceFontPreset
+  hudFont: HudFontPreset
 }
 
 type AppearanceContextValue = {
@@ -22,6 +28,18 @@ type AppearanceContextValue = {
 }
 
 const STORAGE_KEY = 'hermes-appearance:v1'
+const interfaceFontStacks: Record<InterfaceFontPreset, string> = {
+  modern: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  humanist: '"Segoe UI", Candara, Calibri, ui-sans-serif, system-ui, sans-serif',
+  technical: 'Bahnschrift, "DIN Alternate", "Arial Narrow", ui-sans-serif, system-ui, sans-serif',
+  mono: '"Cascadia Code", "Cascadia Mono", Consolas, "SFMono-Regular", ui-monospace, monospace',
+}
+const hudFontStacks: Record<HudFontPreset, string> = {
+  technical: 'Bahnschrift, "DIN Alternate", "Arial Narrow", ui-sans-serif, system-ui, sans-serif',
+  mono: '"Cascadia Code", "Cascadia Mono", Consolas, "SFMono-Regular", ui-monospace, monospace',
+  modern: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+}
+
 const defaults: AppearanceSettings = {
   accentColor: '#35d9ff',
   backgroundColor: '#04080d',
@@ -34,6 +52,9 @@ const defaults: AppearanceSettings = {
   brainHudColor: '#02070c',
   brainHudOpacity: 0.72,
   rubikTurnSpeedMs: 650,
+  interfaceScale: 1,
+  interfaceFont: 'modern',
+  hudFont: 'technical',
 }
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null)
@@ -64,7 +85,11 @@ function applySettings(settings: AppearanceSettings) {
   const panelRgb = hexToRgb(settings.panelColor)
   const brainHudRgb = hexToRgb(settings.brainHudColor)
   const brainHudOpacitySoft = Math.max(0.12, settings.brainHudOpacity * 0.9)
+  const safeScale = Math.min(1.4, Math.max(0.85, settings.interfaceScale))
 
+  root.style.fontSize = `${safeScale * 100}%`
+  root.style.setProperty('--font-ui', interfaceFontStacks[settings.interfaceFont] ?? interfaceFontStacks.modern)
+  root.style.setProperty('--font-hud', hudFontStacks[settings.hudFont] ?? hudFontStacks.technical)
   root.style.setProperty('--cyan', settings.accentColor)
   root.style.setProperty('--accent-rgb', accentRgb)
   root.style.setProperty('--cyan-soft', `color-mix(in srgb, ${settings.accentColor} 70%, white)`)
