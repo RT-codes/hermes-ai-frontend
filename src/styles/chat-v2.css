@@ -26,7 +26,7 @@
   text-transform: uppercase;
 }
 
-.chat-message--user .chat-message__meta { justify-content: flex-start; }
+.chat-message--user .chat-message__meta { justify-content: flex-end; }
 
 .chat-message__meta button {
   border: 0;
@@ -183,25 +183,44 @@
   overscroll-behavior: contain;
 }
 
-/* User messages use the same restrained cut-corner HUD language as the Brain panels. */
+/*
+ * HUD shape rule: clipped components use a 1px outer edge layer plus an inset
+ * clipped fill. A normal CSS border does not follow diagonal clip-path edges.
+ * Reuse this construction for future cut-corner controls/panels.
+ */
 .chat-message--user {
-  margin-right: auto;
-  margin-left: 0;
+  margin-right: 0;
+  margin-left: auto;
   text-align: left;
 }
 
+.chat-message--user .chat-message__role {
+  display: block;
+  text-align: right;
+}
+
 .chat-message--user p {
+  position: relative;
   width: fit-content;
   max-width: 100%;
-  margin-top: 0.32rem;
+  margin: 0.32rem 0 0 auto;
   padding: 0.62rem 0.78rem;
-  border: 1px solid rgb(var(--accent-rgb) / 0.18);
+  overflow: hidden;
   color: var(--text-primary);
-  background:
-    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.08), transparent 48%),
-    rgb(var(--panel-rgb) / 0.34);
+  background: rgb(var(--accent-rgb) / 0.2);
   clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
-  box-shadow: inset 0 0 18px rgb(var(--accent-rgb) / 0.035);
+  text-align: left;
+}
+
+.chat-message--user p::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background:
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.035), transparent 48%),
+    rgb(var(--panel-rgb) / 0.2);
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
 }
 
 /* Lift the lower-right glowing edge above the resize affordance on Chat only. */
