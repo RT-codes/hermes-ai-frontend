@@ -21,6 +21,7 @@ import './styles/chat-v2.css'
 import './styles/workspace.css'
 import './styles/settings-v2.css'
 import './styles/telemetry.css'
+import './styles/activity-dock.css'
 import './styles/brain.css'
 import './styles/brain-phase2.css'
 import './styles/brain-final-polish.css'
@@ -31,6 +32,12 @@ function HermesHome() {
   const { openTabIds, createSession } = useChatSessions()
   const { settings } = useAppearance()
   const computeAtTop = settings.computeHudPosition === 'top-right'
+
+  const activityHud = (
+    <BrainHudPanel title="HERMES ACTIVITY" className="hermes-activity-panel">
+      <ActivityPanel />
+    </BrainHudPanel>
+  )
 
   return (
     <main className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
@@ -51,10 +58,11 @@ function HermesHome() {
             <HardwareTelemetryHud />
           </div>
 
+          <div className="brain-hud-stack brain-hud-stack--middle">
+            {activityHud}
+          </div>
+
           <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--bottom' : 'brain-hud-stack--top'}`}>
-            <BrainHudPanel title="ACTIVITY">
-              <ActivityPanel />
-            </BrainHudPanel>
             <BrainHudPanel title="SYSTEM">
               <SystemPanel />
             </BrainHudPanel>
@@ -67,6 +75,7 @@ function HermesHome() {
           id="chat"
           title="CHAT"
           className="chat-panel"
+          sidecar={activeView === 'brain' ? undefined : activityHud}
           defaultRect={{ x: 280, y: 610, width: 560, height: 350 }}
           minWidth={380}
           minHeight={270}
