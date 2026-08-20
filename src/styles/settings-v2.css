@@ -94,6 +94,44 @@
   grid-column: 1 / -1;
 }
 
+/* Settings is a workspace, not a centered modal. Use the available canvas. */
+.workspace-stage[aria-label='Settings workspace'] {
+  place-items: start stretch;
+  overflow: hidden;
+  padding-top: calc(var(--space-page) + 5.25rem);
+  padding-right: var(--space-page);
+  padding-bottom: var(--space-page);
+}
+
+.workspace-stage[aria-label='Settings workspace'] .workspace-card--settings {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  overflow: auto;
+  padding: clamp(1.25rem, 2.4vw, 2.25rem);
+}
+
+.workspace-stage[aria-label='Settings workspace'] .workspace-card__heading {
+  position: sticky;
+  z-index: 2;
+  top: calc(-1 * clamp(1.25rem, 2.4vw, 2.25rem));
+  padding-top: clamp(1.25rem, 2.4vw, 2.25rem);
+  background: linear-gradient(180deg, rgb(var(--brain-hud-rgb) / 0.94) 0%, rgb(var(--brain-hud-rgb) / 0.82) 78%, transparent 100%);
+  backdrop-filter: blur(var(--blur-panel));
+}
+
+.workspace-stage[aria-label='Settings workspace'] .appearance-grid,
+.workspace-stage[aria-label='Settings workspace'] .connection-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr));
+  align-content: start;
+}
+
+.workspace-stage[aria-label='Settings workspace'] .appearance-control {
+  min-height: 64px;
+}
+
 @media (max-width: 760px) {
   .connection-grid {
     grid-template-columns: 1fr;
@@ -101,5 +139,15 @@
 
   .settings-note--wide {
     grid-column: auto;
+  }
+
+  .workspace-stage[aria-label='Settings workspace'] {
+    padding-top: calc(var(--space-page) + 4.6rem);
+  }
+
+  .workspace-stage[aria-label='Settings workspace'] .workspace-card__heading {
+    position: static;
+    background: transparent;
+    backdrop-filter: none;
   }
 }
