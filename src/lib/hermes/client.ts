@@ -116,15 +116,14 @@ function parseNativeSessionEvent(block: string, onDelta: (delta: string) => void
   const payload = parseJsonPayload(eventData(block))
   if (!type || !payload) return
 
-  const normalized = normalizeNativeEvent(type, payload)
-  onEvent?.(normalized)
+  onEvent?.(normalizeNativeEvent(type, payload))
 
   if (type === 'error' || type === 'run.failed') {
     throw new Error(payloadMessage(payload) || 'Hermes reported that the agent turn failed.')
   }
 
   if (type === 'assistant.delta' || type === 'message.delta') {
-    const delta = payload.delta
+    const delta = payload.delta ?? payload.text
     if (typeof delta === 'string' && delta) onDelta(delta)
   }
 }
@@ -166,7 +165,14 @@ async function openNativeSessionStream(
       'Content-Type': 'application/json',
       'X-Hermes-Session-Key': HERMES_SESSION_KEY,
     },
-    body: JSON.stringify({ message, model }),
+    body: JSON.stringify({
+      message,
+      model,
+      model_options: {
+        reasoning: { enabled: true, effort: 'medium' },
+        reasoning_effort: 'medium',
+      },
+    }),
     signal,
   })
 
@@ -192,6 +198,10 @@ async function openCompatibilityStream(
     body: JSON.stringify({
       model,
       stream: true,
+      model_options: {
+        reasoning: { enabled: true, effort: 'medium' },
+        reasoning_effort: 'medium',
+      },
       messages: messages.map(({ role, content }) => ({ role, content })),
     }),
     signal,
