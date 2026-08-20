@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent, UIEvent } from 'react'
 import { useChatSessions } from '../../../context/ChatSessionsContext'
+import { useInsightSelection } from '../../../context/InsightSelectionContext'
 import { useRuntimeStatus } from '../../../context/RuntimeStatusContext'
 import type { ChatMessage } from '../types'
 import { MarkdownMessage } from './MarkdownMessage'
@@ -15,10 +16,14 @@ function MessageActions({
   message,
   busy,
   onRegenerate,
+  onTrace,
+  traceSelected,
 }: {
   message: ChatMessage
   busy: boolean
   onRegenerate: () => void
+  onTrace?: () => void
+  traceSelected?: boolean
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -33,12 +38,18 @@ function MessageActions({
   }
 
   const canRegenerate = message.role === 'assistant' && !message.id.startsWith('welcome-') && !busy
+  const canInspectTrace = message.role === 'assistant' && Boolean(message.requestId) && Boolean(onTrace)
 
   return (
     <div className="chat-message__meta">
       <span>{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
       {message.status !== 'completed' && <span className={`chat-message__status chat-message__status--${message.status}`}>{message.status}</span>}
       {message.content && <button type="button" onClick={() => void copy()}>{copied ? 'COPIED' : 'COPY'}</button>}
+      {canInspectTrace && (
+        <button className={traceSelected ? 'is-active' : ''} type="button" onClick={onTrace}>
+          {traceSelected ? 'TRACE SELECTED' : 'TRACE'}
+        </button>
+      )}
       {canRegenerate && (
         <button type="button" onClick={onRegenerate}>
           {message.status === 'failed' ? 'RETRY' : 'REGENERATE'}
@@ -58,6 +69,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
     cancelGeneration,
     retryResponse,
   } = useChatSessions()
+  const { selectedRequestBySession, selectRequestTrace } = useInsightSelection()
   const { hermesOnline, checkedAt, refresh } = useRuntimeStatus()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const messagesRef = useRef<HTMLDivElement | null>(null)
@@ -66,6 +78,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
   const conversation = sessions.find((session) => session.id === conversationId) ?? null
   const input = drafts[conversationId] ?? ''
   const latestContent = conversation?.messages.at(-1)?.content ?? ''
+  const selectedRequestId = selectedRequestBySession[conversationId] ?? null
 
   useEffect(() => {
     const textarea = textareaRef.current
@@ -123,6 +136,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
     if (!content || isBusy || isKnownOffline) return
     followLatestRef.current = true
     setShowJumpToLatest(false)
+    selectRequestTrace(conversationId, null)
     clearDraft(conversationId)
     await sendMessage(conversationId, content)
     textareaRef.current?.focus()
@@ -161,19 +175,29 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
             <span>{isKnownOffline ? 'Hermes is offline, but you can prepare a draft now.' : 'Ask Hermes anything when you are ready.'}</span>
           </div>
         )}
-        {conversation.messages.map((message) => (
-          <div className={`chat-message chat-message--${message.role}`} key={message.id} data-status={message.status}>
-            <span className="chat-message__role">{message.role === 'user' ? 'YOU' : 'HERMES'}</span>
-            {message.role === 'assistant'
-              ? <MarkdownMessage content={message.content || (isBusy ? '…' : '')} />
-              : <p>{message.content}</p>}
-            <MessageActions
-              message={message}
-              busy={isBusy}
-              onRegenerate={() => void retryResponse(conversationId, message.id)}
-            />
-          </div>
-        ))}
+        {conversation.messages.map((message) => {
+          const traceSelected = Boolean(message.requestId && selectedRequestId === message.requestId)
+          return (
+            <div className={`chat-message chat-message--${message.role} ${traceSelected ? 'is-trace-selected' : ''}`} key={message.id} data-status={message.status}>
+              <span className="chat-message__role">{message.role === 'user' ? 'YOU' : 'HERMES'}</span>
+              <div
+                className={message.role === 'assistant' && message.requestId ? 'chat-message__body chat-message__body--traceable' : 'chat-message__body'}
+                onClick={message.role === 'assistant' && message.requestId ? () => selectRequestTrace(conversationId, message.requestId ?? null) : undefined}
+              >
+                {message.role === 'assistant'
+                  ? <MarkdownMessage content={message.content || (isBusy ? '…' : '')} />
+                  : <p>{message.content}</p>}
+              </div>
+              <MessageActions
+                message={message}
+                busy={isBusy}
+                traceSelected={traceSelected}
+                onTrace={message.requestId ? () => selectRequestTrace(conversationId, traceSelected ? null : message.requestId ?? null) : undefined}
+                onRegenerate={() => void retryResponse(conversationId, message.id)}
+              />
+            </div>
+          )
+        })}
       </div>
 
       {showJumpToLatest && (
