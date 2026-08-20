@@ -246,6 +246,7 @@ export async function streamHermesChat({
             requestController.signal,
           )
           native = Boolean(response)
+          if (native) onEvent?.({ type: 'transport.native', payload: { sessionId } })
         }
       }
 
