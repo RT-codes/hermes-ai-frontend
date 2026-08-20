@@ -54,15 +54,14 @@ function HermesHome() {
       <WorkspaceStage activeView={activeView} />
 
       {activeView === 'brain' && (
-        <>
-          <div className={`brain-hud-stack ${computeAtTop ? 'brain-hud-stack--top' : 'brain-hud-stack--bottom'}`}>
+        <div className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}>
+          <div className="brain-hud-lane__compute">
             <HardwareTelemetryHud />
           </div>
-
-          <div className={`brain-hud-stack brain-hud-stack--middle ${computeAtTop ? 'brain-hud-stack--middle-compute-top' : 'brain-hud-stack--middle-compute-bottom'}`}>
+          <div className="brain-hud-lane__insight">
             {activityHud}
           </div>
-        </>
+        </div>
       )}
 
       {openTabIds.length > 0 && (
