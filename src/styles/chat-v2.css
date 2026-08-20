@@ -216,11 +216,11 @@
   content: '';
   position: absolute;
   inset: 1px;
-  z-index: -1;
   background:
-    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.035), transparent 48%),
-    rgb(var(--panel-rgb) / 0.2);
+    linear-gradient(145deg, rgb(var(--accent-rgb) / 0.025), transparent 48%),
+    rgb(var(--panel-rgb) / 0.16);
   clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+  pointer-events: none;
 }
 
 /* Lift the lower-right glowing edge above the resize affordance on Chat only. */
