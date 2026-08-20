@@ -43,7 +43,12 @@ export function HardwareTelemetryHud() {
   const modelGpuPercent = model && model.size > 0 ? Math.round((model.sizeVram / model.size) * 100) : null
 
   return (
-    <BrainHudPanel title="LOCAL COMPUTE" meta={error ? 'DEGRADED' : 'LIVE · 3S'} ariaLabel="Live hardware telemetry">
+    <BrainHudPanel
+      title="LOCAL COMPUTE"
+      meta={error ? 'DEGRADED' : 'LIVE · 3S'}
+      ariaLabel="Live hardware telemetry"
+      className="hardware-hud-panel"
+    >
       <div className="hardware-hud__identity">
         <strong>{gpu?.name ?? 'GPU telemetry unavailable'}</strong>
         <span>{model ? `${model.name} · ${modelGpuPercent ?? 0}% model bytes in VRAM` : 'No Ollama model currently loaded'}</span>
