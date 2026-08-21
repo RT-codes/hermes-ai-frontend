@@ -11,6 +11,7 @@ import { AppearanceProvider, useAppearance } from './context/AppearanceContext'
 import { BrainSceneProvider } from './context/BrainSceneContext'
 import { ChatSessionsProvider, useChatSessions } from './context/ChatSessionsContext'
 import { ConnectionSettingsProvider } from './context/ConnectionSettingsContext'
+import { HermesProfileProvider } from './context/HermesProfileContext'
 import { HouseholdProvider } from './context/HouseholdContext'
 import { InsightSelectionProvider } from './context/InsightSelectionContext'
 import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
@@ -89,17 +90,19 @@ function App() {
     <HouseholdProvider>
       <AppearanceProvider>
         <ConnectionSettingsProvider>
-          <ChatSessionsProvider>
-            <InsightSelectionProvider>
-              <RuntimeStatusProvider>
-                <SystemTelemetryProvider>
-                  <BrainSceneProvider>
-                    <HermesHome />
-                  </BrainSceneProvider>
-                </SystemTelemetryProvider>
-              </RuntimeStatusProvider>
-            </InsightSelectionProvider>
-          </ChatSessionsProvider>
+          <HermesProfileProvider>
+            <ChatSessionsProvider>
+              <InsightSelectionProvider>
+                <RuntimeStatusProvider>
+                  <SystemTelemetryProvider>
+                    <BrainSceneProvider>
+                      <HermesHome />
+                    </BrainSceneProvider>
+                  </SystemTelemetryProvider>
+                </RuntimeStatusProvider>
+              </InsightSelectionProvider>
+            </ChatSessionsProvider>
+          </HermesProfileProvider>
         </ConnectionSettingsProvider>
       </AppearanceProvider>
     </HouseholdProvider>
