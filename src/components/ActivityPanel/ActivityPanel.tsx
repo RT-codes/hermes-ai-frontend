@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { useChatSessions } from '../../context/ChatSessionsContext'
+import { useHermesProfiles } from '../../context/HermesProfileContext'
 import { useInsightSelection } from '../../context/InsightSelectionContext'
 import { useRuntimeStatus } from '../../context/RuntimeStatusContext'
 
@@ -18,6 +19,7 @@ function eventTime(createdAt: number) {
 
 export function ActivityPanel() {
   const { activeSession, activeActivity } = useChatSessions()
+  const { getProfile, getProfileColor } = useHermesProfiles()
   const { selectedRequestBySession, clearRequestTrace } = useInsightSelection()
   const { hermesOnline } = useRuntimeStatus()
 
@@ -69,6 +71,9 @@ export function ActivityPanel() {
     )
   }
 
+  const profile = getProfile(activeSession.profileId)
+  const profileName = profile?.displayName ?? activeSession.profileId
+  const profileColor = getProfileColor(activeSession.profileId)
   const reasoningText = reasoningEvents.map((event) => event.detail ?? '').join('')
   const nativeSession = activeSession.metadata?.nativeSession === true
   const historical = Boolean(selectedRequestId)
@@ -78,7 +83,22 @@ export function ActivityPanel() {
     : latestAssistant
 
   return (
-    <div className="hermes-insight" data-session-id={activeSession.id} data-trace-request-id={traceRequestId ?? undefined}>
+    <div
+      className="hermes-insight hermes-insight--profile-aware"
+      data-session-id={activeSession.id}
+      data-profile-id={activeSession.profileId}
+      data-trace-request-id={traceRequestId ?? undefined}
+      style={{ '--profile-color': profileColor } as CSSProperties}
+    >
+      <div className="hermes-insight__profile-strip" title={`Hermes profile: ${activeSession.profileId}`}>
+        <span className="hermes-insight__profile-dot" aria-hidden="true" />
+        <div>
+          <small>PROFILE</small>
+          <strong>{profileName}</strong>
+        </div>
+        <code>{activeSession.profileId}</code>
+      </div>
+
       <div className="hermes-activity__headline">
         <span className={`activity-dot ${activeSession.connectionState === 'error' ? 'error' : isBusy ? 'busy' : hermesOnline ? 'active' : 'error'}`} />
         <div>
@@ -102,9 +122,9 @@ export function ActivityPanel() {
         )}
       </div>
 
-      <section className="hermes-insight__working" aria-label="Hermes reasoning and working trace">
+      <section className="hermes-insight__working" aria-label={`${profileName} reasoning and working trace`}>
         <div className="hermes-insight__section-heading">
-          <span>WORKING TRACE</span>
+          <span>WORKING TRACE · {profileName.toUpperCase()}</span>
           <small>{reasoningEvents.length ? `${reasoningEvents.length} SIGNAL${reasoningEvents.length === 1 ? '' : 'S'}` : traceMode}</small>
         </div>
         <div className="hermes-insight__reasoning" aria-live="polite">
@@ -112,32 +132,32 @@ export function ActivityPanel() {
             <pre>{reasoningText}</pre>
           ) : verifiedTraceLines.length ? (
             <div className="hermes-insight__verified-trace">
-              <strong>{nativeSession ? 'No separate model reasoning text was emitted for this response.' : 'Compatibility transport does not expose separate model reasoning.'}</strong>
+              <strong>{nativeSession ? `No separate ${profileName} reasoning text was emitted for this response.` : 'Compatibility transport does not expose separate model reasoning.'}</strong>
               <p>Showing the verified Hermes execution trace instead; these lines come from actual session events, not generated thoughts.</p>
               <pre>{verifiedTraceLines.join('\n')}</pre>
             </div>
           ) : (
             <div className="hermes-insight__placeholder">
-              <strong>{isBusy && !historical ? 'Waiting for Hermes working signals…' : 'No trace events recorded for this response.'}</strong>
+              <strong>{isBusy && !historical ? `Waiting for ${profileName} working signals…` : 'No trace events recorded for this response.'}</strong>
               <p>
                 {nativeSession
-                  ? 'Reasoning appears here when Hermes publishes it. Tool and lifecycle evidence is shown as a verified trace when separate reasoning is unavailable.'
-                  : 'This conversation is using compatibility transport. Start a new native chat for richer per-response Insight telemetry.'}
+                  ? `Reasoning appears here when ${profileName} publishes it. Tool and lifecycle evidence is shown as a verified trace when separate reasoning is unavailable.`
+                  : `This conversation is using the ${profileName} compatibility transport. Profile provenance remains pinned to this chat even when richer native session events are unavailable.`}
               </p>
             </div>
           )}
         </div>
         {selectedAssistant?.content && (
           <div className="hermes-insight__response-context" title={selectedAssistant.content}>
-            <span>RESPONSE</span>
+            <span>RESPONSE · {profileName.toUpperCase()}</span>
             <p>{selectedAssistant.content.replace(/\s+/g, ' ').slice(0, 180)}{selectedAssistant.content.length > 180 ? '…' : ''}</p>
           </div>
         )}
       </section>
 
-      <section className="hermes-insight__tools" aria-label="Hermes tool activity">
+      <section className="hermes-insight__tools" aria-label={`${profileName} tool activity`}>
         <div className="hermes-insight__section-heading">
-          <span>TOOLS</span>
+          <span>TOOLS · {profileName.toUpperCase()}</span>
           <small>{toolEvents.length ? `${toolEvents.length} RECENT` : 'IDLE'}</small>
         </div>
         <div className="hermes-insight__tool-list">
@@ -155,9 +175,9 @@ export function ActivityPanel() {
         </div>
       </section>
 
-      <section className="hermes-insight__runtime" aria-label="Hermes runtime timeline">
+      <section className="hermes-insight__runtime" aria-label={`${profileName} runtime timeline`}>
         <div className="hermes-insight__section-heading">
-          <span>ACTIVITY</span>
+          <span>ACTIVITY · {profileName.toUpperCase()}</span>
           <small>{historical ? 'RESPONSE PINNED' : 'SESSION PINNED'}</small>
         </div>
         <div className="hermes-activity__timeline">
