@@ -32,6 +32,7 @@ export type ChatActivityEvent = {
 export type ChatConversation = {
   id: string
   title: string
+  profileId: string
   messages: ChatMessage[]
   connectionState: ChatConnectionState
   error: string | null

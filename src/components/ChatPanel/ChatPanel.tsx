@@ -1,5 +1,6 @@
-import type { MouseEvent } from 'react'
+import type { CSSProperties, MouseEvent } from 'react'
 import { useChatSessions } from '../../context/ChatSessionsContext'
+import { useHermesProfiles } from '../../context/HermesProfileContext'
 import { ChatSurface } from '../../features/chat/components/ChatSurface'
 
 export function ChatPanel() {
@@ -13,6 +14,7 @@ export function ChatPanel() {
     closeAllTabs,
     renameSession,
   } = useChatSessions()
+  const { getProfile, getProfileColor } = useHermesProfiles()
 
   if (!activeSessionId) return null
 
@@ -35,40 +37,56 @@ export function ChatPanel() {
     <div className="chat-shell">
       <div className="chat-tabs" role="tablist" aria-label="Open Hermes chats">
         <div className="chat-tabs__scroll">
-          {openSessions.map((session) => (
-            <div className={`chat-tab ${session.id === activeSessionId ? 'is-active' : ''}`} key={session.id}>
-              <button
-                className="chat-tab__select"
-                type="button"
-                role="tab"
-                aria-selected={session.id === activeSessionId}
-                onClick={() => selectSession(session.id)}
+          {openSessions.map((session) => {
+            const profile = getProfile(session.profileId)
+            const profileColor = getProfileColor(session.profileId)
+            const profileName = profile?.displayName ?? session.profileId
+
+            return (
+              <div
+                className={`chat-tab ${session.id === activeSessionId ? 'is-active' : ''}`}
+                key={session.id}
+                style={{ '--profile-color': profileColor } as CSSProperties}
               >
-                <span className={`chat-tab__state chat-tab__state--${session.connectionState}`} />
-                <span className="chat-tab__title">{session.title}</span>
-              </button>
-              <button
-                className="chat-tab__rename"
-                type="button"
-                aria-label={`Rename ${session.title}`}
-                title="Rename chat"
-                onClick={(event) => handleRename(event, session.id, session.title)}
-              >
-                ✎
-              </button>
-              <button
-                className="chat-tab__close"
-                type="button"
-                aria-label={`Close ${session.title} tab`}
-                onClick={(event) => handleClose(event, session.id)}
-              >
-                ×
-              </button>
-            </div>
-          ))}
+                <button
+                  className="chat-tab__select"
+                  type="button"
+                  role="tab"
+                  aria-selected={session.id === activeSessionId}
+                  onClick={() => selectSession(session.id)}
+                >
+                  <span className={`chat-tab__state chat-tab__state--${session.connectionState}`} />
+                  <span className="chat-tab__identity">
+                    <span className="chat-tab__profile" title={`Hermes profile: ${profileName}`}>
+                      <span className="chat-profile-dot" aria-hidden="true" />
+                      {profileName}
+                    </span>
+                    <span className="chat-tab__title">{session.title}</span>
+                  </span>
+                </button>
+                <button
+                  className="chat-tab__rename"
+                  type="button"
+                  aria-label={`Rename ${session.title}`}
+                  title="Rename chat"
+                  onClick={(event) => handleRename(event, session.id, session.title)}
+                >
+                  ✎
+                </button>
+                <button
+                  className="chat-tab__close"
+                  type="button"
+                  aria-label={`Close ${session.title} tab`}
+                  onClick={(event) => handleClose(event, session.id)}
+                >
+                  ×
+                </button>
+              </div>
+            )
+          })}
         </div>
 
-        <button className="chat-tabs__new" type="button" onClick={createSession} aria-label="New Hermes chat">
+        <button className="chat-tabs__new" type="button" onClick={() => createSession()} aria-label="New Hermes chat">
           +
         </button>
         <button className="chat-tabs__close-all" type="button" onClick={closeAllTabs}>

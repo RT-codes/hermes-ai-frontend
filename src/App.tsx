@@ -16,9 +16,11 @@ import { HouseholdProvider } from './context/HouseholdContext'
 import { InsightSelectionProvider } from './context/InsightSelectionContext'
 import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
 import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
+import { NewChatProfileDialog } from './features/chat/components/NewChatProfileDialog'
 import './styles/layout.css'
 import './styles/chat.css'
 import './styles/chat-v2.css'
+import './styles/profile-chat.css'
 import './styles/workspace.css'
 import './styles/settings-v2.css'
 import './styles/telemetry.css'
@@ -81,6 +83,8 @@ function HermesHome() {
           <ChatPanel />
         </FloatingPanel>
       )}
+
+      <NewChatProfileDialog />
     </main>
   )
 }

@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../../features/chat/types'
 import { getHermesConnectionSettings } from '../../features/settings/connection'
+import { DEFAULT_HERMES_PROFILE_ID } from './profiles'
 
 export type HermesNativeEvent = {
   type: string
@@ -9,6 +10,7 @@ export type HermesNativeEvent = {
 type StreamHermesChatOptions = {
   messages: ChatMessage[]
   sessionId: string
+  profileId?: string
   onDelta: (delta: string) => void
   onEvent?: (event: HermesNativeEvent) => void
   preferNativeSession?: boolean
@@ -117,9 +119,6 @@ function parseOpenAiSseEvent(block: string, onDelta: (delta: string) => void, on
   const delta = chunk.choices?.[0]?.delta
   if (!delta) return
 
-  // Ollama/Qwen currently uses `reasoning` on the OpenAI-compatible stream,
-  // while other providers commonly use `reasoning_content`. Accept both, plus
-  // `thinking`, and normalize them into the same Insight reasoning channel.
   const reasoning = delta.reasoning ?? delta.reasoning_content ?? delta.thinking
   if (reasoning) {
     onEvent?.({
@@ -158,6 +157,11 @@ function httpError(status: number, detail: string) {
   if (status === 429) return new Error(compact || 'Hermes is busy. Retry this response shortly.')
   if (status === 401 || status === 403) return new Error('Hermes API authentication failed. Check the local gateway configuration.')
   return new Error(compact || `Hermes returned HTTP ${status}.`)
+}
+
+function profileApiBasePath(basePath: string, profileId: string) {
+  if (!profileId || profileId === DEFAULT_HERMES_PROFILE_ID) return basePath
+  return `${basePath}/p/${encodeURIComponent(profileId)}`
 }
 
 async function ensureNativeSession(basePath: string, sessionId: string, signal: AbortSignal) {
@@ -206,12 +210,13 @@ async function openNativeSessionStream(
 
 async function openCompatibilityStream(
   basePath: string,
+  profileId: string,
   model: string,
   sessionId: string,
   messages: ChatMessage[],
   signal: AbortSignal,
 ) {
-  const response = await fetch(`${basePath}/v1/chat/completions`, {
+  const response = await fetch(`${profileApiBasePath(basePath, profileId)}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -229,7 +234,13 @@ async function openCompatibilityStream(
     signal,
   })
 
-  if (!response.ok) throw httpError(response.status, await response.text())
+  if (!response.ok) {
+    const detail = await response.text()
+    if (profileId !== DEFAULT_HERMES_PROFILE_ID && response.status === 404) {
+      throw new Error(`Hermes profile "${profileId}" is not available on the multiplexed API gateway. Check gateway.multiplex_profiles and the profile allowlist.`)
+    }
+    throw httpError(response.status, detail)
+  }
   return response
 }
 
@@ -275,6 +286,7 @@ async function consumeSse(
 export async function streamHermesChat({
   messages,
   sessionId,
+  profileId = DEFAULT_HERMES_PROFILE_ID,
   onDelta,
   onEvent,
   preferNativeSession = true,
@@ -293,10 +305,12 @@ export async function streamHermesChat({
   try {
     let response: Response | null = null
     let native = false
+    const isDefaultProfile = profileId === DEFAULT_HERMES_PROFILE_ID
 
     try {
+      onEvent?.({ type: 'transport.profile', payload: { profileId, mode: isDefaultProfile ? 'default' : 'multiplex' } })
       const latestUser = [...messages].reverse().find((message) => message.role === 'user')?.content ?? ''
-      if (preferNativeSession && latestUser) {
+      if (isDefaultProfile && preferNativeSession && latestUser) {
         const available = await ensureNativeSession(connection.apiBasePath, sessionId, requestController.signal)
         if (available) {
           response = await openNativeSessionStream(
@@ -307,14 +321,20 @@ export async function streamHermesChat({
             requestController.signal,
           )
           native = Boolean(response)
-          if (native) onEvent?.({ type: 'transport.native', payload: { sessionId } })
+          if (native) onEvent?.({ type: 'transport.native', payload: { sessionId, profileId } })
         }
       }
 
       if (!response) {
-        onEvent?.({ type: 'transport.fallback', payload: { reason: 'native_session_stream_unavailable' } })
+        onEvent?.({
+          type: isDefaultProfile ? 'transport.fallback' : 'transport.profile_route',
+          payload: isDefaultProfile
+            ? { reason: 'native_session_stream_unavailable', profileId }
+            : { profileId, route: `/p/${profileId}/v1/chat/completions` },
+        })
         response = await openCompatibilityStream(
           connection.apiBasePath,
+          profileId,
           connection.model,
           sessionId,
           messages,
@@ -324,10 +344,14 @@ export async function streamHermesChat({
     } catch (error) {
       if (signal?.aborted) throw error
       if (timedOut) throw new Error('Hermes request timed out. Your conversation is safe; retry the response.')
-      if (error instanceof Error && !/Hermes returned HTTP/.test(error.message) && !/service error/.test(error.message)) {
-        throw new Error('Hermes is unreachable. Check that the local stack is running, then retry the response.')
+      if (error instanceof Error && (
+        error.message.includes('multiplexed API gateway')
+        || /Hermes returned HTTP/.test(error.message)
+        || /service error/.test(error.message)
+      )) {
+        throw error
       }
-      throw error
+      throw new Error('Hermes is unreachable. Check that the local stack is running, then retry the response.')
     }
 
     await consumeSse(
