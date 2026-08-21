@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAppearance } from '../../context/AppearanceContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
 import { useConnectionSettings } from '../../context/ConnectionSettingsContext'
+import { useHermesProfiles } from '../../context/HermesProfileContext'
 import { BrainStage } from '../BrainStage/BrainStage'
 
 export type WorkspaceView =
@@ -17,7 +18,7 @@ type WorkspaceStageProps = {
   activeView: WorkspaceView
 }
 
-type SettingsTab = 'appearance' | 'graphics' | 'connection'
+type SettingsTab = 'appearance' | 'graphics' | 'profiles' | 'connection'
 
 const viewCopy: Record<Exclude<WorkspaceView, 'brain' | 'chat' | 'settings'>, { eyebrow: string; title: string; description: string }> = {
   memory: {
@@ -209,6 +210,59 @@ function GraphicsSettings() {
   )
 }
 
+function ProfilesSettings() {
+  const {
+    profiles,
+    status,
+    warning,
+    refreshProfiles,
+    getProfileColor,
+    setProfileColor,
+  } = useHermesProfiles()
+
+  return (
+    <div className="profiles-settings">
+      <div className={`profile-discovery-banner profile-discovery-banner--${status}`}>
+        <div>
+          <span className="profile-discovery-banner__eyebrow">Hermes profile discovery</span>
+          <strong>{status === 'loading' ? 'SCANNING' : status === 'ready' ? 'CONNECTED' : 'DEGRADED'}</strong>
+          <p>{warning ?? `${profiles.length} Hermes profile${profiles.length === 1 ? '' : 's'} detected and available to the frontend registry.`}</p>
+        </div>
+        <button type="button" className="workspace-action workspace-action--quiet" disabled={status === 'loading'} onClick={() => void refreshProfiles()}>
+          {status === 'loading' ? 'SCANNING…' : 'REFRESH'}
+        </button>
+      </div>
+
+      <div className="profiles-grid">
+        {profiles.map((profile) => {
+          const color = getProfileColor(profile.id)
+          return (
+            <article className={`profile-settings-card ${profile.available ? '' : 'profile-settings-card--unavailable'}`} key={profile.id} style={{ '--profile-color': color } as React.CSSProperties}>
+              <div className="profile-settings-card__identity">
+                <span className="profile-settings-card__swatch" aria-hidden="true" />
+                <div>
+                  <strong>{profile.displayName}</strong>
+                  <code>{profile.id}</code>
+                </div>
+              </div>
+              <div className="profile-settings-card__flags">
+                {profile.isDefault && <span>DEFAULT</span>}
+                <span className={profile.available ? 'is-available' : 'is-unavailable'}>{profile.available ? 'AVAILABLE' : 'UNAVAILABLE'}</span>
+              </div>
+              <label className="profile-color-control">
+                <span>Profile color</span>
+                <input type="color" value={color} onChange={(event) => setProfileColor(profile.id, event.target.value)} />
+                <output>{color}</output>
+              </label>
+              <p className="profile-settings-card__note">Shared identity color for chat, Hermes Insight, Brain filters, skills and future control-center surfaces.</p>
+            </article>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function ConnectionSettings() {
   const { settings, updateSetting } = useConnectionSettings()
   return (
@@ -240,6 +294,13 @@ function SettingsWorkspace() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
   const { resetAppearance } = useAppearance()
   const { resetConnection } = useConnectionSettings()
+  const { resetProfileColors } = useHermesProfiles()
+
+  const resetActiveSettings = () => {
+    if (activeTab === 'connection') resetConnection()
+    else if (activeTab === 'profiles') resetProfileColors()
+    else resetAppearance()
+  }
 
   return (
     <section className="workspace-stage workspace-stage--interactive" aria-label="Settings workspace">
@@ -248,13 +309,13 @@ function SettingsWorkspace() {
           <div>
             <span className="workspace-placeholder__eyebrow">Control center settings</span>
             <h2>Settings</h2>
-            <p>Appearance, rendering behavior, and the frontend connection boundary are configured here.</p>
+            <p>Appearance, rendering behavior, Hermes profiles, and the frontend connection boundary are configured here.</p>
           </div>
-          <button className="workspace-action workspace-action--quiet" type="button" onClick={activeTab === 'connection' ? resetConnection : resetAppearance}>RESET</button>
+          <button className="workspace-action workspace-action--quiet" type="button" onClick={resetActiveSettings}>RESET</button>
         </div>
 
         <div className="settings-tabs" role="tablist" aria-label="Settings sections">
-          {(['appearance', 'graphics', 'connection'] as SettingsTab[]).map((tab) => (
+          {(['appearance', 'graphics', 'profiles', 'connection'] as SettingsTab[]).map((tab) => (
             <button className={activeTab === tab ? 'is-active' : ''} type="button" role="tab" aria-selected={activeTab === tab} key={tab} onClick={() => setActiveTab(tab)}>
               {tab === 'connection' ? 'CONNECTION DETAILS' : tab.toUpperCase()}
             </button>
@@ -263,6 +324,7 @@ function SettingsWorkspace() {
 
         {activeTab === 'appearance' && <AppearanceSettings />}
         {activeTab === 'graphics' && <GraphicsSettings />}
+        {activeTab === 'profiles' && <ProfilesSettings />}
         {activeTab === 'connection' && <ConnectionSettings />}
       </div>
     </section>

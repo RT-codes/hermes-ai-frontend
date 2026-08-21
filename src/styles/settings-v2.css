@@ -94,6 +94,197 @@
   grid-column: 1 / -1;
 }
 
+.profiles-settings {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.2rem;
+}
+
+.profile-discovery-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.14);
+  background: rgb(var(--panel-rgb) / 0.24);
+}
+
+.profile-discovery-banner > div {
+  display: grid;
+  gap: 0.26rem;
+}
+
+.profile-discovery-banner__eyebrow {
+  color: var(--text-faint);
+  font-family: var(--font-hud);
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.profile-discovery-banner strong {
+  color: var(--cyan-soft);
+  font-family: var(--font-hud);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+}
+
+.profile-discovery-banner p {
+  max-width: 60rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  line-height: 1.5;
+}
+
+.profile-discovery-banner--degraded {
+  border-color: rgb(255 173 92 / 0.28);
+}
+
+.profile-discovery-banner--degraded strong {
+  color: #ffad5c;
+}
+
+.profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  gap: 0.8rem;
+}
+
+.profile-settings-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem 1rem;
+  overflow: hidden;
+  padding: 0.95rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--profile-color) 32%, transparent);
+  background:
+    linear-gradient(115deg, color-mix(in srgb, var(--profile-color) 8%, transparent), transparent 48%),
+    rgb(var(--panel-rgb) / 0.24);
+}
+
+.profile-settings-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--profile-color);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--profile-color) 62%, transparent);
+}
+
+.profile-settings-card--unavailable {
+  opacity: 0.6;
+}
+
+.profile-settings-card__identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.7rem;
+}
+
+.profile-settings-card__identity > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.profile-settings-card__identity strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-settings-card__identity code {
+  overflow: hidden;
+  color: var(--text-faint);
+  font-family: var(--font-hud);
+  font-size: 0.54rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-settings-card__swatch {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  border: 1px solid color-mix(in srgb, var(--profile-color) 76%, white);
+  border-radius: 50%;
+  background: var(--profile-color);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--profile-color) 70%, transparent);
+}
+
+.profile-settings-card__flags {
+  display: flex;
+  align-items: start;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.profile-settings-card__flags span {
+  padding: 0.18rem 0.36rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.12);
+  color: var(--text-faint);
+  font-family: var(--font-hud);
+  font-size: 0.46rem;
+  letter-spacing: 0.1em;
+}
+
+.profile-settings-card__flags .is-available {
+  border-color: color-mix(in srgb, var(--profile-color) 32%, transparent);
+  color: var(--profile-color);
+}
+
+.profile-settings-card__flags .is-unavailable {
+  color: #ff7b7b;
+}
+
+.profile-color-control {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.08);
+}
+
+.profile-color-control > span {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+}
+
+.profile-color-control input[type='color'] {
+  width: 32px;
+  height: 24px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.18);
+  padding: 2px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.profile-color-control output {
+  min-width: 4.8rem;
+  color: var(--profile-color);
+  font-family: var(--font-hud);
+  font-size: 0.54rem;
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+
+.profile-settings-card__note {
+  grid-column: 1 / -1;
+  margin: -0.15rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.52rem;
+  line-height: 1.45;
+}
+
 /* Settings is a workspace, not a centered modal. Use the available canvas. */
 .workspace-stage[aria-label='Settings workspace'] {
   place-items: start stretch;
@@ -172,6 +363,27 @@
 
   .settings-note--wide {
     grid-column: auto;
+  }
+
+  .profile-discovery-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-settings-card {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-settings-card__flags {
+    justify-content: flex-start;
+  }
+
+  .profile-color-control {
+    grid-column: 1;
+  }
+
+  .profile-settings-card__note {
+    grid-column: 1;
   }
 
   .workspace-stage[aria-label='Settings workspace'] {
