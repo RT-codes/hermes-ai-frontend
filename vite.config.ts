@@ -95,7 +95,7 @@ async function collectTelemetry() {
     return telemetryCache.payload
   }
 
-  const [host, gpu] = await Promise.all([collectHostSample(), collectGpuSample())
+  const [host, gpu] = await Promise.all([collectHostSample(), collectGpuSample()])
   const memoryUsedBytes = host ? Math.max(0, host.memoryTotalBytes - host.memoryFreeBytes) : null
 
   const payload = {
