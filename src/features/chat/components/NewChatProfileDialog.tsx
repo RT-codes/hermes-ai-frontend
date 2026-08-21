@@ -14,7 +14,7 @@ function storedProfileId() {
 }
 
 export function NewChatProfileDialog() {
-  const { createSession } = useChatSessions()
+  const { createProfileSession } = useChatSessions()
   const { profiles, status, warning, getProfileColor } = useHermesProfiles()
   const [open, setOpen] = useState(false)
   const [selectedProfileId, setSelectedProfileId] = useState(storedProfileId)
@@ -56,7 +56,7 @@ export function NewChatProfileDialog() {
     } catch {
       // Persistence is a convenience; chat creation should still work without it.
     }
-    createSession(selected.id)
+    createProfileSession(selected.id)
     setOpen(false)
   }
 
