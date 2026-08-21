@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import type { FormEvent, KeyboardEvent, UIEvent } from 'react'
+import type { CSSProperties, FormEvent, KeyboardEvent, UIEvent } from 'react'
 import { useChatSessions } from '../../../context/ChatSessionsContext'
+import { useHermesProfiles } from '../../../context/HermesProfileContext'
 import { useInsightSelection } from '../../../context/InsightSelectionContext'
 import { useRuntimeStatus } from '../../../context/RuntimeStatusContext'
 import type { ChatMessage } from '../types'
@@ -70,6 +71,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
     cancelGeneration,
     retryResponse,
   } = useChatSessions()
+  const { getProfile, getProfileColor } = useHermesProfiles()
   const { selectedRequestBySession, selectRequestTrace } = useInsightSelection()
   const { hermesOnline, checkedAt, refresh } = useRuntimeStatus()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -104,13 +106,16 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
 
   if (!conversation) return null
 
+  const profile = getProfile(conversation.profileId)
+  const profileName = profile?.displayName ?? conversation.profileId
+  const profileColor = getProfileColor(conversation.profileId)
   const isBusy = conversation.connectionState === 'connecting' || conversation.connectionState === 'streaming'
   const isKnownOffline = checkedAt !== null && !hermesOnline
   const latestFailedAssistant = [...conversation.messages].reverse().find((message) => message.role === 'assistant' && message.status === 'failed') ?? null
   const statusLabel = conversation.connectionState === 'connecting'
     ? 'Connecting'
     : conversation.connectionState === 'streaming'
-      ? 'Hermes is working'
+      ? `${profileName} is working`
       : conversation.connectionState === 'error'
         ? 'Connection error'
         : isKnownOffline
@@ -157,7 +162,21 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
   }
 
   return (
-    <div className="chat-surface" data-conversation-id={conversationId}>
+    <div
+      className="chat-surface"
+      data-conversation-id={conversationId}
+      data-profile-id={conversation.profileId}
+      style={{ '--profile-color': profileColor } as CSSProperties}
+    >
+      <div className="chat-active-profile" title={`Bound to Hermes profile ${conversation.profileId}`}>
+        <span className="chat-profile-dot" aria-hidden="true" />
+        <div>
+          <small>ACTIVE PROFILE</small>
+          <strong>{profileName}</strong>
+        </div>
+        <code>{conversation.profileId}</code>
+      </div>
+
       <div className={`chat-status chat-status--${conversation.connectionState} ${isKnownOffline ? 'chat-status--offline' : ''}`}>
         <span className="chat-status__dot" />
         {statusLabel}
@@ -173,8 +192,8 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
       <div className="chat-messages" ref={messagesRef} onScroll={handleMessagesScroll} aria-live="polite">
         {conversation.messages.length === 0 && (
           <div className="chat-conversation-empty">
-            <strong>New conversation</strong>
-            <span>{isKnownOffline ? 'Hermes is offline, but you can prepare a draft now.' : 'Ask Hermes anything when you are ready.'}</span>
+            <strong>New conversation with {profileName}</strong>
+            <span>{isKnownOffline ? 'Hermes is offline, but you can prepare a draft now.' : `This chat is permanently bound to the ${profileName} profile.`}</span>
           </div>
         )}
         {conversation.messages.map((message) => {
@@ -189,7 +208,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
 
           return (
             <div className={`chat-message chat-message--${message.role} ${traceSelected ? 'is-trace-selected' : ''}`} key={message.id} data-status={message.status}>
-              <span className="chat-message__role">{message.role === 'user' ? 'YOU' : 'HERMES'}</span>
+              <span className="chat-message__role">{message.role === 'user' ? 'YOU' : profileName.toUpperCase()}</span>
               <div
                 className={message.role === 'assistant' && message.requestId ? 'chat-message__body chat-message__body--traceable' : 'chat-message__body'}
                 onClick={message.role === 'assistant' && message.requestId ? () => selectRequestTrace(conversationId, message.requestId ?? null) : undefined}
@@ -202,7 +221,7 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
               {reasoningText && (
                 <details className="chat-reasoning-disclosure">
                   <summary>
-                    <span>MODEL REASONING</span>
+                    <span>MODEL REASONING · {profileName.toUpperCase()}</span>
                     <small>{reasoningText.length.toLocaleString()} CHARS</small>
                   </summary>
                   <pre>{reasoningText}</pre>
@@ -245,9 +264,9 @@ export function ChatSurface({ conversationId }: ChatSurfaceProps) {
           value={input}
           onChange={(event) => setDraft(conversationId, event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isKnownOffline ? 'Hermes is offline — draft is saved' : `Message ${conversation.title}…`}
+          placeholder={isKnownOffline ? 'Hermes is offline — draft is saved' : `Message ${profileName}…`}
           rows={1}
-          aria-label="Message Hermes"
+          aria-label={`Message ${profileName}`}
           style={{ maxHeight: 160, overflowY: 'auto', resize: 'none' }}
         />
         {isBusy ? (
