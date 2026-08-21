@@ -147,7 +147,9 @@
   cursor: not-allowed;
 }
 
-.new-chat-profile-option__signal {
+.new-chat-profile-option__signal,
+.chat-profile-dot,
+.hermes-insight__profile-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
@@ -200,6 +202,178 @@
   cursor: not-allowed;
 }
 
+/* Profile Chat 4: persistent provenance across chat surfaces. */
+.chat-tab {
+  --profile-color: var(--cyan);
+  border-top-color: color-mix(in srgb, var(--profile-color) 24%, transparent);
+}
+
+.chat-tab.is-active {
+  box-shadow: inset 0 2px var(--profile-color);
+}
+
+.chat-tab__identity {
+  display: grid;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+.chat-tab__profile,
+.chat-session-card__profile {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  min-width: 0;
+  color: var(--profile-color);
+  font-size: 0.46rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chat-tab__profile .chat-profile-dot,
+.chat-session-card__profile .chat-profile-dot {
+  flex: 0 0 auto;
+  width: 0.38rem;
+  height: 0.38rem;
+}
+
+.chat-session-card {
+  --profile-color: var(--cyan);
+  box-shadow: inset 2px 0 color-mix(in srgb, var(--profile-color) 56%, transparent);
+}
+
+.chat-session-card__profile strong {
+  color: var(--profile-color);
+  font-size: 0.54rem;
+  letter-spacing: 0.08em;
+}
+
+.chat-session-card__profile code {
+  overflow: hidden;
+  max-width: 10rem;
+  color: var(--text-faint);
+  font-size: 0.46rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-surface {
+  --profile-color: var(--cyan);
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+}
+
+.chat-active-profile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.44rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--profile-color) 20%, transparent);
+  border-left: 2px solid var(--profile-color);
+  background: color-mix(in srgb, var(--profile-color) 4%, rgb(var(--panel-rgb) / 0.16));
+}
+
+.chat-active-profile .chat-profile-dot {
+  width: 0.48rem;
+  height: 0.48rem;
+}
+
+.chat-active-profile > div {
+  display: grid;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.chat-active-profile small {
+  color: var(--text-faint);
+  font-size: 0.42rem;
+  letter-spacing: 0.11em;
+}
+
+.chat-active-profile strong {
+  overflow: hidden;
+  color: var(--profile-color);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-active-profile code {
+  overflow: hidden;
+  max-width: 9rem;
+  color: var(--text-faint);
+  font-size: 0.46rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-surface .chat-message--assistant .chat-message__role {
+  color: var(--profile-color);
+}
+
+/* Profile Chat 5: profile-pinned Hermes Insight. */
+.hermes-insight--profile-aware {
+  --profile-color: var(--cyan);
+  grid-template-rows: auto auto auto minmax(9rem, 1.8fr) minmax(4.5rem, 0.8fr) minmax(4.5rem, 0.8fr);
+}
+
+.hermes-insight__profile-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.38rem 0.46rem;
+  border: 1px solid color-mix(in srgb, var(--profile-color) 18%, transparent);
+  border-left: 2px solid var(--profile-color);
+  background: color-mix(in srgb, var(--profile-color) 4%, transparent);
+}
+
+.hermes-insight__profile-dot {
+  width: 0.44rem;
+  height: 0.44rem;
+}
+
+.hermes-insight__profile-strip > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.03rem;
+}
+
+.hermes-insight__profile-strip small {
+  color: var(--text-faint);
+  font-size: 0.4rem;
+  letter-spacing: 0.11em;
+}
+
+.hermes-insight__profile-strip strong {
+  overflow: hidden;
+  color: var(--profile-color);
+  font-size: 0.56rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hermes-insight__profile-strip code {
+  overflow: hidden;
+  max-width: 8rem;
+  color: var(--text-faint);
+  font-size: 0.43rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hermes-insight--profile-aware .hermes-insight__working {
+  border-left-color: var(--profile-color);
+}
+
+.hermes-insight--profile-aware .hermes-insight__section-heading > span {
+  color: var(--profile-color);
+}
+
 @media (max-width: 620px) {
   .new-chat-profile-dialog__header,
   .new-chat-profile-dialog__footer {
@@ -212,5 +386,15 @@
 
   .new-chat-profile-dialog__footer > div {
     justify-content: flex-end;
+  }
+
+  .chat-active-profile,
+  .hermes-insight__profile-strip {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .chat-active-profile code,
+  .hermes-insight__profile-strip code {
+    display: none;
   }
 }
