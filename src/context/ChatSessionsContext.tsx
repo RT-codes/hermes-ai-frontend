@@ -13,7 +13,8 @@ type ChatSessionsContextValue = {
   activityBySession: Record<string, ChatActivityEvent[]>
   activeActivity: ChatActivityEvent[]
   drafts: Record<string, string>
-  createSession: (profileId?: string) => string
+  createSession: () => string
+  createProfileSession: (profileId: string) => string
   openSession: (sessionId: string) => void
   selectSession: (sessionId: string) => void
   closeTab: (sessionId: string) => void
@@ -253,17 +254,18 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  function createSession(profileId?: string) {
-    if (!profileId) {
-      window.dispatchEvent(new CustomEvent(NEW_CHAT_PROFILE_REQUEST_EVENT))
-      return ''
-    }
+  function createSession() {
+    window.dispatchEvent(new CustomEvent(NEW_CHAT_PROFILE_REQUEST_EVENT))
+    return ''
+  }
 
-    const session = createFreshSession(sessionsRef.current.length + 1, profileId)
+  function createProfileSession(profileId: string) {
+    const normalizedProfileId = profileId.trim() || DEFAULT_HERMES_PROFILE_ID
+    const session = createFreshSession(sessionsRef.current.length + 1, normalizedProfileId)
     setSessions((current) => [...current, session])
     setOpenTabIds((current) => [...current, session.id])
     setActiveSessionId(session.id)
-    appendActivity(session.id, 'session', 'success', 'Session ready', `Bound to Hermes profile: ${profileId}`)
+    appendActivity(session.id, 'session', 'success', 'Session ready', `Bound to Hermes profile: ${normalizedProfileId}`)
     return session.id
   }
 
@@ -503,6 +505,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     activeActivity,
     drafts,
     createSession,
+    createProfileSession,
     openSession,
     selectSession,
     closeTab,
