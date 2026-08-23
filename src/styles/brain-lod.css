@@ -114,16 +114,13 @@
 .brain-node-hover.is-cluster strong { text-shadow: 0 0 13px rgb(var(--accent-rgb) / 0.28); }
 
 /*
- * Cluster/detail context now lives at the bottom center so the canonical temporal
- * HUD can remain available across spatial tracing modes. The active cluster name
- * is visually integrated into the panel header instead of occupying its own
- * large top-center title treatment.
+ * Cluster/detail context stays bottom-center so temporal tracing remains clear.
  */
 .brain-cluster-info {
   position: absolute;
   z-index: 25;
   top: auto;
-  bottom: 2.35rem;
+  bottom: 4.85rem;
   left: 50%;
   width: min(660px, 44vw);
   transform: translateX(-50%);
@@ -143,7 +140,7 @@
   position: absolute;
   z-index: 27;
   top: auto;
-  bottom: 8.25rem;
+  bottom: 10.75rem;
   left: 50%;
   width: min(620px, 40vw);
   transform: translateX(-50%);
@@ -154,7 +151,7 @@
 
 .brain-cluster-title h2 {
   margin: 0;
-  padding-left: 0.8rem;
+  padding-left: 0.35rem;
   color: var(--cyan-soft);
   font-size: 0.58rem;
   font-weight: 500;
@@ -162,6 +159,12 @@
   line-height: 1;
   text-transform: uppercase;
   text-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.18);
+}
+
+.brain-cluster-title h2::before {
+  content: 'CLUSTER NAME: ';
+  color: var(--text-faint);
+  font-weight: 400;
 }
 
 .brain-cluster-title::after {
