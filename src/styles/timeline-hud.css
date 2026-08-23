@@ -114,19 +114,22 @@
   left: 0;
   right: 0;
   top: 0.85rem;
-  height: 2px;
+  height: 1px;
   background: linear-gradient(
     90deg,
-    rgb(var(--accent-rgb) / 0) 0%,
-    rgb(var(--accent-rgb) / 0.72) 5%,
-    rgb(var(--accent-rgb) / 0.96) 50%,
-    rgb(var(--accent-rgb) / 0.72) 95%,
-    rgb(var(--accent-rgb) / 0) 100%
+    rgb(255 255 255 / 0) 0%,
+    rgb(var(--accent-rgb) / 0.04) 3%,
+    rgb(190 236 250 / 0.48) 11%,
+    rgb(224 247 255 / 0.82) 28%,
+    rgb(238 251 255 / 0.94) 50%,
+    rgb(224 247 255 / 0.82) 72%,
+    rgb(190 236 250 / 0.48) 89%,
+    rgb(var(--accent-rgb) / 0.04) 97%,
+    rgb(255 255 255 / 0) 100%
   );
   box-shadow:
-    0 0 5px rgb(var(--accent-rgb) / 0.7),
-    0 0 14px rgb(var(--accent-rgb) / 0.34);
-  opacity: 1;
+    0 0 4px rgb(var(--accent-rgb) / 0.42),
+    0 0 10px rgb(var(--accent-rgb) / 0.18);
   pointer-events: none;
 }
 
@@ -326,10 +329,10 @@
 }
 
 .brain-timeline-hud .timeline-hud__header {
-  position: fixed;
+  position: absolute;
   z-index: 18;
-  top: calc(var(--space-page) + 0.28rem);
-  left: 50vw;
+  top: -0.95rem;
+  left: 50%;
   width: max-content;
   transform: translateX(-50%);
   flex-direction: column;
