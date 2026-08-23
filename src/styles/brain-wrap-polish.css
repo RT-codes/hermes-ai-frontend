@@ -19,19 +19,21 @@
   border-width: 0.8px;
   border-color: color-mix(in srgb, rgb(var(--accent-rgb)) 72%, white 28%);
   box-shadow:
-    inset 0 0 3px rgb(255 255 255 / 0.02),
-    0 0 4px rgb(var(--accent-rgb) / 0.1);
+    inset 0 0 2px rgb(255 255 255 / 0.016),
+    0 0 3px rgb(var(--accent-rgb) / 0.065);
 }
 
 /* Keep the cube readable but stop the glow from visually thickening its edges. */
 .brain-cube-glow {
-  background: rgb(var(--accent-rgb) / 0.09);
-  box-shadow: 0 0 28px 8px rgb(var(--accent-rgb) / 0.11);
-  filter: blur(15px);
+  opacity: 0.18;
+  background: rgb(var(--accent-rgb) / 0.055);
+  box-shadow: 0 0 22px 6px rgb(var(--accent-rgb) / 0.07);
+  filter: blur(14px);
 }
 
 .brain-cube-glow.is-thinking {
-  box-shadow: 0 0 42px 14px rgb(var(--accent-rgb) / 0.28);
+  opacity: 0.62;
+  box-shadow: 0 0 34px 11px rgb(var(--accent-rgb) / 0.18);
 }
 
 /*
