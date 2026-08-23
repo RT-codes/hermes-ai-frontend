@@ -9,10 +9,9 @@ type SidebarProps = {
 }
 
 const primaryNavItems: Array<{ code: string; label: string; view: WorkspaceView }> = [
-  { code: 'BR', label: 'Brain', view: 'brain' },
+  { code: 'ME', label: 'Memory', view: 'brain' },
   { code: 'OP', label: 'Operations', view: 'operations' },
   { code: 'CH', label: 'Chats', view: 'chat' },
-  { code: 'ME', label: 'Memory', view: 'memory' },
   { code: 'SK', label: 'Skills', view: 'skills' },
   { code: 'SY', label: 'System', view: 'system' },
 ]
