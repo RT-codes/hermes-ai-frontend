@@ -38,6 +38,7 @@ import './styles/timeline-hud.css'
 import './styles/spatial-stage.css'
 import './styles/brain-wrap-polish.css'
 import './styles/orchestration-spatial.css'
+import './styles/orchestration-final-polish.css'
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
