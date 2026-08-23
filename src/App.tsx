@@ -17,6 +17,7 @@ import { InsightSelectionProvider } from './context/InsightSelectionContext'
 import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
 import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
 import { NewChatProfileDialog } from './features/chat/components/NewChatProfileDialog'
+import { OrchestrationWorkspace } from './features/orchestration/OrchestrationWorkspace'
 import './styles/layout.css'
 import './styles/chat.css'
 import './styles/chat-v2.css'
@@ -32,6 +33,7 @@ import './styles/brain.css'
 import './styles/brain-phase2.css'
 import './styles/brain-final-polish.css'
 import './styles/typography-v2.css'
+import './styles/orchestration.css'
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -57,7 +59,9 @@ function HermesHome() {
       />
 
       <TopBar />
-      <WorkspaceStage activeView={activeView} />
+      {activeView === 'operations'
+        ? <OrchestrationWorkspace />
+        : <WorkspaceStage activeView={activeView} />}
 
       {activeView === 'brain' && (
         <div className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}>
