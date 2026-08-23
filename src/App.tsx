@@ -34,6 +34,7 @@ import './styles/brain-phase2.css'
 import './styles/brain-final-polish.css'
 import './styles/typography-v2.css'
 import './styles/orchestration.css'
+import './styles/timeline-hud.css'
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
