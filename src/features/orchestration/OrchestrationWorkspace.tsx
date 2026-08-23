@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { TimelineHud, type TimelineMarker } from '../../components/TimelineHud/TimelineHud'
 import { useHermesProfiles } from '../../context/HermesProfileContext'
 
 type Agent = {
@@ -53,6 +54,14 @@ function taskStateLabel(status: string) {
   if (status === 'done') return 'DONE'
   if (status === 'ready') return 'READY'
   return status.toUpperCase()
+}
+
+function eventTone(kind: string): TimelineMarker['tone'] {
+  if (kind === 'completed') return 'success'
+  if (kind === 'blocked' || kind === 'failed' || kind === 'timeout') return 'danger'
+  if (kind === 'claimed' || kind === 'spawned') return 'accent'
+  if (kind === 'heartbeat') return 'default'
+  return 'warning'
 }
 
 export function OrchestrationWorkspace() {
@@ -150,6 +159,19 @@ export function OrchestrationWorkspace() {
     [selectedTaskId, tasks],
   )
 
+  const timelineMarkers = useMemo<TimelineMarker[]>(() =>
+    selectedEvents
+      .filter((event): event is TaskEvent & { created_at_iso: string } => Boolean(event.created_at_iso))
+      .map((event) => ({
+        id: `${selectedTaskId ?? 'task'}:${event.sequence}:${event.kind}`,
+        at: event.created_at_iso,
+        label: event.kind,
+        tone: eventTone(event.kind),
+        detail: event.run_id == null ? `Event ${event.sequence}` : `Run ${event.run_id} · event ${event.sequence}`,
+      })),
+    [selectedEvents, selectedTaskId],
+  )
+
   const activeTasks = useMemo(
     () => tasks.filter((task) => task.status === 'running' || task.status === 'blocked' || task.status === 'ready'),
     [tasks],
@@ -177,6 +199,13 @@ export function OrchestrationWorkspace() {
       </header>
 
       {error && <div className="orchestration-banner">{error}</div>}
+
+      <TimelineHud
+        className="orchestration-timeline-hud"
+        eyebrow="TASK TEMPORAL TRACE"
+        title={selectedTask ? selectedTask.title : 'SELECT A TASK'}
+        markers={timelineMarkers}
+      />
 
       <div className="orchestration-grid">
         <aside className="orchestration-zone orchestration-team">
