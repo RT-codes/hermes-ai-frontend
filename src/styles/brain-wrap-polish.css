@@ -1,0 +1,58 @@
+/* Final wrap-up polish for the shared Brain spatial HUD pass. */
+
+/* Split the difference between the last two timeline-control positions. */
+.brain-timeline-hud .timeline-hud__header {
+  top: -0.35rem;
+}
+
+/* Lift cluster/detail context another ~20px while preserving its current geometry. */
+.brain-cluster-info {
+  bottom: 6.1rem;
+}
+
+.brain-cluster-title {
+  bottom: 12rem;
+}
+
+/*
+ * Hermes Insight should be quiet when there is nothing to inspect. Keep the
+ * panel identity + ready/offline headline, fold away the empty Working Trace,
+ * and let the full existing panel return as soon as a session/trace is active.
+ */
+.brain-hud-lane__insight,
+.brain-hud-lane__insight > .brain-hud-panel {
+  transition:
+    max-height 170ms cubic-bezier(0.22, 0.78, 0.25, 1),
+    opacity 140ms ease,
+    transform 170ms cubic-bezier(0.22, 0.78, 0.25, 1);
+}
+
+.brain-hud-lane__insight > .brain-hud-panel {
+  max-height: 1000px;
+  overflow: hidden;
+}
+
+.brain-hud-lane__insight:has(.hermes-insight--empty) {
+  align-self: end;
+  min-height: 0;
+  overflow: visible;
+}
+
+.brain-hud-lane__insight:has(.hermes-insight--empty) > .brain-hud-panel {
+  height: auto;
+  max-height: 6.15rem;
+}
+
+.brain-hud-lane__insight:has(.hermes-insight--empty) .brain-hud-panel__content {
+  padding-bottom: 0.55rem;
+}
+
+.hermes-insight--empty {
+  grid-template-rows: auto;
+  gap: 0;
+  min-height: 0;
+}
+
+.hermes-insight--empty .hermes-insight__working--empty {
+  display: none;
+}
