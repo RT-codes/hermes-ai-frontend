@@ -50,8 +50,8 @@ export function useOrchestrationControl(selectedTaskId: string | null) {
     const source = new EventSource(`${API}/v1/events/stream?board=${BOARD}`)
 
     source.onopen = () => {
-      setConnectionState('live')
-      setError(null)
+      setConnectionState(hasSnapshotRef.current ? 'live' : 'connecting')
+      if (hasSnapshotRef.current) setError(null)
     }
 
     source.onerror = () => {
@@ -106,7 +106,6 @@ export function useOrchestrationControl(selectedTaskId: string | null) {
     selectedEvents,
     connectionState,
     error,
-    hasAuthoritativeSnapshot: hasSnapshotRef.current,
     refreshSnapshot,
   }
 }
