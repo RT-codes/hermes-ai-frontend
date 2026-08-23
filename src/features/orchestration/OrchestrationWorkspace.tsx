@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { BrainHudPanel } from '../../components/BrainHudPanel/BrainHudPanel'
+import { SpatialInteractionCanvas } from '../../components/SpatialInteractionCanvas/SpatialInteractionCanvas'
 import { SpatialStageEnvironment } from '../../components/SpatialStageEnvironment/SpatialStageEnvironment'
 import { TimelineHud, type TimelineMarker } from '../../components/TimelineHud/TimelineHud'
 import { useHermesProfiles } from '../../context/HermesProfileContext'
@@ -74,6 +75,7 @@ export function OrchestrationWorkspace() {
   const [selectedEvents, setSelectedEvents] = useState<TaskEvent[]>([])
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting')
   const [error, setError] = useState<string | null>(null)
+  const [panelCollapsed, setPanelCollapsed] = useState(false)
 
   const refreshSnapshot = useCallback(async () => {
     const [agentsResponse, tasksResponse] = await Promise.all([
@@ -188,15 +190,26 @@ export function OrchestrationWorkspace() {
   )
 
   const panelMeta = (
-    <span className={`orchestration-connection orchestration-connection--${connectionState}`}>
-      <span aria-hidden="true" />
-      {connectionState.toUpperCase()} · {agents.length} PROFILES
+    <span className="orchestration-panel-meta">
+      <span className={`orchestration-connection orchestration-connection--${connectionState}`}>
+        <span aria-hidden="true" />
+        {connectionState.toUpperCase()} · {agents.length} PROFILES
+      </span>
+      <button
+        type="button"
+        className="orchestration-panel-toggle"
+        onClick={() => setPanelCollapsed((value) => !value)}
+        aria-expanded={!panelCollapsed}
+      >
+        {panelCollapsed ? 'EXPAND' : 'COLLAPSE'}
+      </button>
     </span>
   )
 
   return (
     <section className="workspace-stage workspace-stage--interactive orchestration-stage orchestration-stage--spatial" aria-label="Orchestration workspace">
       <SpatialStageEnvironment className="orchestration-spatial-environment" />
+      <SpatialInteractionCanvas />
 
       <TimelineHud
         className="brain-timeline-hud orchestration-canonical-timeline"
@@ -207,7 +220,7 @@ export function OrchestrationWorkspace() {
 
       {error && <div className="orchestration-banner orchestration-banner--spatial">{error}</div>}
 
-      <div className="orchestration-spatial-panel-shell">
+      <div className={`orchestration-spatial-panel-shell ${panelCollapsed ? 'is-collapsed' : ''}`}>
         <BrainHudPanel title="OPERATIONS" meta={panelMeta} className="orchestration-spatial-panel">
           <div className="orchestration-spatial-panel__body">
             <section className="orchestration-spatial-panel__work" aria-label="Hermes work queue">
