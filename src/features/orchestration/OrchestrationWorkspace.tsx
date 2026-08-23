@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { SpatialStageBackdrop } from '../../components/SpatialStageBackdrop/SpatialStageBackdrop'
 import { TimelineHud, type TimelineMarker } from '../../components/TimelineHud/TimelineHud'
 import { useHermesProfiles } from '../../context/HermesProfileContext'
 
@@ -187,6 +188,8 @@ export function OrchestrationWorkspace() {
 
   return (
     <section className="workspace-stage workspace-stage--interactive orchestration-stage" aria-label="Orchestration workspace">
+      <SpatialStageBackdrop className="orchestration-spatial-backdrop" />
+
       <header className="orchestration-header">
         <div>
           <span className="workspace-placeholder__eyebrow">Native Hermes orchestration</span>
