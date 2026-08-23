@@ -81,19 +81,31 @@ export function TimelineHud({
   const [internalRange, setInternalRange] = useState(60)
   const [centerOffsetMs, setCenterOffsetMs] = useState<number | null>(null)
   const [scrubAtMs, setScrubAtMs] = useState<number | null>(null)
+  const [isPanning, setIsPanning] = useState(false)
   const railRef = useRef<HTMLDivElement | null>(null)
   const draggingRef = useRef(false)
+  const panningRef = useRef(false)
+  const panStartXRef = useRef(0)
+  const panStartCenterOffsetRef = useRef(0)
 
   const activeRange = clamp(rangeMinutes ?? internalRange, MIN_RANGE_MINUTES, MAX_RANGE_MINUTES)
   const highlightedPreset = nearestPreset(activeRange)
   const nowMs = now.getTime()
-  const liveDefaultCenter = nowMs - (activeRange * 60_000) / 2
+  const windowMs = activeRange * 60_000
+  const halfWindowMs = windowMs / 2
+  const liveDefaultCenter = nowMs - halfWindowMs
   const centerMs = centerOffsetMs == null ? liveDefaultCenter : nowMs + centerOffsetMs
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(timer)
   }, [])
+
+  const clampCenterToHistory = (candidateCenterMs: number) => {
+    const newestCenter = liveDefaultCenter
+    const oldestCenter = nowMs - MAX_RANGE_MINUTES * 60_000 + halfWindowMs
+    return clamp(candidateCenterMs, oldestCenter, newestCenter)
+  }
 
   const setRangeAroundCenter = (minutes: number) => {
     const next = clamp(minutes, MIN_RANGE_MINUTES, MAX_RANGE_MINUTES)
@@ -103,7 +115,6 @@ export function TimelineHud({
   }
 
   const { startMs, endMs, ticks } = useMemo(() => {
-    const halfWindowMs = (activeRange * 60_000) / 2
     const start = centerMs - halfWindowMs
     const end = centerMs + halfWindowMs
     const stepMinutes = tickStepForRange(activeRange)
@@ -119,7 +130,7 @@ export function TimelineHud({
     }
 
     return { startMs: start, endMs: end, ticks: values }
-  }, [activeRange, centerMs])
+  }, [activeRange, centerMs, halfWindowMs])
 
   useEffect(() => {
     setScrubAtMs((current) => {
@@ -175,6 +186,43 @@ export function TimelineHud({
     }
   }
 
+  const handleRailDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return
+    event.preventDefault()
+    panningRef.current = true
+    setIsPanning(true)
+    panStartXRef.current = event.clientX
+    panStartCenterOffsetRef.current = centerMs - nowMs
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handleRailMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!panningRef.current) return
+    const rail = railRef.current
+    if (!rail) return
+    const rect = rail.getBoundingClientRect()
+    if (rect.width <= 0) return
+
+    const deltaPx = event.clientX - panStartXRef.current
+    const deltaMs = (deltaPx / rect.width) * windowMs
+    const candidateCenter = nowMs + panStartCenterOffsetRef.current - deltaMs
+    const boundedCenter = clampCenterToHistory(candidateCenter)
+
+    if (Math.abs(boundedCenter - liveDefaultCenter) < Math.max(1000, windowMs * 0.001)) {
+      setCenterOffsetMs(null)
+    } else {
+      setCenterOffsetMs(boundedCenter - nowMs)
+    }
+  }
+
+  const handleRailUp = (event: PointerEvent<HTMLDivElement>) => {
+    panningRef.current = false
+    setIsPanning(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
     event.preventDefault()
     const factor = Math.exp(event.deltaY * 0.0014)
@@ -205,7 +253,16 @@ export function TimelineHud({
       </header>
 
       <div className="timeline-hud__rail-wrap">
-        <div className="timeline-hud__rail" ref={railRef} onWheel={handleWheel}>
+        <div
+          className={`timeline-hud__rail ${isPanning ? 'is-panning' : ''}`}
+          ref={railRef}
+          onWheel={handleWheel}
+          onPointerDown={handleRailDown}
+          onPointerMove={handleRailMove}
+          onPointerUp={handleRailUp}
+          onPointerCancel={handleRailUp}
+          title="Drag to pan through time · wheel to zoom"
+        >
           <span className="timeline-hud__axis" aria-hidden="true" />
 
           {ticks.map((tick) => (
@@ -264,7 +321,7 @@ export function TimelineHud({
       </div>
 
       <footer className="timeline-hud__footer">
-        <span>WINDOW {formatWindow(activeRange)} · WHEEL TO ZOOM</span>
+        <span>WINDOW {formatWindow(activeRange)} · DRAG TO PAN · WHEEL TO ZOOM</span>
         <time>{playheadAtNow ? `NOW ${formatClock(now)}` : new Date(playheadMs).toLocaleString()}</time>
       </footer>
     </div>
