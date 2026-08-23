@@ -1,6 +1,7 @@
-/* Spatial Operations shell: reuse the Brain stage language without reusing the Brain graph itself. */
+/* Spatial Operations shell: a translucent HUD overlay on the shared 3D stage. */
 
 .orchestration-stage--spatial {
+  position: absolute;
   inset: 0;
   display: block;
   padding: 0;
@@ -8,21 +9,46 @@
   background: transparent;
 }
 
+/* Make the shared scene materially visible behind the Operations glass. */
 .orchestration-stage--spatial > .orchestration-spatial-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   opacity: 1;
 }
 
-.orchestration-canonical-timeline {
+.orchestration-stage--spatial .spatial-stage-backdrop__haze {
+  background:
+    radial-gradient(circle at 50% 37%, rgb(var(--accent-rgb) / 0.18), transparent 30%),
+    radial-gradient(circle at 50% 72%, rgb(var(--accent-rgb) / 0.09), transparent 42%);
+}
+
+.orchestration-stage--spatial .spatial-stage-backdrop__grid {
+  opacity: 0.48;
+}
+
+.orchestration-stage--spatial .spatial-stage-backdrop__floor {
+  top: 48%;
+  opacity: 0.42;
+  background-image:
+    linear-gradient(rgb(var(--accent-rgb) / 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--accent-rgb) / 0.12) 1px, transparent 1px);
+}
+
+/* Canonical Brain timeline geometry, now correctly absolute again. */
+.orchestration-stage--spatial > .orchestration-canonical-timeline {
+  position: absolute;
   z-index: 18;
 }
 
+/* Main Operations surface behaves like a floating Brain HUD/cluster inspector. */
 .orchestration-spatial-panel-shell {
   position: absolute;
-  z-index: 20;
-  top: 10.9rem;
-  bottom: 6.6rem;
+  z-index: 28;
+  top: 11.2rem;
+  bottom: 7.4rem;
   left: 50%;
-  width: min(72vw, 1180px);
+  width: min(70vw, 1160px);
   min-width: 760px;
   transform: translateX(-50%);
   pointer-events: auto;
@@ -34,12 +60,29 @@
   width: 100%;
   height: 100%;
   min-height: 0;
+  filter:
+    drop-shadow(0 22px 42px rgb(0 0 0 / 0.34))
+    drop-shadow(0 0 24px rgb(var(--accent-rgb) / 0.05));
+}
+
+/* Keep the Brain HUD two-layer cut-corner construction, but make this large panel glassier. */
+.orchestration-spatial-panel > .brain-hud-panel__surface {
+  background: rgb(var(--accent-rgb) / 0.22);
+}
+
+.orchestration-spatial-panel > .brain-hud-panel__surface::after {
+  background:
+    linear-gradient(115deg, rgb(var(--accent-rgb) / 0.035), transparent 44%, rgb(var(--accent-rgb) / 0.018)),
+    rgb(var(--brain-hud-rgb) / 0.46);
+  backdrop-filter: blur(12px) saturate(126%);
+  -webkit-backdrop-filter: blur(12px) saturate(126%);
 }
 
 .orchestration-spatial-panel > .brain-hud-panel__header {
   padding-left: 0.8rem;
   padding-right: 0.8rem;
   border-bottom: 1px solid rgb(var(--accent-rgb) / 0.1);
+  background: rgb(var(--brain-hud-rgb) / 0.1);
 }
 
 .orchestration-spatial-panel > .brain-hud-panel__content {
@@ -60,6 +103,7 @@
 .orchestration-spatial-panel__detail {
   min-width: 0;
   min-height: 0;
+  background: rgb(var(--brain-hud-rgb) / 0.08);
 }
 
 .orchestration-spatial-panel__work {
@@ -86,10 +130,15 @@
   overflow: auto;
 }
 
+.orchestration-task-list--embedded .orchestration-task {
+  background: rgb(0 0 0 / 0.12);
+}
+
 .orchestration-inspector--embedded {
   min-height: 0;
   padding: 0.95rem 1rem 1.05rem;
   overflow: auto;
+  background: transparent;
 }
 
 .orchestration-activity-inline {
@@ -97,7 +146,7 @@
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
   border-top: 1px solid rgb(var(--accent-rgb) / 0.11);
-  background: rgb(0 0 0 / 0.08);
+  background: rgb(0 0 0 / 0.07);
 }
 
 .orchestration-activity__feed--embedded {
@@ -122,16 +171,17 @@
 
 .orchestration-banner--spatial {
   position: absolute;
-  z-index: 24;
+  z-index: 32;
   top: 8.4rem;
   left: 50%;
   width: min(60vw, 900px);
   transform: translateX(-50%);
 }
 
-.orchestration-view-controls {
+/* Future scene controls stay in the same spatial layer as Brain controls, below overlays. */
+.orchestration-stage--spatial > .orchestration-view-controls {
   position: absolute;
-  z-index: 21;
+  z-index: 12;
   left: 50%;
   bottom: 3.25rem;
   display: flex;
@@ -159,8 +209,12 @@
   cursor: default;
 }
 
-.orchestration-scene-help {
-  z-index: 21;
+.orchestration-stage--spatial > .orchestration-scene-help {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: 1.35rem;
+  transform: translateX(-50%);
 }
 
 @media (max-width: 1180px) {
