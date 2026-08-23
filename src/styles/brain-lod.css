@@ -113,49 +113,60 @@
 .brain-node-hover.is-cluster { min-width: min(250px, 24vw); }
 .brain-node-hover.is-cluster strong { text-shadow: 0 0 13px rgb(var(--accent-rgb) / 0.28); }
 
-.brain-cluster-title {
-  position: absolute;
-  z-index: 26;
-  top: calc(var(--space-page) + 1.08rem);
-  left: 50%;
-  width: min(520px, 34vw);
-  transform: translateX(-50%);
-  text-align: center;
-  pointer-events: none;
-  animation: brain-cluster-title-enter 320ms ease both;
-}
-
-.brain-cluster-title h2 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 1.75rem;
-  font-weight: 400;
-  letter-spacing: 0.015em;
-  line-height: normal;
-  text-shadow: 0 0 18px rgb(var(--accent-rgb) / 0.11);
-}
-
-.brain-cluster-title::after {
-  content: '';
-  display: block;
-  width: 118%;
-  height: 1px;
-  margin: 0.55rem 0 0 -9%;
-  background: linear-gradient(90deg, rgb(255 255 255 / 0) 0%, rgb(255 255 255 / 0.68) 24%, rgb(255 255 255 / 0.68) 76%, rgb(255 255 255 / 0) 100%);
-}
-
+/*
+ * Cluster/detail context now lives at the bottom center so the canonical temporal
+ * HUD can remain available across spatial tracing modes. The active cluster name
+ * is visually integrated into the panel header instead of occupying its own
+ * large top-center title treatment.
+ */
 .brain-cluster-info {
   position: absolute;
   z-index: 25;
-  top: 7.2rem;
+  top: auto;
+  bottom: 2.35rem;
   left: 50%;
-  width: min(680px, 45vw);
+  width: min(660px, 44vw);
   transform: translateX(-50%);
   pointer-events: none;
   animation: brain-cluster-info-enter 360ms 60ms ease both;
 }
 
-.brain-cluster-info__panel { width: 100%; }
+.brain-cluster-info__panel {
+  width: 100%;
+}
+
+.brain-cluster-info__panel .brain-hud-panel__header > span {
+  opacity: 0;
+}
+
+.brain-cluster-title {
+  position: absolute;
+  z-index: 27;
+  top: auto;
+  bottom: 8.25rem;
+  left: 50%;
+  width: min(620px, 40vw);
+  transform: translateX(-50%);
+  text-align: left;
+  pointer-events: none;
+  animation: brain-cluster-title-enter 260ms ease both;
+}
+
+.brain-cluster-title h2 {
+  margin: 0;
+  padding-left: 0.8rem;
+  color: var(--cyan-soft);
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.18);
+}
+
+.brain-cluster-title::after {
+  display: none;
+}
 
 .brain-cluster-info__mode-toggle {
   display: inline-flex;
@@ -238,12 +249,12 @@
 }
 
 @keyframes brain-cluster-title-enter {
-  from { opacity: 0; transform: translate(-50%, -8px); }
+  from { opacity: 0; transform: translate(-50%, 6px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
 @keyframes brain-cluster-info-enter {
-  from { opacity: 0; transform: translate(-50%, -6px); }
+  from { opacity: 0; transform: translate(-50%, 6px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
@@ -272,12 +283,11 @@
 
 @media (max-width: 1180px) {
   .brain-cluster-info { display: none; }
-  .brain-cluster-title { width: min(400px, 38vw); }
+  .brain-cluster-title { display: none; }
 }
 
 @media (max-width: 900px) {
   .brain-cluster-label {
     transform: translate(-50%, calc(-100% - var(--cluster-pin-length))) scale(var(--cluster-label-scale));
   }
-  .brain-cluster-title { display: none; }
 }
