@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useAppearance } from '../../context/AppearanceContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
 import { BrainGraph } from '../BrainGraph/BrainGraph'
+import { SpatialStageBackdrop } from '../SpatialStageBackdrop/SpatialStageBackdrop'
 import { TimelineHud } from '../TimelineHud/TimelineHud'
 
 type Axis = 'x' | 'y' | 'z'
@@ -100,6 +101,7 @@ export function BrainStage() {
 
   return (
     <section className="brain-stage brain-stage--3d" aria-label="Interactive 3D Hermes memory graph foundation">
+      <SpatialStageBackdrop />
       <BrainGraph onViewRotationChange={handleViewRotationChange} />
 
       <div className={`brain-scene-core ${isThinking ? 'is-thinking' : 'is-idle'}`} aria-hidden="true">
