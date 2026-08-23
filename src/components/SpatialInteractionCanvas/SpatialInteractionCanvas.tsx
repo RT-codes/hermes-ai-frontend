@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import ForceGraph3D from 'react-force-graph-3d'
 import type { ForceGraphMethods } from 'react-force-graph-3d'
-import { Color, GridHelper, Material } from 'three'
+import { Color, GridHelper } from 'three'
+import type { Material } from 'three'
 
 type SpatialNode = { id: string }
 type SpatialLink = { source: string; target: string }
