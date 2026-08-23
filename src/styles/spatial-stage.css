@@ -52,10 +52,5 @@
 
 .orchestration-stage > .spatial-stage-backdrop {
   z-index: 0;
-  opacity: 0.9;
-}
-
-.orchestration-stage > :not(.spatial-stage-backdrop) {
-  position: relative;
-  z-index: 1;
+  opacity: 1;
 }
