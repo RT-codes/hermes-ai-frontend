@@ -159,18 +159,19 @@ export function OrchestrationWorkspace() {
     [selectedTaskId, tasks],
   )
 
-  const timelineMarkers = useMemo<TimelineMarker[]>(() =>
-    selectedEvents
+  const timelineMarkers = useMemo<TimelineMarker[]>(() => {
+    const ownerColor = getProfileColor(selectedTask?.assignee ?? 'default')
+    return selectedEvents
       .filter((event): event is TaskEvent & { created_at_iso: string } => Boolean(event.created_at_iso))
       .map((event) => ({
         id: `${selectedTaskId ?? 'task'}:${event.sequence}:${event.kind}`,
         at: event.created_at_iso,
         label: event.kind,
         tone: eventTone(event.kind),
+        color: ownerColor,
         detail: event.run_id == null ? `Event ${event.sequence}` : `Run ${event.run_id} · event ${event.sequence}`,
-      })),
-    [selectedEvents, selectedTaskId],
-  )
+      }))
+  }, [getProfileColor, selectedEvents, selectedTask?.assignee, selectedTaskId])
 
   const activeTasks = useMemo(
     () => tasks.filter((task) => task.status === 'running' || task.status === 'blocked' || task.status === 'ready'),
@@ -202,8 +203,8 @@ export function OrchestrationWorkspace() {
 
       <TimelineHud
         className="orchestration-timeline-hud"
-        eyebrow="TASK TEMPORAL TRACE"
-        title={selectedTask ? selectedTask.title : 'SELECT A TASK'}
+        eyebrow={selectedTask ? `TASK TRACE · ${selectedTask.id}` : 'TASK TEMPORAL TRACE'}
+        title="EXECUTION TIMELINE"
         markers={timelineMarkers}
       />
 
