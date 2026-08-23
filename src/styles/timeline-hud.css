@@ -51,7 +51,9 @@
 .timeline-hud__controls button,
 .timeline-hud__tick small,
 .timeline-hud__marker small,
-.timeline-hud__now small {
+.timeline-hud__now-terminal small,
+.timeline-hud__playhead span,
+.timeline-hud__playhead time {
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -91,43 +93,52 @@
 }
 
 .timeline-hud__rail-wrap {
-  padding: 0.55rem 1rem 0.75rem;
+  padding: 0.75rem 1.2rem 1.15rem;
 }
 
 .timeline-hud__rail {
   position: relative;
-  height: 3.25rem;
-  border-top: 1px solid color-mix(in srgb, var(--accent) 30%, rgba(255,255,255,0.05));
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 4%, transparent), transparent 78%);
+  height: 4.35rem;
   overflow: visible;
+  touch-action: none;
+  cursor: ew-resize;
 }
 
-.timeline-hud__past-glow {
+.timeline-hud__axis {
   position: absolute;
-  inset: -1px 0 auto 0;
+  left: 0;
+  right: 0;
+  top: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 55%, transparent) 72%, var(--accent));
-  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 26%, transparent) 5%,
+    color-mix(in srgb, var(--accent) 62%, rgba(255,255,255,0.1)) 50%,
+    color-mix(in srgb, var(--accent) 42%, transparent) 94%,
+    transparent 100%
+  );
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .timeline-hud__tick,
 .timeline-hud__marker {
   position: absolute;
   left: var(--timeline-position);
-  top: -1px;
+  top: 0;
   transform: translateX(-50%);
 }
 
 .timeline-hud__tick i {
   display: block;
   width: 1px;
-  height: 0.55rem;
+  height: 0.7rem;
   background: color-mix(in srgb, var(--accent) 38%, rgba(255,255,255,0.08));
 }
 
 .timeline-hud__tick small {
   display: block;
-  margin-top: 0.3rem;
+  margin-top: 0.28rem;
   transform: translateX(-50%);
   color: color-mix(in srgb, var(--text-muted) 78%, transparent);
   font-size: 0.47rem;
@@ -135,23 +146,23 @@
 }
 
 .timeline-hud__marker {
-  top: 0.85rem;
-  color: var(--accent);
+  top: 1.05rem;
+  color: var(--timeline-marker-color, var(--accent));
 }
 
 .timeline-hud__marker i {
   display: block;
-  width: 0.54rem;
-  height: 0.54rem;
+  width: 0.58rem;
+  height: 0.58rem;
   border: 1px solid currentColor;
   border-radius: 50%;
-  background: color-mix(in srgb, currentColor 26%, var(--panel-color));
-  box-shadow: 0 0 9px currentColor;
+  background: color-mix(in srgb, currentColor 24%, var(--panel-color));
+  box-shadow: 0 0 10px currentColor, 0 0 20px color-mix(in srgb, currentColor 38%, transparent);
 }
 
 .timeline-hud__marker small {
   position: absolute;
-  top: 0.82rem;
+  top: 0.9rem;
   left: 50%;
   transform: translateX(-50%);
   max-width: 7rem;
@@ -163,47 +174,123 @@
   opacity: 0.78;
 }
 
-.timeline-hud__marker--warning { color: #f4c968; }
-.timeline-hud__marker--danger { color: #f06f7b; }
-.timeline-hud__marker--success { color: #66e3a4; }
-.timeline-hud__marker--accent { color: var(--accent); }
-.timeline-hud__marker--default { color: color-mix(in srgb, var(--accent) 68%, #b6c6d8); }
+.timeline-hud__marker--warning:not([style*='--timeline-marker-color']) { color: #f4c968; }
+.timeline-hud__marker--danger:not([style*='--timeline-marker-color']) { color: #f06f7b; }
+.timeline-hud__marker--success:not([style*='--timeline-marker-color']) { color: #66e3a4; }
+.timeline-hud__marker--accent:not([style*='--timeline-marker-color']) { color: var(--accent); }
+.timeline-hud__marker--default:not([style*='--timeline-marker-color']) { color: color-mix(in srgb, var(--accent) 68%, #b6c6d8); }
 
-.timeline-hud__now {
+.timeline-hud__now-terminal {
   position: absolute;
   right: 0;
-  top: -0.54rem;
+  top: -0.5rem;
   display: grid;
   justify-items: end;
-  color: color-mix(in srgb, var(--accent) 78%, white 22%);
+  color: color-mix(in srgb, var(--accent) 68%, white 32%);
+  pointer-events: none;
 }
 
-.timeline-hud__now::before {
+.timeline-hud__now-terminal::before {
   content: '';
   position: absolute;
-  top: 0.55rem;
-  right: 0.26rem;
+  top: 0.5rem;
+  right: 0.22rem;
   width: 1px;
-  height: 2rem;
-  background: linear-gradient(currentColor, transparent);
-  opacity: 0.68;
+  height: 3.25rem;
+  background: linear-gradient(currentColor 0%, color-mix(in srgb, currentColor 45%, transparent) 50%, transparent 100%);
+  opacity: 0.52;
 }
 
-.timeline-hud__now i {
-  width: 0.62rem;
-  height: 0.62rem;
+.timeline-hud__now-terminal i {
+  width: 0.46rem;
+  height: 0.46rem;
   border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 8px currentColor, 0 0 22px color-mix(in srgb, currentColor 72%, transparent);
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 28%, var(--panel-color));
+  box-shadow: 0 0 8px currentColor;
 }
 
-.timeline-hud__now small {
-  margin-top: 0.18rem;
-  font-size: 0.48rem;
+.timeline-hud__now-terminal small {
+  margin-top: 0.15rem;
+  font-size: 0.42rem;
+  opacity: 0.7;
+}
+
+.timeline-hud__playhead {
+  position: absolute;
+  left: var(--timeline-position);
+  top: -0.76rem;
+  width: 3.1rem;
+  min-height: 4.8rem;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-rows: auto auto auto;
+  justify-items: center;
+  align-content: start;
+  gap: 0.1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--accent) 82%, white 18%);
+  cursor: grab;
+  touch-action: none;
+}
+
+.timeline-hud__playhead:active {
+  cursor: grabbing;
+}
+
+.timeline-hud__playhead::before {
+  content: '';
+  position: absolute;
+  top: 0.7rem;
+  left: 50%;
+  width: 1px;
+  height: 3.85rem;
+  transform: translateX(-50%);
+  background: linear-gradient(currentColor 0%, color-mix(in srgb, currentColor 55%, transparent) 52%, transparent 100%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.timeline-hud__playhead i {
+  position: relative;
+  z-index: 1;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, currentColor 86%, white 14%);
+  background: currentColor;
+  box-shadow:
+    0 0 9px currentColor,
+    0 0 24px color-mix(in srgb, currentColor 74%, transparent),
+    0 0 42px color-mix(in srgb, currentColor 32%, transparent);
+}
+
+.timeline-hud__playhead span,
+.timeline-hud__playhead time {
+  position: relative;
+  z-index: 2;
+  white-space: nowrap;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+}
+
+.timeline-hud__playhead span {
+  margin-top: 0.06rem;
+  font-size: 0.43rem;
+}
+
+.timeline-hud__playhead time {
+  color: var(--text-primary);
+  font-size: 0.46rem;
+}
+
+.timeline-hud__playhead:not(.is-live) {
+  color: color-mix(in srgb, #80c7ff 76%, var(--accent) 24%);
 }
 
 .timeline-hud__footer {
-  padding: 0 0.8rem 0.55rem;
+  padding: 0 0.8rem 0.58rem;
   color: var(--text-muted);
   font-size: 0.5rem;
 }
@@ -212,7 +299,7 @@
   position: absolute;
   z-index: 29;
   left: max(2rem, calc(var(--sidebar-width) + 2rem));
-  right: min(31rem, 31vw);
+  right: 2rem;
   bottom: 2rem;
   pointer-events: auto;
 }
@@ -227,7 +314,7 @@
 
 @media (max-width: 1100px) {
   .brain-timeline-hud {
-    right: 2rem;
+    right: 1.25rem;
     bottom: 1.25rem;
   }
 }
@@ -241,6 +328,11 @@
   .timeline-hud__tick small,
   .timeline-hud__marker small {
     display: none;
+  }
+
+  .timeline-hud__rail-wrap {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
   }
 
   .brain-timeline-hud {
