@@ -5,7 +5,7 @@ import { KanbanBoard } from './KanbanBoard'
 import { OperationsSpatialShell } from './OperationsSpatialShell'
 import { UNASSIGNED } from './RoleFilter'
 import { TaskInspector } from './TaskInspector'
-import type { KanbanPhase } from './types'
+import type { KanbanPhase, TaskEvent } from './types'
 import { useOrchestrationControl } from './useOrchestrationControl'
 
 const KANBAN_PHASES: KanbanPhase[] = [
@@ -103,7 +103,7 @@ export function OrchestrationWorkspace() {
   const timelineMarkers = useMemo<TimelineMarker[]>(() => {
     const ownerColor = getProfileColor(selectedTask?.assignee ?? 'default')
     return selectedEvents
-      .filter((event): event is typeof event & { created_at_iso: string } => Boolean(event.created_at_iso))
+      .filter((event): event is TaskEvent & { created_at_iso: string } => Boolean(event.created_at_iso))
       .map((event) => ({
         id: `${selectedTaskId ?? 'task'}:${event.sequence}:${event.kind}`,
         at: event.created_at_iso,
