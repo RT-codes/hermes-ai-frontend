@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { BrainHudPanel } from '../../components/BrainHudPanel/BrainHudPanel'
 import { SpatialStageBackdrop } from '../../components/SpatialStageBackdrop/SpatialStageBackdrop'
 import { TimelineHud, type TimelineMarker } from '../../components/TimelineHud/TimelineHud'
 import { useHermesProfiles } from '../../context/HermesProfileContext'
@@ -66,7 +67,7 @@ function eventTone(kind: string): TimelineMarker['tone'] {
 }
 
 export function OrchestrationWorkspace() {
-  const { getProfileColor, getProfile } = useHermesProfiles()
+  const { getProfileColor } = useHermesProfiles()
   const [agents, setAgents] = useState<Agent[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -186,134 +187,124 @@ export function OrchestrationWorkspace() {
     [tasks],
   )
 
+  const panelMeta = (
+    <span className={`orchestration-connection orchestration-connection--${connectionState}`}>
+      <span aria-hidden="true" />
+      {connectionState.toUpperCase()} · {agents.length} PROFILES
+    </span>
+  )
+
   return (
-    <section className="workspace-stage workspace-stage--interactive orchestration-stage" aria-label="Orchestration workspace">
+    <section className="workspace-stage workspace-stage--interactive orchestration-stage orchestration-stage--spatial" aria-label="Orchestration workspace">
       <SpatialStageBackdrop className="orchestration-spatial-backdrop" />
 
-      <header className="orchestration-header">
-        <div>
-          <span className="workspace-placeholder__eyebrow">Native Hermes orchestration</span>
-          <h2>Operations</h2>
-          <p>Live team state, durable work, and runtime activity from the Hermes control contract.</p>
-        </div>
-        <div className={`orchestration-connection orchestration-connection--${connectionState}`}>
-          <span aria-hidden="true" />
-          {connectionState.toUpperCase()}
-        </div>
-      </header>
-
-      {error && <div className="orchestration-banner">{error}</div>}
-
       <TimelineHud
-        className="orchestration-timeline-hud"
+        className="brain-timeline-hud orchestration-canonical-timeline"
         eyebrow={selectedTask ? `TASK TRACE · ${selectedTask.id}` : 'TASK TEMPORAL TRACE'}
-        title="EXECUTION TIMELINE"
+        title="OPERATIONS TRACE · LIVE"
         markers={timelineMarkers}
       />
 
-      <div className="orchestration-grid">
-        <aside className="orchestration-zone orchestration-team">
-          <div className="orchestration-zone__heading">
-            <span>TEAM</span>
-            <small>{agents.length} PROFILES</small>
-          </div>
-          <div className="orchestration-team__list">
-            {agents.map((agent) => {
-              const color = getProfileColor(agent.id)
-              const profile = getProfile(agent.id)
-              return (
-                <button
-                  type="button"
-                  className={`orchestration-agent orchestration-agent--${agent.activity_state}`}
-                  style={{ '--profile-color': color } as CSSProperties}
-                  key={agent.id}
-                  onClick={() => agent.current_task_id && setSelectedTaskId(agent.current_task_id)}
-                >
-                  <span className="orchestration-agent__rail" />
-                  <span className="orchestration-agent__identity">
-                    <strong>{profile?.displayName ?? agent.name}</strong>
-                    <code>{agent.id}</code>
-                  </span>
-                  <span className="orchestration-agent__state">
-                    <span className="orchestration-agent__dot" />
-                    {agent.activity_state === 'unknown' ? 'NO ACTIVE WORK' : agent.activity_state.toUpperCase()}
-                  </span>
-                  <small>{agent.current_task_id ?? `${agent.task_counts.done ?? 0} done`}</small>
-                </button>
-              )
-            })}
-          </div>
-        </aside>
+      {error && <div className="orchestration-banner orchestration-banner--spatial">{error}</div>}
 
-        <main className="orchestration-zone orchestration-work">
-          <div className="orchestration-zone__heading">
-            <span>WORK</span>
-            <small>{activeTasks.length} ACTIVE / {completedTasks.length} DONE</small>
-          </div>
+      <div className="orchestration-spatial-panel-shell">
+        <BrainHudPanel title="OPERATIONS" meta={panelMeta} className="orchestration-spatial-panel">
+          <div className="orchestration-spatial-panel__body">
+            <section className="orchestration-spatial-panel__work" aria-label="Hermes work queue">
+              <div className="orchestration-zone__heading orchestration-zone__heading--embedded">
+                <span>WORK</span>
+                <small>{activeTasks.length} ACTIVE / {completedTasks.length} DONE</small>
+              </div>
 
-          <div className="orchestration-work__split">
-            <div className="orchestration-task-list">
-              <div className="orchestration-section-label">ACTIVE QUEUE</div>
-              {activeTasks.length === 0 && <div className="orchestration-empty">No active Hermes tasks.</div>}
-              {activeTasks.map((task) => (
-                <TaskCard key={task.id} task={task} selected={task.id === selectedTaskId} onSelect={setSelectedTaskId} color={getProfileColor(task.assignee ?? 'default')} />
-              ))}
+              <div className="orchestration-task-list orchestration-task-list--embedded">
+                <div className="orchestration-section-label">ACTIVE QUEUE</div>
+                {activeTasks.length === 0 && <div className="orchestration-empty">No active Hermes tasks.</div>}
+                {activeTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    selected={task.id === selectedTaskId}
+                    onSelect={setSelectedTaskId}
+                    color={getProfileColor(task.assignee ?? 'default')}
+                  />
+                ))}
 
-              <div className="orchestration-section-label">RECENTLY COMPLETED</div>
-              {completedTasks.slice(0, 8).map((task) => (
-                <TaskCard key={task.id} task={task} selected={task.id === selectedTaskId} onSelect={setSelectedTaskId} color={getProfileColor(task.assignee ?? 'default')} />
-              ))}
-            </div>
+                <div className="orchestration-section-label">RECENTLY COMPLETED</div>
+                {completedTasks.slice(0, 8).map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    selected={task.id === selectedTaskId}
+                    onSelect={setSelectedTaskId}
+                    color={getProfileColor(task.assignee ?? 'default')}
+                  />
+                ))}
+              </div>
+            </section>
 
-            <div className="orchestration-inspector">
-              {selectedTask ? (
-                <>
-                  <div className="orchestration-inspector__topline">
-                    <span>{selectedTask.id}</span>
-                    <strong className={`task-state task-state--${selectedTask.status}`}>{taskStateLabel(selectedTask.status)}</strong>
-                  </div>
-                  <h3>{selectedTask.title}</h3>
-                  <div className="orchestration-inspector__meta">
-                    <span>OWNER <strong>{selectedTask.assignee ?? 'UNASSIGNED'}</strong></span>
-                    <span>CREATOR <strong>{selectedTask.created_by ?? 'UNKNOWN'}</strong></span>
-                    <span>START <strong>{formatTime(selectedTask.timestamps?.started_at)}</strong></span>
-                  </div>
-                  {selectedTask.body && <p className="orchestration-inspector__body">{selectedTask.body}</p>}
-                  {selectedTask.result && (
-                    <div className="orchestration-result">
-                      <span>RESULT</span>
-                      <p>{selectedTask.result}</p>
+            <section className="orchestration-spatial-panel__detail" aria-label="Selected task inspector">
+              <div className="orchestration-inspector orchestration-inspector--embedded">
+                {selectedTask ? (
+                  <>
+                    <div className="orchestration-inspector__topline">
+                      <span>{selectedTask.id}</span>
+                      <strong className={`task-state task-state--${selectedTask.status}`}>{taskStateLabel(selectedTask.status)}</strong>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="orchestration-empty">Select a task to inspect it.</div>
-              )}
-            </div>
-          </div>
-        </main>
+                    <h3>{selectedTask.title}</h3>
+                    <div className="orchestration-inspector__meta">
+                      <span>OWNER <strong>{selectedTask.assignee ?? 'UNASSIGNED'}</strong></span>
+                      <span>CREATOR <strong>{selectedTask.created_by ?? 'UNKNOWN'}</strong></span>
+                      <span>START <strong>{formatTime(selectedTask.timestamps?.started_at)}</strong></span>
+                    </div>
+                    {selectedTask.body && <p className="orchestration-inspector__body">{selectedTask.body}</p>}
+                    {selectedTask.result && (
+                      <div className="orchestration-result">
+                        <span>RESULT</span>
+                        <p>{selectedTask.result}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="orchestration-empty">Select a task to inspect it.</div>
+                )}
+              </div>
 
-        <aside className="orchestration-zone orchestration-activity">
-          <div className="orchestration-zone__heading">
-            <span>ACTIVITY</span>
-            <small>{selectedTask ? selectedTask.id : 'NO TASK'}</small>
-          </div>
-          <div className="orchestration-activity__feed">
-            {selectedEvents.length === 0 && <div className="orchestration-empty">No task activity selected.</div>}
-            {selectedEvents.map((event) => (
-              <article className="orchestration-event" key={`${event.sequence}-${event.kind}`}>
-                <span className="orchestration-event__line" />
-                <div>
-                  <div className="orchestration-event__heading">
-                    <strong>{event.kind.toUpperCase()}</strong>
-                    <time>{formatTime(event.created_at_iso)}</time>
-                  </div>
-                  <small>{event.run_id == null ? `EVENT ${event.sequence}` : `RUN ${event.run_id} · EVENT ${event.sequence}`}</small>
+              <div className="orchestration-activity-inline">
+                <div className="orchestration-zone__heading orchestration-zone__heading--embedded">
+                  <span>ACTIVITY</span>
+                  <small>{selectedTask ? selectedTask.id : 'NO TASK'}</small>
                 </div>
-              </article>
-            ))}
+                <div className="orchestration-activity__feed orchestration-activity__feed--embedded">
+                  {selectedEvents.length === 0 && <div className="orchestration-empty">No task activity selected.</div>}
+                  {selectedEvents.slice(0, 8).map((event) => (
+                    <article className="orchestration-event" key={`${event.sequence}-${event.kind}`}>
+                      <span className="orchestration-event__line" />
+                      <div>
+                        <div className="orchestration-event__heading">
+                          <strong>{event.kind.toUpperCase()}</strong>
+                          <time>{formatTime(event.created_at_iso)}</time>
+                        </div>
+                        <small>{event.run_id == null ? `EVENT ${event.sequence}` : `RUN ${event.run_id} · EVENT ${event.sequence}`}</small>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
           </div>
-        </aside>
+        </BrainHudPanel>
+      </div>
+
+      <div className="orchestration-view-controls" aria-label="Future Operations 3D view controls">
+        <button type="button" disabled>PLACEHOLDER VIEW BUTTON</button>
+        <button type="button" disabled>PLACEHOLDER VIEW BUTTON</button>
+        <button type="button" disabled>PLACEHOLDER VIEW BUTTON</button>
+      </div>
+
+      <div className="brain-scene-help orchestration-scene-help">
+        <span>DRAG · ORBIT</span>
+        <span>RIGHT DRAG · PAN</span>
+        <span>WHEEL · ZOOM</span>
       </div>
     </section>
   )
