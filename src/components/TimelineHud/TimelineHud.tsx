@@ -79,27 +79,33 @@ export function TimelineHud({
 }: TimelineHudProps) {
   const [now, setNow] = useState(() => new Date())
   const [internalRange, setInternalRange] = useState(60)
+  const [centerOffsetMs, setCenterOffsetMs] = useState<number | null>(null)
   const [scrubAtMs, setScrubAtMs] = useState<number | null>(null)
   const railRef = useRef<HTMLDivElement | null>(null)
   const draggingRef = useRef(false)
 
   const activeRange = clamp(rangeMinutes ?? internalRange, MIN_RANGE_MINUTES, MAX_RANGE_MINUTES)
   const highlightedPreset = nearestPreset(activeRange)
+  const nowMs = now.getTime()
+  const liveDefaultCenter = nowMs - (activeRange * 60_000) / 2
+  const centerMs = centerOffsetMs == null ? liveDefaultCenter : nowMs + centerOffsetMs
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(timer)
   }, [])
 
-  const setRange = (minutes: number) => {
+  const setRangeAroundCenter = (minutes: number) => {
     const next = clamp(minutes, MIN_RANGE_MINUTES, MAX_RANGE_MINUTES)
+    setCenterOffsetMs(centerMs - nowMs)
     if (onRangeMinutesChange) onRangeMinutesChange(next)
     else setInternalRange(next)
   }
 
   const { startMs, endMs, ticks } = useMemo(() => {
-    const end = now.getTime()
-    const start = end - activeRange * 60_000
+    const halfWindowMs = (activeRange * 60_000) / 2
+    const start = centerMs - halfWindowMs
+    const end = centerMs + halfWindowMs
     const stepMinutes = tickStepForRange(activeRange)
     const stepMs = stepMinutes * 60_000
     const firstTick = Math.ceil(start / stepMs) * stepMs
@@ -113,7 +119,7 @@ export function TimelineHud({
     }
 
     return { startMs: start, endMs: end, ticks: values }
-  }, [activeRange, now])
+  }, [activeRange, centerMs])
 
   useEffect(() => {
     setScrubAtMs((current) => {
@@ -129,9 +135,11 @@ export function TimelineHud({
     [endMs, markers, startMs],
   )
 
-  const playheadMs = scrubAtMs ?? endMs
+  const nowPosition = ((nowMs - startMs) / (endMs - startMs)) * 100
+  const nowVisible = nowPosition >= 0 && nowPosition <= 100
+  const playheadMs = scrubAtMs ?? nowMs
   const playheadPosition = clamp(((playheadMs - startMs) / (endMs - startMs)) * 100, 0, 100)
-  const playheadAtNow = scrubAtMs == null || endMs - playheadMs < 1500
+  const playheadAtNow = scrubAtMs == null || Math.abs(nowMs - playheadMs) < 1500
 
   const setPlayheadFromClientX = (clientX: number) => {
     const rail = railRef.current
@@ -139,11 +147,12 @@ export function TimelineHud({
     const rect = rail.getBoundingClientRect()
     if (rect.width <= 0) return
     const ratio = clamp((clientX - rect.left) / rect.width, 0, 1)
-    if (ratio >= 0.998) {
+    const nextMs = startMs + ratio * (endMs - startMs)
+    if (Math.abs(nextMs - nowMs) < Math.max(1500, activeRange * 60_000 * 0.004)) {
       setScrubAtMs(null)
       return
     }
-    setScrubAtMs(startMs + ratio * (endMs - startMs))
+    setScrubAtMs(nextMs)
   }
 
   const handlePlayheadDown = (event: PointerEvent<HTMLButtonElement>) => {
@@ -169,14 +178,14 @@ export function TimelineHud({
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
     event.preventDefault()
     const factor = Math.exp(event.deltaY * 0.0014)
-    setRange(Number((activeRange * factor).toFixed(2)))
+    setRangeAroundCenter(Number((activeRange * factor).toFixed(2)))
   }
 
   return (
     <div className={`timeline-hud ${className}`}>
       <div className="timeline-hud__frame" aria-hidden="true" />
       <header className="timeline-hud__header">
-        <div>
+        <div className="timeline-hud__identity">
           <span className="timeline-hud__eyebrow">{eyebrow}</span>
           <strong>{title}</strong>
         </div>
@@ -186,7 +195,7 @@ export function TimelineHud({
               type="button"
               key={minutes}
               className={highlightedPreset === minutes ? 'is-active' : ''}
-              onClick={() => setRange(minutes)}
+              onClick={() => setRangeAroundCenter(minutes)}
               title={`Snap timeline window to ${formatWindow(minutes)}`}
             >
               {minutes < 60 ? `${minutes}M` : `${minutes / 60}H`}
@@ -225,10 +234,16 @@ export function TimelineHud({
             </span>
           ))}
 
-          <span className="timeline-hud__now-terminal" aria-hidden="true">
-            <i />
-            <small>NOW</small>
-          </span>
+          {nowVisible && (
+            <span
+              className="timeline-hud__now-terminal"
+              style={{ '--timeline-position': `${nowPosition}%` } as CSSProperties}
+              aria-hidden="true"
+            >
+              <i />
+              <small>NOW</small>
+            </span>
+          )}
 
           <button
             type="button"
