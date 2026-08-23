@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { BrainHudPanel } from '../../components/BrainHudPanel/BrainHudPanel'
-import { SpatialStageBackdrop } from '../../components/SpatialStageBackdrop/SpatialStageBackdrop'
+import { SpatialStageEnvironment } from '../../components/SpatialStageEnvironment/SpatialStageEnvironment'
 import { TimelineHud, type TimelineMarker } from '../../components/TimelineHud/TimelineHud'
 import { useHermesProfiles } from '../../context/HermesProfileContext'
 
@@ -196,7 +196,7 @@ export function OrchestrationWorkspace() {
 
   return (
     <section className="workspace-stage workspace-stage--interactive orchestration-stage orchestration-stage--spatial" aria-label="Orchestration workspace">
-      <SpatialStageBackdrop className="orchestration-spatial-backdrop" />
+      <SpatialStageEnvironment className="orchestration-spatial-environment" />
 
       <TimelineHud
         className="brain-timeline-hud orchestration-canonical-timeline"
