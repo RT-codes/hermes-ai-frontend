@@ -43,6 +43,8 @@
   overflow: hidden;
   pointer-events: auto;
   touch-action: none;
+  -webkit-mask-image: radial-gradient(ellipse 82% 72% at 50% 72%, #000 0%, #000 46%, rgb(0 0 0 / 0.78) 61%, rgb(0 0 0 / 0.28) 76%, transparent 91%);
+  mask-image: radial-gradient(ellipse 82% 72% at 50% 72%, #000 0%, #000 46%, rgb(0 0 0 / 0.78) 61%, rgb(0 0 0 / 0.28) 76%, transparent 91%);
 }
 
 .spatial-interaction-canvas canvas {
@@ -68,7 +70,7 @@
 .orchestration-spatial-panel-shell {
   position: absolute;
   z-index: 28;
-  top: 11.2rem;
+  bottom: 7.4rem;
   left: 50%;
   width: min(70vw, 1160px);
   min-width: 760px;
@@ -291,7 +293,7 @@
 
 @media (max-width: 900px) {
   .orchestration-spatial-panel-shell {
-    top: 11.5rem;
+    bottom: 6.4rem;
     width: calc(100vw - 4rem);
     min-width: 0;
     height: calc(100% - 17.9rem);
