@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useAppearance } from '../../context/AppearanceContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
 import { BrainGraph } from '../BrainGraph/BrainGraph'
+import { TimelineHud } from '../TimelineHud/TimelineHud'
 
 type Axis = 'x' | 'y' | 'z'
 
@@ -140,6 +141,12 @@ export function BrainStage() {
           </div>
         </div>
       </div>
+
+      <TimelineHud
+        className="brain-timeline-hud"
+        eyebrow="TEMPORAL LAYER"
+        title="BRAIN TRACE · LIVE"
+      />
 
       <div className="brain-scene-help">
         <span>DRAG · ORBIT</span>
