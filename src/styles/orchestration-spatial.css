@@ -1,4 +1,4 @@
-/* Spatial Operations shell: a translucent HUD overlay on the shared 3D stage. */
+/* Spatial Operations shell: a translucent HUD overlay on the real shared spatial environment. */
 
 .orchestration-stage--spatial {
   position: absolute;
@@ -9,11 +9,15 @@
   background: transparent;
 }
 
-/* Make the shared scene materially visible behind the Operations glass. */
-.orchestration-stage--spatial > .orchestration-spatial-backdrop {
+.orchestration-spatial-environment {
   position: absolute;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.orchestration-stage--spatial .orchestration-spatial-environment .spatial-stage-backdrop {
   opacity: 1;
 }
 
@@ -35,10 +39,14 @@
     linear-gradient(90deg, rgb(var(--accent-rgb) / 0.12) 1px, transparent 1px);
 }
 
-/* Canonical Brain timeline geometry, now correctly absolute again. */
+/* Canonical Brain timeline geometry, with Operations-only footer noise removed. */
 .orchestration-stage--spatial > .orchestration-canonical-timeline {
   position: absolute;
   z-index: 18;
+}
+
+.orchestration-canonical-timeline .timeline-hud__footer {
+  display: none;
 }
 
 /* Main Operations surface behaves like a floating Brain HUD/cluster inspector. */
@@ -61,28 +69,28 @@
   height: 100%;
   min-height: 0;
   filter:
-    drop-shadow(0 22px 42px rgb(0 0 0 / 0.34))
-    drop-shadow(0 0 24px rgb(var(--accent-rgb) / 0.05));
+    drop-shadow(0 22px 42px rgb(0 0 0 / 0.3))
+    drop-shadow(0 0 24px rgb(var(--accent-rgb) / 0.045));
 }
 
-/* Keep the Brain HUD two-layer cut-corner construction, but make this large panel glassier. */
+/* Brain-HUD cut corners, but transparent enough that the spatial world stays readable beneath it. */
 .orchestration-spatial-panel > .brain-hud-panel__surface {
-  background: rgb(var(--accent-rgb) / 0.22);
+  background: rgb(var(--accent-rgb) / 0.17);
 }
 
 .orchestration-spatial-panel > .brain-hud-panel__surface::after {
   background:
-    linear-gradient(115deg, rgb(var(--accent-rgb) / 0.035), transparent 44%, rgb(var(--accent-rgb) / 0.018)),
-    rgb(var(--brain-hud-rgb) / 0.46);
-  backdrop-filter: blur(12px) saturate(126%);
-  -webkit-backdrop-filter: blur(12px) saturate(126%);
+    linear-gradient(115deg, rgb(var(--accent-rgb) / 0.028), transparent 44%, rgb(var(--accent-rgb) / 0.014)),
+    rgb(var(--brain-hud-rgb) / 0.22);
+  backdrop-filter: blur(7px) saturate(120%);
+  -webkit-backdrop-filter: blur(7px) saturate(120%);
 }
 
 .orchestration-spatial-panel > .brain-hud-panel__header {
   padding-left: 0.8rem;
   padding-right: 0.8rem;
   border-bottom: 1px solid rgb(var(--accent-rgb) / 0.1);
-  background: rgb(var(--brain-hud-rgb) / 0.1);
+  background: rgb(var(--brain-hud-rgb) / 0.055);
 }
 
 .orchestration-spatial-panel > .brain-hud-panel__content {
@@ -103,7 +111,7 @@
 .orchestration-spatial-panel__detail {
   min-width: 0;
   min-height: 0;
-  background: rgb(var(--brain-hud-rgb) / 0.08);
+  background: rgb(var(--brain-hud-rgb) / 0.025);
 }
 
 .orchestration-spatial-panel__work {
@@ -119,7 +127,7 @@
 
 .orchestration-zone__heading--embedded {
   border-bottom: 1px solid rgb(var(--accent-rgb) / 0.1);
-  background: rgb(var(--accent-rgb) / 0.018);
+  background: rgb(var(--accent-rgb) / 0.012);
 }
 
 .orchestration-task-list--embedded {
@@ -131,7 +139,7 @@
 }
 
 .orchestration-task-list--embedded .orchestration-task {
-  background: rgb(0 0 0 / 0.12);
+  background: rgb(0 0 0 / 0.08);
 }
 
 .orchestration-inspector--embedded {
@@ -146,7 +154,7 @@
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
   border-top: 1px solid rgb(var(--accent-rgb) / 0.11);
-  background: rgb(0 0 0 / 0.07);
+  background: rgb(0 0 0 / 0.035);
 }
 
 .orchestration-activity__feed--embedded {
