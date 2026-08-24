@@ -1,0 +1,28 @@
+/* Neutral HUD panel structure. Legacy Brain selectors remain as compatibility hooks. */
+.hud-panel {
+  position: relative;
+  min-width: 0;
+  color: var(--text-muted);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.85);
+  filter: drop-shadow(0 14px 26px rgb(0 0 0 / 0.24));
+  isolation: isolate;
+}
+
+.hud-panel__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  padding: 0.7rem 0.85rem 0.35rem;
+  color: var(--cyan-soft);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+}
+
+.hud-panel__content {
+  position: relative;
+  z-index: 1;
+  padding: 0.35rem 0.85rem 0.85rem;
+}
