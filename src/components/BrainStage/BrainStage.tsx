@@ -1,22 +1,14 @@
-import { useCallback, useState } from 'react'
 import { BrainGraph } from '../BrainGraph/BrainGraph'
-import { SpatialStageEnvironment, type ViewRotation } from '../SpatialStageEnvironment/SpatialStageEnvironment'
 import { TimelineHud } from '../TimelineHud/TimelineHud'
+import { useSpatialApplicationShell } from '../../app/spatial/SpatialApplicationShell'
 
+/** Memory contributes its graph, timeline and controls to the persistent spatial shell. */
 export function BrainStage() {
-  const [viewRotation, setViewRotation] = useState<ViewRotation>({ yaw: 0, pitch: 0 })
-
-  const handleViewRotationChange = useCallback((rotation: ViewRotation) => {
-    setViewRotation((current) => {
-      if (Math.abs(current.yaw - rotation.yaw) < 0.35 && Math.abs(current.pitch - rotation.pitch) < 0.35) return current
-      return rotation
-    })
-  }, [])
+  const { reportViewRotation } = useSpatialApplicationShell()
 
   return (
     <section className="brain-stage brain-stage--3d" aria-label="Interactive 3D Hermes memory graph foundation">
-      <SpatialStageEnvironment viewRotation={viewRotation} />
-      <BrainGraph onViewRotationChange={handleViewRotationChange} />
+      <BrainGraph onViewRotationChange={reportViewRotation} />
 
       <TimelineHud
         className="brain-timeline-hud"
