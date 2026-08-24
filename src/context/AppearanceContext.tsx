@@ -55,9 +55,9 @@ const defaults: AppearanceSettings = {
   brainHudColor: '#02070c',
   brainHudOpacity: 0.72,
   rubikTurnSpeedMs: 650,
-  viewTransitionDurationMs: 520,
-  panelTransitionDurationMs: 280,
-  panelTransitionStaggerMs: 45,
+  viewTransitionDurationMs: 600,
+  panelTransitionDurationMs: 200,
+  panelTransitionStaggerMs: 25,
   interfaceScale: 1,
   interfaceFont: 'modern',
   hudFont: 'technical',
@@ -92,6 +92,14 @@ function applySettings(settings: AppearanceSettings) {
   const brainHudRgb = hexToRgb(settings.brainHudColor)
   const brainHudOpacitySoft = Math.max(0.12, settings.brainHudOpacity * 0.9)
   const safeScale = Math.min(1.4, Math.max(0.85, settings.interfaceScale))
+  const viewDuration = Math.max(360, settings.viewTransitionDurationMs)
+  const halfWindow = Math.max(160, Math.floor(viewDuration / 2) - 12)
+  const requestedStagger = Math.max(0, settings.panelTransitionStaggerMs)
+  const effectiveStagger = Math.min(requestedStagger, Math.floor(halfWindow / 8))
+  const effectivePanelDuration = Math.max(
+    100,
+    Math.min(settings.panelTransitionDurationMs, halfWindow - effectiveStagger * 3),
+  )
 
   root.style.fontSize = `${safeScale * 100}%`
   root.style.setProperty('--font-ui', interfaceFontStacks[settings.interfaceFont] ?? interfaceFontStacks.modern)
@@ -112,9 +120,9 @@ function applySettings(settings: AppearanceSettings) {
   root.style.setProperty('--brain-hud-rgb', brainHudRgb)
   root.style.setProperty('--brain-hud-opacity', `${settings.brainHudOpacity}`)
   root.style.setProperty('--brain-hud-opacity-soft', `${brainHudOpacitySoft}`)
-  root.style.setProperty('--view-transition-duration', `${Math.max(160, settings.viewTransitionDurationMs)}ms`)
-  root.style.setProperty('--panel-transition-duration', `${Math.max(100, settings.panelTransitionDurationMs)}ms`)
-  root.style.setProperty('--panel-transition-stagger', `${Math.max(0, settings.panelTransitionStaggerMs)}ms`)
+  root.style.setProperty('--view-transition-duration', `${viewDuration}ms`)
+  root.style.setProperty('--panel-transition-duration', `${effectivePanelDuration}ms`)
+  root.style.setProperty('--panel-transition-stagger', `${effectiveStagger}ms`)
 }
 
 export function AppearanceProvider({ children }: { children: ReactNode }) {
