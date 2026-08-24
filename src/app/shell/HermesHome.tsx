@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 import { ActivityPanel } from '../../components/ActivityPanel/ActivityPanel'
+import { BrainStage } from '../../components/BrainStage/BrainStage'
 import { ChatPanel } from '../../components/ChatPanel/ChatPanel'
 import { FloatingPanel } from '../../components/FloatingPanel/FloatingPanel'
 import { HardwareTelemetryHud } from '../../components/HardwareTelemetryHud/HardwareTelemetryHud'
@@ -20,8 +21,9 @@ const transitionIndex = (index: number) => ({ '--workspace-transition-index': in
 
 /**
  * Product shell for global chrome and cross-workspace floating surfaces. Requested
- * navigation belongs to WorkspaceProvider; the transition controller separately owns
- * what is currently rendered so outgoing HUDs can animate before the workspace swap.
+ * navigation belongs to WorkspaceProvider; rendered workspace handoff and the
+ * persistent spatial camera layer are separate concerns so switching views does not
+ * destroy the 3D world underneath the HUDs.
  */
 export function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -31,6 +33,7 @@ export function HermesHome() {
   const { settings } = useAppearance()
   const computeAtTop = settings.computeHudPosition === 'top-right'
   const spatialWorkspace = displayWorkspace === 'memory' || displayWorkspace === 'operations'
+  const memoryGraphicsVisible = displayWorkspace === 'memory' && phase !== 'exiting'
 
   const activityHud = (
     <HudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
@@ -38,9 +41,11 @@ export function HermesHome() {
     </HudPanel>
   )
 
-  const workspaceContent = displayWorkspace === 'operations'
-    ? <OrchestrationWorkspace />
-    : <WorkspaceStage activeView={displayWorkspace} />
+  const workspaceContent = displayWorkspace === 'memory'
+    ? null
+    : displayWorkspace === 'operations'
+      ? <OrchestrationWorkspace />
+      : <WorkspaceStage activeView={displayWorkspace} />
 
   const transitioningWorkspace = (
     <div className="workspace-transition-frame workspace-transition-item" style={transitionIndex(0)}>
@@ -65,7 +70,13 @@ export function HermesHome() {
 
       <TopBar />
       {spatialWorkspace
-        ? <SpatialApplicationShell>{transitioningWorkspace}</SpatialApplicationShell>
+        ? (
+          <SpatialApplicationShell
+            persistentLayer={<BrainStage graphicsVisible={memoryGraphicsVisible} />}
+          >
+            {transitioningWorkspace}
+          </SpatialApplicationShell>
+        )
         : transitioningWorkspace}
 
       {displayWorkspace === 'memory' && (
