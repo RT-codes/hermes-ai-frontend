@@ -1,4 +1,4 @@
-/* FCP.2 diagnostic geometry. This layer never owns production layout. */
+/* FCP.2 diagnostic geometry, extended by FCP.6A vertical slot guides. This layer never owns production layout. */
 .layout-zone-overlay {
   position: fixed;
   z-index: 230;
@@ -17,6 +17,7 @@
 
 .layout-zone-overlay__zone > span {
   position: absolute;
+  z-index: 2;
   top: 0;
   left: 0;
   padding: 0.2rem 0.4rem;
@@ -26,6 +27,34 @@
   font-size: 0.48rem;
   letter-spacing: 0.15em;
   text-shadow: 0 0 8px rgb(255 222 76 / 0.28);
+}
+
+.layout-zone-overlay__slot-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: var(--layout-zone-slot-gap);
+  padding: var(--layout-zone-slot-gap) 0 0;
+}
+
+.layout-zone-overlay__slot {
+  position: relative;
+  min-height: 0;
+  border-top: 1px dotted rgb(109 235 255 / 0.58);
+  border-bottom: 1px dotted rgb(109 235 255 / 0.32);
+  background: rgb(53 217 255 / 0.018);
+}
+
+.layout-zone-overlay__slot small {
+  position: absolute;
+  right: 0.3rem;
+  bottom: 0.2rem;
+  color: rgb(122 235 255 / 0.76);
+  font-family: var(--font-hud);
+  font-size: 0.42rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .layout-zone-overlay__zone--floating-layer {
