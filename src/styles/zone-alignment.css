@@ -6,6 +6,12 @@
  * or turning the interface into rigid tiles.
  */
 
+/* Global top chrome starts after the same widened navigation contract used by TOP BAND. */
+.topbar,
+.sidebar-is-collapsed .topbar {
+  left: calc(var(--layout-zone-nav-width) + 2rem);
+}
+
 /* Workspace-centered surfaces center on the usable area to the right of navigation. */
 .brain-timeline-hud,
 .brain-graph__controls,
