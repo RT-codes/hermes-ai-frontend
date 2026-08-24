@@ -1,6 +1,6 @@
 /*
- * FCP developer surface. It intentionally reuses the existing HUD variables and
- * cut-corner construction so diagnostics read as part of the product language.
+ * Developer-console layout only. Shared HUD glass/cut-corner treatment lives in
+ * styles/primitives/hud-surface.css so this file can stay feature-specific.
  */
 .developer-console {
   position: fixed;
@@ -32,23 +32,10 @@
 }
 
 .developer-console__surface {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: var(--glass-border);
-  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-}
-
-.developer-console__surface::after {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  clip-path: inherit;
-  background:
+  --hud-cut: 14px;
+  --hud-surface-fill:
     linear-gradient(112deg, rgb(var(--accent-rgb) / 0.045), transparent 28%, rgb(var(--accent-rgb) / 0.025) 72%, transparent),
     linear-gradient(180deg, rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity)), rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity-soft)));
-  backdrop-filter: blur(var(--blur-panel)) saturate(132%);
-  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(132%);
 }
 
 .developer-console__header {
