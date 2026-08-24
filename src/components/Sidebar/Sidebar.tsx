@@ -1,27 +1,28 @@
-import type { WorkspaceView } from '../WorkspaceStage/WorkspaceStage'
+import type { WorkspaceId } from '../../app/workspaces/workspaceModel'
 
 type SidebarProps = {
   collapsed: boolean
-  activeView: WorkspaceView
+  activeView: WorkspaceId
   onToggle: () => void
-  onViewChange: (view: WorkspaceView) => void
+  onViewChange: (view: WorkspaceId) => void
   onNewChat: () => void
 }
 
-const primaryNavItems: Array<{ code: string; label: string; view: WorkspaceView }> = [
-  { code: 'ME', label: 'Memory', view: 'brain' },
+const primaryNavItems: Array<{ code: string; label: string; view: WorkspaceId }> = [
+  { code: 'ME', label: 'Memory', view: 'memory' },
   { code: 'OP', label: 'Operations', view: 'operations' },
   { code: 'CH', label: 'Chats', view: 'chat' },
   { code: 'SK', label: 'Skills', view: 'skills' },
   { code: 'SY', label: 'System', view: 'system' },
 ]
 
-const footerNavItems: Array<{ code: string; label: string; view: WorkspaceView }> = [
+const footerNavItems: Array<{ code: string; label: string; view: WorkspaceId }> = [
   { code: 'SE', label: 'Settings', view: 'settings' },
 ]
 
+/** Primary workspace navigation consumes only canonical workspace identities. */
 export function Sidebar({ collapsed, activeView, onToggle, onViewChange, onNewChat }: SidebarProps) {
-  function renderNavItem(item: { code: string; label: string; view: WorkspaceView }) {
+  function renderNavItem(item: { code: string; label: string; view: WorkspaceId }) {
     const button = (
       <button
         className={`sidebar__item ${activeView === item.view ? 'is-active' : ''}`}
