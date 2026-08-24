@@ -1,14 +1,14 @@
 .brain-hud-lane {
   position: absolute;
   z-index: 24;
-  top: 7.15rem;
-  right: 2rem;
-  bottom: 2rem;
+  top: var(--layout-zone-workspace-top);
+  right: var(--layout-zone-page-gutter);
+  bottom: var(--layout-zone-workspace-bottom);
   display: grid;
   gap: 0.85rem;
-  width: min(420px, calc(100vw - var(--sidebar-width) - 5rem));
+  width: min(420px, calc(100vw - var(--layout-zone-sidebar-width) - 5rem));
   min-width: 320px;
-  max-width: min(680px, calc(100vw - var(--sidebar-width) - 5rem));
+  max-width: min(680px, calc(100vw - var(--layout-zone-sidebar-width) - 5rem));
   min-height: 0;
   overflow: hidden;
   resize: horizontal;
@@ -58,11 +58,7 @@
 }
 
 .brain-is-inspecting .brain-hud-lane {
-  transform: translateX(calc(var(--sidebar-width) + 4rem + 100% - 100vw));
-}
-
-.sidebar-is-collapsed.brain-is-inspecting .brain-hud-lane {
-  transform: translateX(calc(var(--sidebar-width-collapsed) + 4rem + 100% - 100vw));
+  transform: translateX(calc(var(--layout-zone-sidebar-width) + 4rem + 100% - 100vw));
 }
 
 .floating-panel__sidecar {
@@ -122,7 +118,7 @@
 @media (max-width: 1120px) {
   .brain-hud-lane {
     width: 360px;
-    max-width: calc(100vw - var(--sidebar-width) - 3.5rem);
+    max-width: calc(100vw - var(--layout-zone-sidebar-width) - 3.5rem);
   }
 
   .floating-panel__sidecar {
