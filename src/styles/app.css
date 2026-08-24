@@ -4,6 +4,7 @@
  * change cascade precedence while feature CSS is migrated into clearer families.
  */
 @import './layout.css';
+@import './layout-zones.css';
 @import './chat.css';
 @import './chat-v2.css';
 @import './profile-chat.css';
