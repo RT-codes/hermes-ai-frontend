@@ -12,12 +12,13 @@ import { DeveloperConsole } from '../../dev/console/DeveloperConsole'
 import { NewChatProfileDialog } from '../../features/chat/components/NewChatProfileDialog'
 import { OrchestrationWorkspace } from '../../features/orchestration/OrchestrationWorkspace'
 import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
+import { SpatialApplicationShell } from '../spatial/SpatialApplicationShell'
 import { useWorkspace } from '../workspaces/WorkspaceProvider'
 
 /**
  * Product shell for global chrome and cross-workspace floating surfaces. Workspace
- * identity/persistence belongs to WorkspaceProvider, keeping this component focused
- * on composition rather than navigation state management.
+ * identity/persistence belongs to WorkspaceProvider; spatial workspaces additionally
+ * share one persistent application environment instead of recreating it per view.
  */
 export function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -25,12 +26,17 @@ export function HermesHome() {
   const { openTabIds, createSession } = useChatSessions()
   const { settings } = useAppearance()
   const computeAtTop = settings.computeHudPosition === 'top-right'
+  const spatialWorkspace = activeWorkspace === 'memory' || activeWorkspace === 'operations'
 
   const activityHud = (
     <HudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
       <ActivityPanel />
     </HudPanel>
   )
+
+  const workspaceContent = activeWorkspace === 'operations'
+    ? <OrchestrationWorkspace />
+    : <WorkspaceStage activeView={activeWorkspace} />
 
   return (
     <main className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
@@ -43,9 +49,9 @@ export function HermesHome() {
       />
 
       <TopBar />
-      {activeWorkspace === 'operations'
-        ? <OrchestrationWorkspace />
-        : <WorkspaceStage activeView={activeWorkspace} />}
+      {spatialWorkspace
+        ? <SpatialApplicationShell>{workspaceContent}</SpatialApplicationShell>
+        : workspaceContent}
 
       {activeWorkspace === 'memory' && (
         <div className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}>
