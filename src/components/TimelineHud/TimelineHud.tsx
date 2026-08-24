@@ -16,6 +16,8 @@ type TimelineHudProps = {
   markers?: TimelineMarker[]
   rangeMinutes?: number
   onRangeMinutesChange?: (minutes: number) => void
+  collapsible?: boolean
+  defaultExpanded?: boolean
 }
 
 const RANGE_OPTIONS = [30, 60, 120, 240] as const
@@ -76,12 +78,15 @@ export function TimelineHud({
   markers = [],
   rangeMinutes,
   onRangeMinutesChange,
+  collapsible = false,
+  defaultExpanded = true,
 }: TimelineHudProps) {
   const [now, setNow] = useState(() => new Date())
   const [internalRange, setInternalRange] = useState(60)
   const [centerOffsetMs, setCenterOffsetMs] = useState<number | null>(null)
   const [scrubAtMs, setScrubAtMs] = useState<number | null>(null)
   const [isPanning, setIsPanning] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const railRef = useRef<HTMLDivElement | null>(null)
   const draggingRef = useRef(false)
   const panningRef = useRef(false)
@@ -123,20 +128,14 @@ export function TimelineHud({
     const values: Array<{ ratio: number; at: Date }> = []
 
     for (let value = firstTick; value <= end; value += stepMs) {
-      values.push({
-        ratio: (value - start) / (end - start),
-        at: new Date(value),
-      })
+      values.push({ ratio: (value - start) / (end - start), at: new Date(value) })
     }
 
     return { startMs: start, endMs: end, ticks: values }
   }, [activeRange, centerMs, halfWindowMs])
 
   useEffect(() => {
-    setScrubAtMs((current) => {
-      if (current == null) return null
-      return clamp(current, startMs, endMs)
-    })
+    setScrubAtMs((current) => current == null ? null : clamp(current, startMs, endMs))
   }, [endMs, startMs])
 
   const visibleMarkers = useMemo(
@@ -175,15 +174,12 @@ export function TimelineHud({
   }
 
   const handlePlayheadMove = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!draggingRef.current) return
-    setPlayheadFromClientX(event.clientX)
+    if (draggingRef.current) setPlayheadFromClientX(event.clientX)
   }
 
   const handlePlayheadUp = (event: PointerEvent<HTMLButtonElement>) => {
     draggingRef.current = false
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
 
   const handleRailDown = (event: PointerEvent<HTMLDivElement>) => {
@@ -202,128 +198,108 @@ export function TimelineHud({
     if (!rail) return
     const rect = rail.getBoundingClientRect()
     if (rect.width <= 0) return
-
     const deltaPx = event.clientX - panStartXRef.current
     const deltaMs = (deltaPx / rect.width) * windowMs
-    const candidateCenter = nowMs + panStartCenterOffsetRef.current - deltaMs
-    const boundedCenter = clampCenterToHistory(candidateCenter)
-
-    if (Math.abs(boundedCenter - liveDefaultCenter) < Math.max(1000, windowMs * 0.001)) {
-      setCenterOffsetMs(null)
-    } else {
-      setCenterOffsetMs(boundedCenter - nowMs)
-    }
+    const boundedCenter = clampCenterToHistory(nowMs + panStartCenterOffsetRef.current - deltaMs)
+    setCenterOffsetMs(Math.abs(boundedCenter - liveDefaultCenter) < Math.max(1000, windowMs * 0.001) ? null : boundedCenter - nowMs)
   }
 
   const handleRailUp = (event: PointerEvent<HTMLDivElement>) => {
     panningRef.current = false
     setIsPanning(false)
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
     event.preventDefault()
-    const factor = Math.exp(event.deltaY * 0.0014)
-    setRangeAroundCenter(Number((activeRange * factor).toFixed(2)))
+    setRangeAroundCenter(Number((activeRange * Math.exp(event.deltaY * 0.0014)).toFixed(2)))
   }
 
   return (
-    <div className={`timeline-hud ${className}`}>
+    <div className={`timeline-hud ${isExpanded ? 'is-expanded' : 'is-collapsed'} ${className}`.trim()}>
       <div className="timeline-hud__frame" aria-hidden="true" />
       <header className="timeline-hud__header">
         <div className="timeline-hud__identity">
           <span className="timeline-hud__eyebrow">{eyebrow}</span>
           <strong>{title}</strong>
         </div>
-        <div className="timeline-hud__controls" aria-label="Timeline range presets">
-          {RANGE_OPTIONS.map((minutes) => (
+        <div className="timeline-hud__header-actions">
+          <div className="timeline-hud__controls" aria-label="Timeline range presets">
+            {RANGE_OPTIONS.map((minutes) => (
+              <button
+                type="button"
+                key={minutes}
+                className={highlightedPreset === minutes ? 'is-active' : ''}
+                onClick={() => setRangeAroundCenter(minutes)}
+                title={`Snap timeline window to ${formatWindow(minutes)}`}
+              >
+                {minutes < 60 ? `${minutes}M` : `${minutes / 60}H`}
+              </button>
+            ))}
+          </div>
+          {collapsible && (
             <button
+              className="timeline-hud__toggle"
               type="button"
-              key={minutes}
-              className={highlightedPreset === minutes ? 'is-active' : ''}
-              onClick={() => setRangeAroundCenter(minutes)}
-              title={`Snap timeline window to ${formatWindow(minutes)}`}
+              aria-expanded={isExpanded}
+              onClick={() => setIsExpanded((value) => !value)}
             >
-              {minutes < 60 ? `${minutes}M` : `${minutes / 60}H`}
+              {isExpanded ? 'HIDE TRACE' : 'SHOW TRACE'}
             </button>
-          ))}
+          )}
         </div>
       </header>
 
-      <div className="timeline-hud__rail-wrap">
-        <div
-          className={`timeline-hud__rail ${isPanning ? 'is-panning' : ''}`}
-          ref={railRef}
-          onWheel={handleWheel}
-          onPointerDown={handleRailDown}
-          onPointerMove={handleRailMove}
-          onPointerUp={handleRailUp}
-          onPointerCancel={handleRailUp}
-          title="Drag to pan through time · wheel to zoom"
-        >
-          <span className="timeline-hud__axis" aria-hidden="true" />
-
-          {ticks.map((tick) => (
-            <span
-              className="timeline-hud__tick"
-              key={tick.at.getTime()}
-              style={{ '--timeline-position': `${tick.ratio * 100}%` } as CSSProperties}
+      {isExpanded && (
+        <>
+          <div className="timeline-hud__rail-wrap">
+            <div
+              className={`timeline-hud__rail ${isPanning ? 'is-panning' : ''}`}
+              ref={railRef}
+              onWheel={handleWheel}
+              onPointerDown={handleRailDown}
+              onPointerMove={handleRailMove}
+              onPointerUp={handleRailUp}
+              onPointerCancel={handleRailUp}
+              title="Drag to pan through time · wheel to zoom"
             >
-              <i />
-              <small>{formatTick(tick.at, activeRange)}</small>
-            </span>
-          ))}
-
-          {visibleMarkers.map(({ marker, position }) => (
-            <span
-              key={marker.id}
-              className={`timeline-hud__marker timeline-hud__marker--${marker.tone ?? 'default'}`}
-              style={{
-                '--timeline-position': `${position}%`,
-                '--timeline-marker-color': marker.color ?? undefined,
-              } as CSSProperties}
-              title={marker.detail ? `${marker.label} — ${marker.detail}` : marker.label}
-            >
-              <i />
-              <small>{marker.label}</small>
-            </span>
-          ))}
-
-          {nowVisible && (
-            <span
-              className="timeline-hud__now-terminal"
-              style={{ '--timeline-position': `${nowPosition}%` } as CSSProperties}
-              aria-hidden="true"
-            >
-              <i />
-              <small>NOW</small>
-            </span>
-          )}
-
-          <button
-            type="button"
-            className={`timeline-hud__playhead ${playheadAtNow ? 'is-live' : ''}`}
-            style={{ '--timeline-position': `${playheadPosition}%` } as CSSProperties}
-            onPointerDown={handlePlayheadDown}
-            onPointerMove={handlePlayheadMove}
-            onPointerUp={handlePlayheadUp}
-            onPointerCancel={handlePlayheadUp}
-            aria-label="Timeline playhead. Drag to scrub through history."
-            title="Drag to scrub through time"
-          >
-            <i />
-            <span>{playheadAtNow ? 'LIVE' : 'TRACE'}</span>
-            <time>{formatClock(new Date(playheadMs))}</time>
-          </button>
-        </div>
-      </div>
-
-      <footer className="timeline-hud__footer">
-        <span>WINDOW {formatWindow(activeRange)} · DRAG TO PAN · WHEEL TO ZOOM</span>
-        <time>{playheadAtNow ? `NOW ${formatClock(now)}` : new Date(playheadMs).toLocaleString()}</time>
-      </footer>
+              <span className="timeline-hud__axis" aria-hidden="true" />
+              {ticks.map((tick) => (
+                <span className="timeline-hud__tick" key={tick.at.getTime()} style={{ '--timeline-position': `${tick.ratio * 100}%` } as CSSProperties}>
+                  <i /><small>{formatTick(tick.at, activeRange)}</small>
+                </span>
+              ))}
+              {visibleMarkers.map(({ marker, position }) => (
+                <span key={marker.id} className={`timeline-hud__marker timeline-hud__marker--${marker.tone ?? 'default'}`} style={{ '--timeline-position': `${position}%`, '--timeline-marker-color': marker.color ?? undefined } as CSSProperties} title={marker.detail ? `${marker.label} — ${marker.detail}` : marker.label}>
+                  <i /><small>{marker.label}</small>
+                </span>
+              ))}
+              {nowVisible && (
+                <span className="timeline-hud__now-terminal" style={{ '--timeline-position': `${nowPosition}%` } as CSSProperties} aria-hidden="true">
+                  <i /><small>NOW</small>
+                </span>
+              )}
+              <button
+                type="button"
+                className={`timeline-hud__playhead ${playheadAtNow ? 'is-live' : ''}`}
+                style={{ '--timeline-position': `${playheadPosition}%` } as CSSProperties}
+                onPointerDown={handlePlayheadDown}
+                onPointerMove={handlePlayheadMove}
+                onPointerUp={handlePlayheadUp}
+                onPointerCancel={handlePlayheadUp}
+                aria-label="Timeline playhead. Drag to scrub through history."
+                title="Drag to scrub through time"
+              >
+                <i /><span>{playheadAtNow ? 'LIVE' : 'TRACE'}</span><time>{formatClock(new Date(playheadMs))}</time>
+              </button>
+            </div>
+          </div>
+          <footer className="timeline-hud__footer">
+            <span>WINDOW {formatWindow(activeRange)} · DRAG TO PAN · WHEEL TO ZOOM</span>
+            <time>{playheadAtNow ? `NOW ${formatClock(now)}` : new Date(playheadMs).toLocaleString()}</time>
+          </footer>
+        </>
+      )}
     </div>
   )
 }
