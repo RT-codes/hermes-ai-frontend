@@ -9,12 +9,30 @@
   --layout-zone-top-band-bottom: calc(100% - 6.25rem);
   --layout-zone-workspace-top: 6.75rem;
   --layout-zone-workspace-bottom: 6.5rem;
-  --layout-zone-hud-width: 20rem;
+  /* Wide enough for the accepted 390-420px Memory HUDs, but adaptive on smaller screens. */
+  --layout-zone-hud-width: clamp(22rem, 24vw, 32rem);
   --layout-zone-bottom-top: calc(100% - 5.75rem);
   --layout-zone-bottom: 0.75rem;
   --layout-zone-floating-inset-x: 4rem;
   --layout-zone-floating-top: 5.75rem;
   --layout-zone-floating-bottom: 4.75rem;
+
+  /*
+   * All centered workspace HUDs use the content center, not viewport center.
+   * The persistent sidebar makes those two points intentionally different.
+   */
+  --layout-zone-content-center-x: calc((100% + var(--layout-zone-sidebar-width)) / 2);
+  --layout-zone-center-left: calc(
+    var(--layout-zone-sidebar-width) +
+    var(--layout-zone-hud-width) +
+    var(--layout-zone-page-gutter) +
+    var(--layout-zone-page-gutter)
+  );
+  --layout-zone-center-right: calc(
+    var(--layout-zone-hud-width) +
+    var(--layout-zone-page-gutter) +
+    var(--layout-zone-page-gutter)
+  );
 }
 
 .hermes-home.sidebar-is-collapsed {
@@ -39,4 +57,19 @@
 
 .layout-zone-align--bottom-band {
   bottom: var(--layout-zone-bottom);
+}
+
+@media (max-width: 1180px) {
+  .hermes-home {
+    --layout-zone-hud-width: clamp(19rem, 25vw, 24rem);
+  }
+}
+
+@media (max-width: 900px) {
+  /* Narrow layouts stop reserving bilateral HUD lanes; responsive feature CSS takes over. */
+  .hermes-home {
+    --layout-zone-hud-width: 0rem;
+    --layout-zone-center-left: calc(var(--layout-zone-sidebar-width) + var(--layout-zone-page-gutter));
+    --layout-zone-center-right: var(--layout-zone-page-gutter);
+  }
 }
