@@ -1,0 +1,46 @@
+/*
+ * FCP.6B production alignment layer.
+ *
+ * The persistent WebGL world intentionally spans behind HUD zones. These rules
+ * align actual UI surfaces to the named contracts without clipping the spatial scene
+ * or turning the interface into rigid tiles.
+ */
+
+/* Workspace-centered surfaces center on the usable area to the right of navigation. */
+.brain-timeline-hud,
+.brain-graph__controls,
+.brain-cluster-info,
+.brain-cluster-title {
+  left: var(--layout-zone-content-center-x);
+}
+
+@media (min-width: 901px) {
+  /* Normal Memory telemetry/Insight occupies RIGHT HUD. */
+  .brain-hud-lane {
+    top: var(--layout-zone-workspace-top);
+    right: var(--layout-zone-page-gutter);
+    bottom: var(--layout-zone-workspace-bottom);
+    width: min(420px, var(--layout-zone-hud-width));
+    max-width: var(--layout-zone-hud-width);
+  }
+
+  /*
+   * Inspecting mode moves that same lane into LEFT HUD by changing its anchor,
+   * rather than translating a right-anchored panel across the viewport.
+   */
+  .brain-is-inspecting .brain-hud-lane,
+  .sidebar-is-collapsed.brain-is-inspecting .brain-hud-lane {
+    left: calc(var(--layout-zone-sidebar-width) + var(--layout-zone-page-gutter));
+    right: auto;
+    transform: none;
+  }
+
+  /* Memory detail inspection is the primary RIGHT HUD inspector. */
+  .brain-memory-inspector {
+    top: var(--layout-zone-workspace-top);
+    right: var(--layout-zone-page-gutter);
+    bottom: var(--layout-zone-workspace-bottom);
+    width: min(390px, var(--layout-zone-hud-width));
+    max-width: var(--layout-zone-hud-width);
+  }
+}
