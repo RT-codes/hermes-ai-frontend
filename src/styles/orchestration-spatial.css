@@ -15,6 +15,7 @@
   position: absolute;
   z-index: 18;
   top: var(--layout-zone-top);
+  left: var(--layout-zone-content-center-x);
   pointer-events: auto;
 }
 
@@ -22,15 +23,32 @@
   display: none;
 }
 
-/* Main Operations surface stays inside center-stage while retaining its accepted width. */
+/* Main Operations surface is centered inside center-stage, not the raw viewport. */
 .orchestration-spatial-panel-shell {
   position: absolute;
   z-index: 28;
   top: var(--layout-zone-workspace-top);
   bottom: var(--layout-zone-workspace-bottom);
-  left: 50%;
-  width: min(70vw, 1160px);
-  min-width: 760px;
+  left: var(--layout-zone-content-center-x);
+  width: min(
+    70vw,
+    1160px,
+    calc(
+      100% - var(--layout-zone-sidebar-width) -
+      var(--layout-zone-hud-width) - var(--layout-zone-hud-width) -
+      var(--layout-zone-page-gutter) - var(--layout-zone-page-gutter) -
+      var(--layout-zone-page-gutter) - var(--layout-zone-page-gutter)
+    )
+  );
+  min-width: min(
+    760px,
+    calc(
+      100% - var(--layout-zone-sidebar-width) -
+      var(--layout-zone-hud-width) - var(--layout-zone-hud-width) -
+      var(--layout-zone-page-gutter) - var(--layout-zone-page-gutter) -
+      var(--layout-zone-page-gutter) - var(--layout-zone-page-gutter)
+    )
+  );
   transform: translateX(-50%);
   pointer-events: auto;
   transition: height 170ms cubic-bezier(0.22, 0.78, 0.25, 1);
@@ -193,7 +211,7 @@
   position: absolute;
   z-index: 32;
   top: var(--layout-zone-floating-top);
-  left: 50%;
+  left: var(--layout-zone-content-center-x);
   width: min(60vw, 900px);
   transform: translateX(-50%);
   pointer-events: auto;
@@ -203,7 +221,7 @@
 .orchestration-stage--spatial > .orchestration-view-controls {
   position: absolute;
   z-index: 12;
-  left: 50%;
+  left: var(--layout-zone-content-center-x);
   bottom: 3.25rem;
   display: flex;
   gap: 0.28rem;
@@ -233,7 +251,7 @@
 .orchestration-stage--spatial > .orchestration-scene-help {
   position: absolute;
   z-index: 12;
-  left: 50%;
+  left: var(--layout-zone-content-center-x);
   bottom: var(--layout-zone-bottom);
   transform: translateX(-50%);
   pointer-events: none;
@@ -241,8 +259,12 @@
 
 @media (max-width: 1180px) {
   .orchestration-spatial-panel-shell {
-    width: min(78vw, 980px);
-    min-width: 680px;
+    width: min(
+      78vw,
+      980px,
+      calc(100% - var(--layout-zone-center-left) - var(--layout-zone-center-right))
+    );
+    min-width: min(680px, calc(100% - var(--layout-zone-center-left) - var(--layout-zone-center-right)));
   }
 
   .orchestration-spatial-panel__body {
@@ -254,7 +276,7 @@
   .orchestration-spatial-panel-shell {
     top: 8rem;
     bottom: 6.4rem;
-    width: calc(100vw - 4rem);
+    width: calc(100vw - var(--layout-zone-sidebar-width) - 3rem);
     min-width: 0;
   }
 
