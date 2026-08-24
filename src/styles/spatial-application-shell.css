@@ -1,0 +1,16 @@
+/*
+ * Full-workspace composition boundary for persistent spatial state. Intentionally
+ * avoids introducing a new stacking context so existing Brain/Operations z-index
+ * contracts keep their tested ordering while ownership moves upward.
+ */
+.spatial-application-shell,
+.spatial-application-shell__workspace {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.spatial-application-shell__environment {
+  position: absolute;
+  inset: 0;
+}
