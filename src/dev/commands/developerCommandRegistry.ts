@@ -1,3 +1,5 @@
+import { layoutZones, type LayoutZoneId } from '../zones/layoutZones'
+
 export type DeveloperConsoleTone = 'default' | 'accent' | 'muted' | 'warning'
 
 export type DeveloperConsoleLine = {
@@ -8,8 +10,8 @@ export type DeveloperConsoleLine = {
 export type DeveloperCommandContext = {
   activeWorkspace: string
   registeredLayers: string[]
-  zonesVisible: boolean
-  setZonesVisible: (visible: boolean) => void
+  activeZoneIds: ReadonlySet<LayoutZoneId>
+  setActiveZoneIds: (zoneIds: Set<LayoutZoneId>) => void
 }
 
 export type DeveloperCommandResult = {
@@ -25,6 +27,31 @@ type DeveloperCommand = {
   run: (args: string[], context: DeveloperCommandContext) => DeveloperCommandResult
 }
 
+const allZoneIds = layoutZones.map((zone) => zone.id)
+const zoneIdSet = new Set<LayoutZoneId>(allZoneIds)
+
+/** Resolves user text to a canonical zone id without inventing aliases implicitly. */
+function parseZoneId(value: string | undefined): LayoutZoneId | null {
+  if (!value) return null
+  const normalized = value.toLowerCase() as LayoutZoneId
+  return zoneIdSet.has(normalized) ? normalized : null
+}
+
+/** Builds a compact diagnostic summary that remains readable in the Quake console. */
+function zoneStatusLines(context: DeveloperCommandContext): DeveloperConsoleLine[] {
+  if (context.activeZoneIds.size === 0) {
+    return [{ text: 'LAYOUT ZONES  HIDDEN', tone: 'accent' }]
+  }
+
+  return [
+    { text: `LAYOUT ZONES  ${context.activeZoneIds.size}/${allZoneIds.length} VISIBLE`, tone: 'accent' },
+    ...layoutZones.map((zone) => ({
+      text: `${context.activeZoneIds.has(zone.id) ? 'ON ' : 'OFF'}  ${zone.id.padEnd(16)} ${zone.label}`,
+      tone: context.activeZoneIds.has(zone.id) ? 'default' as const : 'muted' as const,
+    })),
+  ]
+}
+
 /**
  * The developer console intentionally exposes a small, explicit command surface.
  * Keeping diagnostics behind a registry makes later FCP tools discoverable without
@@ -38,7 +65,7 @@ const commands: DeveloperCommand[] = [
     description: 'List the developer commands registered in this frontend build.',
     run: () => ({
       lines: commands.map((command) => ({
-        text: `${command.usage.padEnd(22)} ${command.description}`,
+        text: `${command.usage.padEnd(32)} ${command.description}`,
         tone: command.name === 'help' ? 'accent' : 'default',
       })),
     }),
@@ -68,27 +95,68 @@ const commands: DeveloperCommand[] = [
   },
   {
     name: 'zones',
-    usage: 'zones <show|hide|toggle|status>',
-    description: 'Inspect or toggle the FCP diagnostic layout-zone overlay.',
+    usage: 'zones <show|hide|toggle|only|all|status> [zone]',
+    description: 'Inspect or control all/individual diagnostic layout zones.',
     run: (args, context) => {
       const action = (args[0] ?? 'status').toLowerCase()
-      let nextVisible = context.zonesVisible
+      const requestedZone = parseZoneId(args[1])
+      const current = new Set(context.activeZoneIds)
 
-      if (action === 'show') nextVisible = true
-      else if (action === 'hide') nextVisible = false
-      else if (action === 'toggle') nextVisible = !context.zonesVisible
-      else if (action !== 'status') {
+      if (action === 'status') return { lines: zoneStatusLines(context) }
+
+      if (action === 'all') {
+        context.setActiveZoneIds(new Set(allZoneIds))
+        return { lines: [{ text: 'LAYOUT ZONES  ALL VISIBLE', tone: 'accent' }] }
+      }
+
+      if (action === 'show' && !args[1]) {
+        context.setActiveZoneIds(new Set(allZoneIds))
+        return { lines: [{ text: 'LAYOUT ZONES  ALL VISIBLE', tone: 'accent' }] }
+      }
+
+      if (action === 'hide' && !args[1]) {
+        context.setActiveZoneIds(new Set())
+        return { lines: [{ text: 'LAYOUT ZONES  HIDDEN', tone: 'accent' }] }
+      }
+
+      if (action === 'toggle' && !args[1]) {
+        const next = current.size > 0 ? new Set<LayoutZoneId>() : new Set(allZoneIds)
+        context.setActiveZoneIds(next)
+        return { lines: [{ text: `LAYOUT ZONES  ${next.size > 0 ? 'ALL VISIBLE' : 'HIDDEN'}`, tone: 'accent' }] }
+      }
+
+      if (!requestedZone) {
         return {
           lines: [
-            { text: `UNKNOWN ZONES ACTION  ${action}`, tone: 'warning' },
-            { text: 'Usage: zones <show|hide|toggle|status>', tone: 'muted' },
+            { text: `UNKNOWN ZONE  ${args[1] ?? '(missing)'}`, tone: 'warning' },
+            { text: `Zones: ${allZoneIds.join(', ')}`, tone: 'muted' },
           ],
         }
       }
 
-      if (nextVisible !== context.zonesVisible) context.setZonesVisible(nextVisible)
+      if (action === 'show') current.add(requestedZone)
+      else if (action === 'hide') current.delete(requestedZone)
+      else if (action === 'toggle') {
+        if (current.has(requestedZone)) current.delete(requestedZone)
+        else current.add(requestedZone)
+      } else if (action === 'only') {
+        current.clear()
+        current.add(requestedZone)
+      } else {
+        return {
+          lines: [
+            { text: `UNKNOWN ZONES ACTION  ${action}`, tone: 'warning' },
+            { text: 'Usage: zones <show|hide|toggle|only|all|status> [zone]', tone: 'muted' },
+          ],
+        }
+      }
+
+      context.setActiveZoneIds(current)
       return {
-        lines: [{ text: `LAYOUT ZONES  ${nextVisible ? 'VISIBLE' : 'HIDDEN'}`, tone: 'accent' }],
+        lines: [
+          { text: `${current.has(requestedZone) ? 'ON ' : 'OFF'}  ${requestedZone}`, tone: 'accent' },
+          { text: `${current.size}/${allZoneIds.length} zones visible`, tone: 'muted' },
+        ],
       }
     },
   },
