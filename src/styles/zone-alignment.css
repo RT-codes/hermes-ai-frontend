@@ -14,6 +14,76 @@
   left: var(--layout-zone-content-center-x);
 }
 
+/* Memory timeline trace is one framed, collapsible top-band component. */
+.brain-timeline-hud {
+  top: var(--layout-zone-top);
+}
+
+.brain-timeline-hud .timeline-hud__header {
+  position: relative;
+  top: auto;
+  left: auto;
+  width: auto;
+  transform: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.42rem 0.62rem 0.22rem;
+}
+
+.brain-timeline-hud .timeline-hud__identity {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  justify-items: initial;
+  text-align: left;
+}
+
+.brain-timeline-hud .timeline-hud__eyebrow {
+  display: inline;
+  font-size: 0.45rem;
+}
+
+.brain-timeline-hud .timeline-hud__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.brain-timeline-hud .timeline-hud__controls {
+  justify-content: flex-end;
+}
+
+.brain-timeline-hud .timeline-hud__rail-wrap {
+  padding-top: 0.48rem;
+  padding-left: 1.55rem;
+  padding-right: 1.55rem;
+}
+
+.timeline-hud__toggle {
+  border: 1px solid rgb(var(--accent-rgb) / 0.14);
+  padding: 0.24rem 0.42rem;
+  color: var(--cyan-soft);
+  background: rgb(var(--accent-rgb) / 0.035);
+  font: inherit;
+  font-size: 0.46rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.timeline-hud__toggle:hover,
+.timeline-hud__toggle:focus-visible {
+  outline: none;
+  border-color: rgb(var(--accent-rgb) / 0.48);
+  background: rgb(var(--accent-rgb) / 0.09);
+}
+
+.brain-timeline-hud.is-collapsed .timeline-hud__header {
+  padding-bottom: 0.42rem;
+}
+
 @media (min-width: 901px) {
   /* Normal Memory telemetry/Insight occupies the complete RIGHT HUD lane width. */
   .brain-hud-lane {
@@ -30,7 +100,7 @@
    */
   .brain-is-inspecting .brain-hud-lane,
   .sidebar-is-collapsed.brain-is-inspecting .brain-hud-lane {
-    left: calc(var(--layout-zone-sidebar-width) + var(--layout-zone-page-gutter) + var(--layout-zone-inner-gutter));
+    left: calc(var(--layout-zone-nav-width) + var(--layout-zone-page-gutter) + var(--layout-zone-inner-gutter));
     right: auto;
     transform: none;
   }
@@ -53,5 +123,37 @@
   .brain-memory-inspector__content {
     max-height: calc(66.667vh - 13.62rem);
     overflow-y: auto;
+  }
+}
+
+@media (max-width: 980px) {
+  .brain-timeline-hud .timeline-hud__header {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: auto;
+    transform: none;
+    padding: 0.35rem 0.6rem 0.2rem;
+  }
+
+  .brain-timeline-hud .timeline-hud__header-actions {
+    gap: 0.24rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .brain-timeline-hud .timeline-hud__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .brain-timeline-hud .timeline-hud__identity {
+    display: grid;
+    gap: 0.08rem;
+  }
+
+  .brain-timeline-hud .timeline-hud__header-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }
