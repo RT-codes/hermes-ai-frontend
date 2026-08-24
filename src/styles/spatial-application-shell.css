@@ -65,14 +65,14 @@
 }
 
 /*
- * Operations reuses the Memory ForceGraph camera/control instance while suppressing
- * Memory-specific graphics. The transparent graph surface still receives orbit/pan/
- * zoom events in uncovered areas, so switching views does not rebuild the camera.
+ * Operations reuses the persistent Memory ForceGraph camera/control instance and the
+ * WebGL world itself. Only Memory-specific HUD chrome is suppressed below; the graph
+ * must stay painted so Operations remains visibly inside the same 3D environment.
  */
 .spatial-memory-layer.is-camera-only .spatial-memory-layer__graph {
-  opacity: 0;
-  translate: 0 -8px;
-  scale: 0.992;
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
 }
 
 /* Keep hidden Memory overlays out of the generic incoming Operations animation. */
