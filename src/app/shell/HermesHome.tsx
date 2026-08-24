@@ -45,7 +45,7 @@ export function HermesHome() {
       <TopBar />
       {activeWorkspace === 'operations'
         ? <OrchestrationWorkspace />
-        : <WorkspaceStage activeView={activeWorkspace === 'memory' ? 'brain' : activeWorkspace} />}
+        : <WorkspaceStage activeView={activeWorkspace} />}
 
       {activeWorkspace === 'memory' && (
         <div className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}>
