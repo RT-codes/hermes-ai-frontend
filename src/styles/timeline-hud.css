@@ -318,7 +318,7 @@
 .brain-timeline-hud {
   position: absolute;
   z-index: 18;
-  top: calc(var(--space-page) + 0.05rem);
+  top: var(--layout-zone-top);
   left: 50%;
   right: auto;
   bottom: auto;
@@ -378,7 +378,7 @@
 @media (max-width: 980px) {
   .brain-timeline-hud {
     top: 5.1rem;
-    width: calc(100vw - var(--sidebar-width) - 3rem);
+    width: calc(100vw - var(--layout-zone-sidebar-width) - 3rem);
     max-width: none;
   }
 
