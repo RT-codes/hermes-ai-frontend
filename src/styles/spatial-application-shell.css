@@ -65,9 +65,9 @@
 }
 
 /*
- * Operations reuses the persistent Memory ForceGraph camera/control instance and the
- * WebGL world itself. Only Memory-specific HUD chrome is suppressed below; the graph
- * must stay painted so Operations remains visibly inside the same 3D environment.
+ * Operations currently reuses the persistent Memory ForceGraph scene/camera owner.
+ * Keep the WebGL world painted until workspace-specific 3D payloads are split out;
+ * only Memory HUD chrome and inspectors are suppressed in camera-only mode.
  */
 .spatial-memory-layer.is-camera-only .spatial-memory-layer__graph {
   opacity: 1;
@@ -79,12 +79,18 @@
 .spatial-memory-layer.is-camera-only .brain-timeline-hud.workspace-transition-item,
 .spatial-memory-layer.is-camera-only .brain-scene-help.workspace-transition-item {
   opacity: 0 !important;
+  visibility: hidden !important;
   translate: 0 -10px !important;
   scale: 1 !important;
-  pointer-events: none;
+  pointer-events: none !important;
   animation: none !important;
 }
 
+/*
+ * BrainGraph still owns the shared WebGL camera today, so its DOM HUDs remain mounted.
+ * In Operations they must be visually inert as well as non-interactive; otherwise a
+ * Memory node selection can leak cluster/inspector UI into the Operations workspace.
+ */
 .spatial-memory-layer.is-camera-only .brain-graph__controls,
 .spatial-memory-layer.is-camera-only .brain-memory-inspector,
 .spatial-memory-layer.is-camera-only .brain-cluster-info,
@@ -92,5 +98,7 @@
 .spatial-memory-layer.is-camera-only .brain-node-hover,
 .spatial-memory-layer.is-camera-only .brain-selected-connector,
 .spatial-memory-layer.is-camera-only .brain-node-hover__connector {
-  pointer-events: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
