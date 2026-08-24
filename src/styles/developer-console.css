@@ -46,7 +46,7 @@
   clip-path: inherit;
   background:
     linear-gradient(112deg, rgb(var(--accent-rgb) / 0.045), transparent 28%, rgb(var(--accent-rgb) / 0.025) 72%, transparent),
-    linear-gradient(180deg, rgb(var(--brain-hud-rgb) / calc(var(--brain-hud-opacity) * 0.92)), rgb(var(--brain-hud-rgb) / calc(var(--brain-hud-opacity-soft) * 0.94)));
+    linear-gradient(180deg, rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity)), rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity-soft)));
   backdrop-filter: blur(var(--blur-panel)) saturate(132%);
   -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(132%);
 }
