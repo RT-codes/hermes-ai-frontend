@@ -24,7 +24,7 @@ export function BrainStage({ graphicsVisible = true }: BrainStageProps) {
       aria-label="Interactive 3D Hermes memory graph foundation"
       aria-hidden={!graphicsVisible}
     >
-      <div className="spatial-memory-layer__graph workspace-transition-item" style={transitionIndex(0)}>
+      <div className="spatial-memory-layer__graph">
         <BrainGraph onViewRotationChange={reportViewRotation} />
       </div>
 
