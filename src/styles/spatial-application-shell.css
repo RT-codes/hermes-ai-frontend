@@ -56,9 +56,9 @@
 
 /*
  * Memory's ForceGraph stays mounted because it is currently the canonical orbit/pan/
- * zoom control owner. In Operations it becomes a transparent interaction surface.
- * Operations intentionally owns no second renderer/camera until the shared scene
- * authority is extracted from BrainGraph.
+ * zoom control owner and it also owns the real Three.js floor. Until BrainGraph
+ * exposes payload visibility separately from its renderer/floor, keep this WebGL
+ * canvas painted in both Memory and Operations so the spatial environment survives.
  */
 .spatial-graphics-slot__memory {
   z-index: 1;
@@ -70,17 +70,15 @@
   pointer-events: none;
 }
 
-.spatial-graphics-slot[data-spatial-graphics='memory'] .spatial-graphics-slot__memory {
+.spatial-graphics-slot[data-spatial-graphics='memory'] .spatial-graphics-slot__memory,
+.spatial-graphics-slot[data-spatial-graphics='operations'] .spatial-graphics-slot__memory {
   opacity: 1;
+  visibility: visible;
 }
 
 .spatial-graphics-slot[data-spatial-graphics='memory'] .spatial-graphics-slot__operations {
   opacity: 0;
   visibility: hidden;
-}
-
-.spatial-graphics-slot[data-spatial-graphics='operations'] .spatial-graphics-slot__memory {
-  opacity: 0;
 }
 
 .spatial-graphics-slot[data-spatial-graphics='operations'] .spatial-graphics-slot__operations {
