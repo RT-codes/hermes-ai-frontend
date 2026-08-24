@@ -10,10 +10,11 @@
   pointer-events: none;
 }
 
-/* Canonical Brain timeline geometry, with Operations-only footer noise removed. */
+/* Canonical shared timeline occupies the top-band contract. */
 .orchestration-stage--spatial > .orchestration-canonical-timeline {
   position: absolute;
   z-index: 18;
+  top: var(--layout-zone-top);
   pointer-events: auto;
 }
 
@@ -21,21 +22,22 @@
   display: none;
 }
 
-/* Main Operations surface behaves like a floating Brain HUD/cluster inspector. */
+/* Main Operations surface stays inside center-stage while retaining its accepted width. */
 .orchestration-spatial-panel-shell {
   position: absolute;
   z-index: 28;
-  bottom: 7.4rem;
+  top: var(--layout-zone-workspace-top);
+  bottom: var(--layout-zone-workspace-bottom);
   left: 50%;
   width: min(70vw, 1160px);
   min-width: 760px;
-  height: calc(100% - 18.6rem);
   transform: translateX(-50%);
   pointer-events: auto;
   transition: height 170ms cubic-bezier(0.22, 0.78, 0.25, 1);
 }
 
 .orchestration-spatial-panel-shell.is-collapsed {
+  top: auto;
   height: 2.65rem;
 }
 
@@ -190,14 +192,14 @@
 .orchestration-banner--spatial {
   position: absolute;
   z-index: 32;
-  top: 8.4rem;
+  top: var(--layout-zone-floating-top);
   left: 50%;
   width: min(60vw, 900px);
   transform: translateX(-50%);
   pointer-events: auto;
 }
 
-/* Future scene controls stay in the same spatial layer as Brain controls, below overlays. */
+/* Scene controls/help stay inside the shared bottom-band contract. */
 .orchestration-stage--spatial > .orchestration-view-controls {
   position: absolute;
   z-index: 12;
@@ -232,7 +234,7 @@
   position: absolute;
   z-index: 12;
   left: 50%;
-  bottom: 1.35rem;
+  bottom: var(--layout-zone-bottom);
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -250,13 +252,14 @@
 
 @media (max-width: 900px) {
   .orchestration-spatial-panel-shell {
+    top: 8rem;
     bottom: 6.4rem;
     width: calc(100vw - 4rem);
     min-width: 0;
-    height: calc(100% - 17.9rem);
   }
 
   .orchestration-spatial-panel-shell.is-collapsed {
+    top: auto;
     height: 2.65rem;
   }
 
