@@ -1,31 +1,18 @@
 import { useState, type CSSProperties } from 'react'
+import type { WorkspaceId } from '../../app/workspaces/workspaceModel'
 import { useAppearance } from '../../context/AppearanceContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
 import { useConnectionSettings } from '../../context/ConnectionSettingsContext'
 import { useHermesProfiles } from '../../context/HermesProfileContext'
 import { BrainStage } from '../BrainStage/BrainStage'
 
-export type WorkspaceView =
-  | 'brain'
-  | 'chat'
-  | 'memory'
-  | 'skills'
-  | 'system'
-  | 'operations'
-  | 'settings'
-
 type WorkspaceStageProps = {
-  activeView: WorkspaceView
+  activeView: WorkspaceId
 }
 
 type SettingsTab = 'appearance' | 'graphics' | 'profiles' | 'connection'
 
-const viewCopy: Record<Exclude<WorkspaceView, 'brain' | 'chat' | 'settings'>, { eyebrow: string; title: string; description: string }> = {
-  memory: {
-    eyebrow: 'Hindsight + Hermes',
-    title: 'Memory',
-    description: 'Memory inspection, recall history, and graph exploration will live in this workspace.',
-  },
+const viewCopy: Record<Exclude<WorkspaceId, 'memory' | 'chat' | 'settings'>, { eyebrow: string; title: string; description: string }> = {
   skills: {
     eyebrow: 'Capabilities',
     title: 'Skills',
@@ -340,8 +327,13 @@ function SettingsWorkspace() {
   )
 }
 
+/**
+ * Renders non-Operations workspace content using the canonical workspace model.
+ * Memory is now the live identity for the mature spatial graph; the historical
+ * `brain` name is no longer accepted by rendering/navigation code.
+ */
 export function WorkspaceStage({ activeView }: WorkspaceStageProps) {
-  if (activeView === 'brain') return <BrainStage />
+  if (activeView === 'memory') return <BrainStage />
   if (activeView === 'chat') return <ChatsWorkspace />
   if (activeView === 'settings') return <SettingsWorkspace />
 
