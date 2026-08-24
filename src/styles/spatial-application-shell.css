@@ -37,7 +37,8 @@
   pointer-events: auto;
   transition:
     opacity var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1),
-    transform var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1);
+    translate var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1),
+    scale var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /*
@@ -47,14 +48,16 @@
  */
 .spatial-memory-layer.is-camera-only .spatial-memory-layer__graph {
   opacity: 0;
-  transform: translateY(-8px) scale(0.992);
+  translate: 0 -8px;
+  scale: 0.992;
 }
 
 /* Keep hidden Memory overlays out of the generic incoming Operations animation. */
 .spatial-memory-layer.is-camera-only .brain-timeline-hud.workspace-transition-item,
 .spatial-memory-layer.is-camera-only .brain-scene-help.workspace-transition-item {
   opacity: 0 !important;
-  transform: translateY(-10px) !important;
+  translate: 0 -10px !important;
+  scale: 1 !important;
   pointer-events: none;
   animation: none !important;
 }
