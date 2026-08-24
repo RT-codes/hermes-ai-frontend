@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { SpatialInteractionCanvas } from '../../components/SpatialInteractionCanvas/SpatialInteractionCanvas'
-import { SpatialStageEnvironment } from '../../components/SpatialStageEnvironment/SpatialStageEnvironment'
 import { TimelineHud, type TimelineMarker } from '../../components/TimelineHud/TimelineHud'
 import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
 import type { ConnectionState, Task } from './types'
@@ -17,9 +16,9 @@ type OperationsSpatialShellProps = {
 }
 
 /**
- * Operations composes spatial interaction and its contextual HUD without owning
- * the shared HUD implementation. FCP.5 will later move the remaining scene pieces
- * onto the persistent application shell.
+ * Operations contributes its interaction/data/HUD layers above the persistent
+ * application environment. FCP.5 will replace the remaining Operations-specific
+ * WebGL camera with the shared spatial control contract.
  */
 export function OperationsSpatialShell({
   selectedTask,
@@ -50,7 +49,6 @@ export function OperationsSpatialShell({
 
   return (
     <section className="workspace-stage workspace-stage--interactive orchestration-stage orchestration-stage--spatial" aria-label="Orchestration workspace">
-      <SpatialStageEnvironment className="orchestration-spatial-environment" />
       <SpatialInteractionCanvas />
 
       <TimelineHud
