@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { WorkspaceProvider } from '../workspaces/WorkspaceProvider'
 import { AppearanceProvider } from '../../context/AppearanceContext'
 import { BrainSceneProvider } from '../../context/BrainSceneContext'
 import { ChatSessionsProvider } from '../../context/ChatSessionsContext'
@@ -20,24 +21,26 @@ type AppProvidersProps = {
  */
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <HouseholdProvider>
-      <AppearanceProvider>
-        <ConnectionSettingsProvider>
-          <HermesProfileProvider>
-            <ChatSessionsProvider>
-              <InsightSelectionProvider>
-                <RuntimeStatusProvider>
-                  <SystemTelemetryProvider>
-                    <BrainSceneProvider>
-                      {children}
-                    </BrainSceneProvider>
-                  </SystemTelemetryProvider>
-                </RuntimeStatusProvider>
-              </InsightSelectionProvider>
-            </ChatSessionsProvider>
-          </HermesProfileProvider>
-        </ConnectionSettingsProvider>
-      </AppearanceProvider>
-    </HouseholdProvider>
+    <WorkspaceProvider>
+      <HouseholdProvider>
+        <AppearanceProvider>
+          <ConnectionSettingsProvider>
+            <HermesProfileProvider>
+              <ChatSessionsProvider>
+                <InsightSelectionProvider>
+                  <RuntimeStatusProvider>
+                    <SystemTelemetryProvider>
+                      <BrainSceneProvider>
+                        {children}
+                      </BrainSceneProvider>
+                    </SystemTelemetryProvider>
+                  </RuntimeStatusProvider>
+                </InsightSelectionProvider>
+              </ChatSessionsProvider>
+            </HermesProfileProvider>
+          </ConnectionSettingsProvider>
+        </AppearanceProvider>
+      </HouseholdProvider>
+    </WorkspaceProvider>
   )
 }
