@@ -11,20 +11,43 @@
   overflow: hidden;
 }
 
+/*
+ * Keep the visual world in an explicit stack below camera graphics and workspace HUDs.
+ * The ordering is intentionally boring: environment -> persistent 3D -> workspace UI.
+ */
 .spatial-application-shell__environment {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
 }
 
 .spatial-application-shell__persistent-layer {
-  z-index: 1;
+  z-index: 2;
 }
 
 .spatial-application-shell__workspace {
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
+}
+
+/*
+ * Operations is intentionally more HUD-heavy than Memory. Preserve the same shared
+ * backdrop underneath it, but raise its contrast just enough that the floor/grid does
+ * not disappear behind the translucent orchestration surface.
+ */
+.hermes-home[data-display-workspace='operations'] .spatial-application-shell__environment .spatial-stage-backdrop__haze {
+  background:
+    radial-gradient(circle at 50% 38%, rgb(var(--accent-rgb) / 0.17), transparent 30%),
+    radial-gradient(circle at 50% 74%, rgb(var(--accent-rgb) / 0.085), transparent 40%);
+}
+
+.hermes-home[data-display-workspace='operations'] .spatial-application-shell__environment .spatial-stage-backdrop__grid {
+  opacity: 0.46;
+}
+
+.hermes-home[data-display-workspace='operations'] .spatial-application-shell__environment .spatial-stage-backdrop__floor {
+  opacity: 0.34;
 }
 
 .spatial-memory-layer,
