@@ -25,7 +25,10 @@ type Point = { x: number; y: number }
 type ViewRotation = { yaw: number; pitch: number }
 type LinkEndpoint = string | number | GraphNode | undefined
 
-type BrainGraphProps = { onViewRotationChange?: (rotation: ViewRotation) => void }
+type BrainGraphProps = {
+  memoryGraphicsVisible?: boolean
+  onViewRotationChange?: (rotation: ViewRotation) => void
+}
 type GraphNode = NodeObject<BrainGraphNode>
 type GraphLink = LinkObject<BrainGraphNode, BrainGraphLink>
 type GraphSource = 'loading' | 'hindsight' | 'fallback' | 'error'
@@ -378,7 +381,7 @@ function snapshotDelta(a: CameraSnapshot, b: CameraSnapshot) {
   )
 }
 
-export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
+export function BrainGraph({ memoryGraphicsVisible = true, onViewRotationChange }: BrainGraphProps) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const graphRef = useRef<ForceGraphMethods<BrainGraphNode, BrainGraphLink> | undefined>(undefined)
   const inspectorRef = useRef<HTMLElement | null>(null)
@@ -891,6 +894,7 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
   }, [graphData.links, nodeById, selectedNodeId])
 
   const nodeIsVisible = useCallback((node: BrainGraphNode) => {
+    if (!memoryGraphicsVisible) return false
     if (node.kind === 'core') return false
     if (selectedNodeId) {
       if (node.kind === 'cluster') return false
@@ -906,6 +910,7 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
     activeClusterId,
     lodLevel,
     lodModel.representativeNodeIds,
+    memoryGraphicsVisible,
     previewNeighborhood.distances,
     previewNodeId,
     selectedNeighborhood.distances,
@@ -913,6 +918,7 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
   ])
 
   const linkIsVisible = useCallback((rawLink: BrainGraphLink) => {
+    if (!memoryGraphicsVisible) return false
     const link = rawLink as GraphLink
     const typed = rawLink as BrainGraphLink
     const sourceId = endpointId(link.source as LinkEndpoint)
@@ -952,6 +958,7 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
     hoverNeighborhood.linkKeys,
     hoveredNode?.kind,
     lodLevel,
+    memoryGraphicsVisible,
     nodeById,
     nodeIsVisible,
     previewBridgeKey,
@@ -1156,6 +1163,7 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
           return 0.12
         }}
         linkDirectionalParticles={(rawLink) => {
+          if (!memoryGraphicsVisible) return 0
           const key = graphLinkKey(rawLink as GraphLink)
           if (previewNodeId && (previewNeighborhood.linkKeys.has(key) || key === previewBridgeKey)) return 1
           if (selectedNodeId && !previewNodeId && selectedNeighborhood.linkKeys.has(key)) return 1
@@ -1182,8 +1190,12 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
             fitVisibleGraph(650, 175)
           }
         }}
-        onNodeHover={(node) => setHoveredNodeId(node?.id == null ? null : String(node.id))}
+        onNodeHover={(node) => {
+          if (!memoryGraphicsVisible) return
+          setHoveredNodeId(node?.id == null ? null : String(node.id))
+        }}
         onNodeClick={(node) => {
+          if (!memoryGraphicsVisible) return
           if (node.kind === 'cluster') {
             focusCluster(node as GraphNode)
             return
@@ -1193,11 +1205,12 @@ export function BrainGraph({ onViewRotationChange }: BrainGraphProps) {
           setSelectedNodeId((current) => current === String(node.id) ? null : String(node.id))
         }}
         onBackgroundClick={() => {
+          if (!memoryGraphicsVisible) return
           previewCameraRef.current = null
           setPreviewNodeId(null)
           setSelectedNodeId(null)
         }}
-        enablePointerInteraction
+        enablePointerInteraction={memoryGraphicsVisible}
         enableNodeDrag={false}
         enableNavigationControls
       />
