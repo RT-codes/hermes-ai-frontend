@@ -1,5 +1,5 @@
 import { useRuntimeStatus } from '../../context/RuntimeStatusContext'
-import { BrainHudPanel } from '../BrainHudPanel/BrainHudPanel'
+import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
 import { SystemPanel } from '../SystemPanel/SystemPanel'
 
 export function TopBar() {
@@ -24,9 +24,9 @@ export function TopBar() {
         </button>
 
         <div className="system-status-flyout" role="status" aria-label="System status details">
-          <BrainHudPanel title="SYSTEM">
+          <HudPanel title="SYSTEM">
             <SystemPanel />
-          </BrainHudPanel>
+          </HudPanel>
         </div>
       </div>
     </header>
