@@ -19,17 +19,17 @@ type SpatialApplicationShellContextValue = {
 
 type SpatialApplicationShellProps = {
   children: ReactNode
+  persistentLayer?: ReactNode
 }
 
 const SpatialApplicationShellContext = createContext<SpatialApplicationShellContextValue | null>(null)
 
 /**
  * Persistent owner for the spatial application's base environment, shared view
- * orientation and named workspace camera poses. Camera implementations may still be
- * separate during migration, but they exchange pose state through this stable contract
- * so the later single-camera shell can adopt the same API without changing workspaces.
+ * orientation and named workspace camera poses. `persistentLayer` is intentionally
+ * mounted outside workspace swaps so camera/scene owners can survive view changes.
  */
-export function SpatialApplicationShell({ children }: SpatialApplicationShellProps) {
+export function SpatialApplicationShell({ children, persistentLayer }: SpatialApplicationShellProps) {
   const [viewRotation, setViewRotation] = useState<ViewRotation>(DEFAULT_VIEW_ROTATION)
   const cameraPosesRef = useRef<Partial<Record<WorkspaceId, SpatialCameraPose>>>({})
 
@@ -63,6 +63,11 @@ export function SpatialApplicationShell({ children }: SpatialApplicationShellPro
     <SpatialApplicationShellContext.Provider value={value}>
       <div className="spatial-application-shell">
         <SpatialStageEnvironment viewRotation={viewRotation} className="spatial-application-shell__environment" />
+        {persistentLayer && (
+          <div className="spatial-application-shell__persistent-layer">
+            {persistentLayer}
+          </div>
+        )}
         <div className="spatial-application-shell__workspace">
           {children}
         </div>
