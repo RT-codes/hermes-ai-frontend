@@ -6,10 +6,12 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react'
+import { HudSurface } from '../../ui/cells/HudSurface/HudSurface'
 import {
   executeDeveloperCommand,
   type DeveloperConsoleLine,
 } from '../commands/developerCommandRegistry'
+import { useDeveloperConsoleToggle } from './useDeveloperConsoleToggle'
 
 type DeveloperConsoleProps = {
   activeWorkspace: string
@@ -25,12 +27,11 @@ const INITIAL_TRANSCRIPT: DeveloperConsoleLine[] = [
 ]
 
 /**
- * A Quake-style developer surface for frontend diagnostics and future layout tools.
- * It deliberately stays separate from host/runtime shells so UI debugging cannot
- * silently become privileged infrastructure execution.
+ * Quake-style frontend diagnostic organism. It owns transcript/history UX while
+ * keyboard policy, visual primitives and executable commands live in lower layers.
  */
 export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
-  const [open, setOpen] = useState(false)
+  const { open } = useDeveloperConsoleToggle()
   const [input, setInput] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState<number | null>(null)
@@ -51,26 +52,6 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
       'developer-overlay',
     ],
   }), [activeWorkspace])
-
-  /**
-   * The Backquote physical key is used instead of a text character so Shift+` (~)
-   * and plain ` behave as one reliable toggle across keyboard layouts.
-   */
-  useEffect(() => {
-    const handleToggle = (event: globalThis.KeyboardEvent) => {
-      if (event.code !== 'Backquote' || event.ctrlKey || event.metaKey || event.altKey) return
-
-      const target = event.target as HTMLElement | null
-      const targetIsEditable = target?.matches('input, textarea, [contenteditable="true"]') ?? false
-      if (!open && targetIsEditable) return
-
-      event.preventDefault()
-      setOpen((current) => !current)
-    }
-
-    window.addEventListener('keydown', handleToggle)
-    return () => window.removeEventListener('keydown', handleToggle)
-  }, [open])
 
   /** Opening the HUD always returns keyboard ownership to its command line. */
   useEffect(() => {
@@ -144,7 +125,7 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
       aria-hidden={!open}
       aria-label="Frontend developer console"
     >
-      <div className="developer-console__surface" />
+      <HudSurface className="developer-console__surface" />
       <header className="developer-console__header">
         <div>
           <span className="developer-console__eyebrow">DEVELOPER MODE</span>
