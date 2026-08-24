@@ -1,2 +1,3 @@
 /* Shared visual atoms/cells. Feature styles may consume these but should not redefine them. */
 @import './primitives/hud-surface.css';
+@import './primitives/hud-panel.css';
