@@ -1,13 +1,19 @@
-import { layoutZones, type LayoutZoneId } from './layoutZones'
+import {
+  isManagedLayoutLane,
+  layoutSlotNames,
+  layoutZones,
+  type LayoutZoneId,
+} from './layoutZones'
 
 type LayoutZoneOverlayProps = {
   activeZoneIds: ReadonlySet<LayoutZoneId>
 }
 
 /**
- * Visualizes only the diagnostic zones the developer has enabled. The overlay
- * never participates in production layout or pointer handling, so individual
- * zones can be isolated while debugging overlaps without affecting the app.
+ * Visualizes only the diagnostic zones the developer has enabled. Managed workspace
+ * lanes include their FCP.6A top/middle/bottom subdivisions so the overlay displays
+ * the same semantic placement contract production HUDs declare. The overlay never
+ * participates in production layout or pointer handling.
  */
 export function LayoutZoneOverlay({ activeZoneIds }: LayoutZoneOverlayProps) {
   if (activeZoneIds.size === 0) return null
@@ -24,6 +30,19 @@ export function LayoutZoneOverlay({ activeZoneIds }: LayoutZoneOverlayProps) {
             data-zone-id={zone.id}
           >
             <span>{zone.label}</span>
+            {isManagedLayoutLane(zone.id) && (
+              <div className="layout-zone-overlay__slot-grid">
+                {layoutSlotNames.map((slot) => (
+                  <div
+                    className="layout-zone-overlay__slot"
+                    data-slot-id={`${zone.id}.${slot}`}
+                    key={`${zone.id}.${slot}`}
+                  >
+                    <small>{zone.id}.{slot}</small>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
     </div>
