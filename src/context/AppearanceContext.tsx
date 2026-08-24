@@ -16,6 +16,9 @@ export type AppearanceSettings = {
   brainHudColor: string
   brainHudOpacity: number
   rubikTurnSpeedMs: number
+  viewTransitionDurationMs: number
+  panelTransitionDurationMs: number
+  panelTransitionStaggerMs: number
   interfaceScale: number
   interfaceFont: InterfaceFontPreset
   hudFont: HudFontPreset
@@ -52,6 +55,9 @@ const defaults: AppearanceSettings = {
   brainHudColor: '#02070c',
   brainHudOpacity: 0.72,
   rubikTurnSpeedMs: 650,
+  viewTransitionDurationMs: 520,
+  panelTransitionDurationMs: 280,
+  panelTransitionStaggerMs: 45,
   interfaceScale: 1,
   interfaceFont: 'modern',
   hudFont: 'technical',
@@ -106,6 +112,9 @@ function applySettings(settings: AppearanceSettings) {
   root.style.setProperty('--brain-hud-rgb', brainHudRgb)
   root.style.setProperty('--brain-hud-opacity', `${settings.brainHudOpacity}`)
   root.style.setProperty('--brain-hud-opacity-soft', `${brainHudOpacitySoft}`)
+  root.style.setProperty('--view-transition-duration', `${Math.max(160, settings.viewTransitionDurationMs)}ms`)
+  root.style.setProperty('--panel-transition-duration', `${Math.max(100, settings.panelTransitionDurationMs)}ms`)
+  root.style.setProperty('--panel-transition-stagger', `${Math.max(0, settings.panelTransitionStaggerMs)}ms`)
 }
 
 export function AppearanceProvider({ children }: { children: ReactNode }) {
