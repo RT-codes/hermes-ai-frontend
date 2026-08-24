@@ -17,7 +17,7 @@
 
 .layout-zone-overlay__zone > span {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   top: 0;
   left: 0;
   padding: 0.2rem 0.4rem;
@@ -29,28 +29,32 @@
   text-shadow: 0 0 8px rgb(255 222 76 / 0.28);
 }
 
+/*
+ * Slot rectangles begin exactly at the owning lane edge. The grid gap is the only
+ * vertical spacing between them, matching the production slot contract one-for-one.
+ */
 .layout-zone-overlay__slot-grid {
   position: absolute;
   inset: 0;
   display: grid;
   grid-template-rows: repeat(3, minmax(0, 1fr));
   gap: var(--layout-zone-slot-gap);
-  padding: var(--layout-zone-slot-gap) 0 0;
 }
 
 .layout-zone-overlay__slot {
   position: relative;
   min-height: 0;
-  border-top: 1px dotted rgb(109 235 255 / 0.58);
-  border-bottom: 1px dotted rgb(109 235 255 / 0.32);
-  background: rgb(53 217 255 / 0.018);
+  border: 1px dashed rgb(255 222 76 / 0.72);
+  background: rgb(255 222 76 / 0.018);
 }
 
 .layout-zone-overlay__slot small {
   position: absolute;
   right: 0.3rem;
   bottom: 0.2rem;
-  color: rgb(122 235 255 / 0.76);
+  color: rgb(255 232 118 / 0.78);
+  background: rgb(18 18 10 / 0.62);
+  padding: 0.1rem 0.2rem;
   font-family: var(--font-hud);
   font-size: 0.42rem;
   letter-spacing: 0.08em;
