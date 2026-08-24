@@ -31,11 +31,7 @@
   pointer-events: none;
 }
 
-/*
- * Operations is intentionally more HUD-heavy than Memory. Preserve the same shared
- * backdrop underneath it, but raise its contrast just enough that the floor/grid does
- * not disappear behind the translucent orchestration surface.
- */
+/* Operations keeps the same shared stage backdrop but with slightly stronger depth cues. */
 .hermes-home[data-display-workspace='operations'] .spatial-application-shell__environment .spatial-stage-backdrop__haze {
   background:
     radial-gradient(circle at 50% 38%, rgb(var(--accent-rgb) / 0.17), transparent 30%),
@@ -51,53 +47,72 @@
 }
 
 .spatial-memory-layer,
-.spatial-memory-layer__graph {
+.spatial-graphics-slot,
+.spatial-graphics-slot__memory,
+.spatial-graphics-slot__operations,
+.operations-spatial-graphics {
   position: absolute;
   inset: 0;
 }
 
-.spatial-memory-layer__graph {
+.spatial-graphics-slot {
+  overflow: hidden;
+}
+
+.spatial-graphics-slot__memory,
+.spatial-graphics-slot__operations {
+  transition: opacity var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Memory's ForceGraph stays mounted because it is currently the canonical orbit/pan/
+ * zoom control owner. In Operations it becomes a transparent interaction surface while
+ * the Operations-owned WebGL payload is painted above it.
+ */
+.spatial-graphics-slot__memory {
+  z-index: 1;
   pointer-events: auto;
-  transition:
-    opacity var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1),
-    translate var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1),
-    scale var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/*
- * Operations currently reuses the persistent Memory ForceGraph scene/camera owner.
- * Keep the WebGL world painted until workspace-specific 3D payloads are split out;
- * only Memory HUD chrome and inspectors are suppressed in camera-only mode.
- */
-.spatial-memory-layer.is-camera-only .spatial-memory-layer__graph {
+.spatial-graphics-slot__operations {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.spatial-graphics-slot[data-spatial-graphics='memory'] .spatial-graphics-slot__memory {
   opacity: 1;
-  translate: 0 0;
-  scale: 1;
 }
 
-/* Keep hidden Memory overlays out of the generic incoming Operations animation. */
-.spatial-memory-layer.is-camera-only .brain-timeline-hud.workspace-transition-item,
-.spatial-memory-layer.is-camera-only .brain-scene-help.workspace-transition-item {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  translate: 0 -10px !important;
-  scale: 1 !important;
-  pointer-events: none !important;
-  animation: none !important;
+.spatial-graphics-slot[data-spatial-graphics='memory'] .spatial-graphics-slot__operations {
+  opacity: 0;
+  visibility: hidden;
 }
 
-/*
- * BrainGraph still owns the shared WebGL camera today, so its DOM HUDs remain mounted.
- * In Operations they must be visually inert as well as non-interactive; otherwise a
- * Memory node selection can leak cluster/inspector UI into the Operations workspace.
- */
-.spatial-memory-layer.is-camera-only .brain-graph__controls,
-.spatial-memory-layer.is-camera-only .brain-memory-inspector,
-.spatial-memory-layer.is-camera-only .brain-cluster-info,
-.spatial-memory-layer.is-camera-only .brain-cluster-title,
-.spatial-memory-layer.is-camera-only .brain-node-hover,
-.spatial-memory-layer.is-camera-only .brain-selected-connector,
-.spatial-memory-layer.is-camera-only .brain-node-hover__connector {
+.spatial-graphics-slot[data-spatial-graphics='operations'] .spatial-graphics-slot__memory {
+  opacity: 0;
+}
+
+.spatial-graphics-slot[data-spatial-graphics='operations'] .spatial-graphics-slot__operations {
+  opacity: 1;
+  visibility: visible;
+}
+
+.operations-spatial-graphics,
+.operations-spatial-graphics canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Memory DOM HUDs stay mounted inside BrainGraph but must never leak through Operations. */
+.spatial-memory-layer.is-operations .brain-graph__controls,
+.spatial-memory-layer.is-operations .brain-memory-inspector,
+.spatial-memory-layer.is-operations .brain-cluster-info,
+.spatial-memory-layer.is-operations .brain-cluster-title,
+.spatial-memory-layer.is-operations .brain-cluster-labels,
+.spatial-memory-layer.is-operations .brain-node-hover,
+.spatial-memory-layer.is-operations .brain-selected-connector,
+.spatial-memory-layer.is-operations .brain-node-hover__connector,
+.spatial-memory-layer.is-operations .brain-graph__load-error {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
