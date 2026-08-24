@@ -5,6 +5,8 @@
 .hermes-home {
   --layout-zone-sidebar-width: var(--sidebar-width);
   --layout-zone-page-gutter: 1rem;
+  --layout-zone-inner-gutter: 1rem;
+  --layout-zone-slot-gap: 0.85rem;
   --layout-zone-top: 0.75rem;
   --layout-zone-top-band-bottom: calc(100% - 6.25rem);
   --layout-zone-workspace-top: 6.75rem;
@@ -26,6 +28,7 @@
     var(--layout-zone-sidebar-width) +
     var(--layout-zone-hud-width) +
     var(--layout-zone-page-gutter) +
+    var(--layout-zone-inner-gutter) +
     var(--layout-zone-page-gutter)
   );
   --layout-zone-center-right: calc(
@@ -59,9 +62,42 @@
   bottom: var(--layout-zone-bottom);
 }
 
+/*
+ * FCP.6A managed-panel contract. These attributes express semantic placement intent;
+ * FCP.6B will own collision resolution and animated reflow. Feature CSS may size the
+ * lane itself, but managed surfaces fill lane width and derive height from fit/span.
+ */
+[data-layout-slot] {
+  min-width: 0;
+  width: 100%;
+}
+
+[data-layout-fit='content-fit'] {
+  align-self: start;
+  min-height: 0;
+  max-height: 100%;
+}
+
+[data-layout-fit='slot-fill'] {
+  align-self: stretch;
+  min-height: 0;
+  height: 100%;
+}
+
+[data-layout-fit='elastic'] {
+  align-self: stretch;
+  min-height: 0;
+  height: 100%;
+}
+
+[data-layout-span='1'] { grid-row-end: span 1; }
+[data-layout-span='2'] { grid-row-end: span 2; }
+[data-layout-span='3'] { grid-row-end: span 3; }
+
 @media (max-width: 1180px) {
   .hermes-home {
     --layout-zone-hud-width: clamp(19rem, 25vw, 24rem);
+    --layout-zone-inner-gutter: 0.8rem;
   }
 }
 
@@ -69,6 +105,7 @@
   /* Narrow layouts stop reserving bilateral HUD lanes; responsive feature CSS takes over. */
   .hermes-home {
     --layout-zone-hud-width: 0rem;
+    --layout-zone-inner-gutter: 0rem;
     --layout-zone-center-left: calc(var(--layout-zone-sidebar-width) + var(--layout-zone-page-gutter));
     --layout-zone-center-right: var(--layout-zone-page-gutter);
   }
