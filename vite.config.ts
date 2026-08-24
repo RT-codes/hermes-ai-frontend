@@ -158,6 +158,7 @@ export default defineConfig(({ mode }) => {
   const target = env.HERMES_API_TARGET || 'http://127.0.0.1:8642'
   const dashboardTarget = env.HERMES_DASHBOARD_TARGET || 'http://127.0.0.1:9119'
   const hindsightTarget = env.HINDSIGHT_API_TARGET || 'http://127.0.0.1:8889'
+  const controlTarget = env.HERMES_CONTROL_TARGET || 'http://127.0.0.1:8770'
   const apiKey = env.HERMES_API_KEY || ''
   const dashboardUsername = env.HERMES_DASHBOARD_USERNAME || ''
   const dashboardPassword = env.HERMES_DASHBOARD_PASSWORD || ''
@@ -195,6 +196,16 @@ export default defineConfig(({ mode }) => {
           target: hindsightTarget,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/hindsight-api/, ''),
+        },
+        '/control-api': {
+          target: controlTarget,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/control-api/, ''),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.removeHeader('origin')
+            })
+          },
         },
       },
     },

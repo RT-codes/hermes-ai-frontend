@@ -1,0 +1,320 @@
+/* Spatial Operations shell: a translucent HUD overlay on the shared interactive 3D stage. */
+
+.orchestration-stage--spatial {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.orchestration-spatial-environment {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.orchestration-stage--spatial .orchestration-spatial-environment .spatial-stage-backdrop {
+  opacity: 1;
+}
+
+.orchestration-stage--spatial .spatial-stage-backdrop__haze {
+  background:
+    radial-gradient(circle at 50% 37%, rgb(var(--accent-rgb) / 0.18), transparent 30%),
+    radial-gradient(circle at 50% 72%, rgb(var(--accent-rgb) / 0.09), transparent 42%);
+}
+
+.orchestration-stage--spatial .spatial-stage-backdrop__grid {
+  opacity: 0.34;
+}
+
+.orchestration-stage--spatial .spatial-stage-backdrop__floor {
+  opacity: 0.16;
+}
+
+/* Real orbit/pan/zoom canvas. The visible Three.js grid is deliberately not a task graph. */
+.spatial-interaction-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-mask-image: radial-gradient(ellipse 82% 72% at 50% 72%, #000 0%, #000 46%, rgb(0 0 0 / 0.78) 61%, rgb(0 0 0 / 0.28) 76%, transparent 91%);
+  mask-image: radial-gradient(ellipse 82% 72% at 50% 72%, #000 0%, #000 46%, rgb(0 0 0 / 0.78) 61%, rgb(0 0 0 / 0.28) 76%, transparent 91%);
+}
+
+.spatial-interaction-canvas canvas {
+  display: block;
+  cursor: grab;
+}
+
+.spatial-interaction-canvas canvas:active {
+  cursor: grabbing;
+}
+
+/* Canonical Brain timeline geometry, with Operations-only footer noise removed. */
+.orchestration-stage--spatial > .orchestration-canonical-timeline {
+  position: absolute;
+  z-index: 18;
+}
+
+.orchestration-canonical-timeline .timeline-hud__footer {
+  display: none;
+}
+
+/* Main Operations surface behaves like a floating Brain HUD/cluster inspector. */
+.orchestration-spatial-panel-shell {
+  position: absolute;
+  z-index: 28;
+  bottom: 7.4rem;
+  left: 50%;
+  width: min(70vw, 1160px);
+  min-width: 760px;
+  height: calc(100% - 18.6rem);
+  transform: translateX(-50%);
+  pointer-events: auto;
+  transition: height 170ms cubic-bezier(0.22, 0.78, 0.25, 1);
+}
+
+.orchestration-spatial-panel-shell.is-collapsed {
+  height: 2.65rem;
+}
+
+.orchestration-spatial-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  filter:
+    drop-shadow(0 22px 42px rgb(0 0 0 / 0.3))
+    drop-shadow(0 0 24px rgb(var(--accent-rgb) / 0.045));
+}
+
+/* Brain-HUD cut corners, but transparent enough that the spatial world stays readable beneath it. */
+.orchestration-spatial-panel > .brain-hud-panel__surface {
+  background: rgb(var(--accent-rgb) / 0.15);
+}
+
+.orchestration-spatial-panel > .brain-hud-panel__surface::after {
+  background:
+    linear-gradient(115deg, rgb(var(--accent-rgb) / 0.024), transparent 44%, rgb(var(--accent-rgb) / 0.012)),
+    rgb(var(--brain-hud-rgb) / 0.17);
+  backdrop-filter: blur(5px) saturate(116%);
+  -webkit-backdrop-filter: blur(5px) saturate(116%);
+}
+
+.orchestration-spatial-panel > .brain-hud-panel__header {
+  padding-left: 0.8rem;
+  padding-right: 0.58rem;
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.1);
+  background: rgb(var(--brain-hud-rgb) / 0.055);
+}
+
+.orchestration-spatial-panel > .brain-hud-panel__content {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  opacity: 1;
+  transition: opacity 110ms ease;
+}
+
+.orchestration-spatial-panel-shell.is-collapsed .brain-hud-panel__content {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.orchestration-panel-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.62rem;
+}
+
+.orchestration-panel-toggle {
+  min-height: 22px;
+  padding: 0 0.48rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
+  background: rgb(var(--accent-rgb) / 0.035);
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 0.46rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.orchestration-panel-toggle:hover {
+  color: var(--text-primary);
+  border-color: rgb(var(--accent-rgb) / 0.48);
+  background: rgb(var(--accent-rgb) / 0.08);
+}
+
+.orchestration-spatial-panel__body {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.86fr) minmax(420px, 1.34fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.orchestration-spatial-panel__work,
+.orchestration-spatial-panel__detail {
+  min-width: 0;
+  min-height: 0;
+  background: rgb(var(--brain-hud-rgb) / 0.02);
+}
+
+.orchestration-spatial-panel__work {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-right: 1px solid rgb(var(--accent-rgb) / 0.11);
+}
+
+.orchestration-spatial-panel__detail {
+  display: grid;
+  grid-template-rows: minmax(0, 1.25fr) minmax(9rem, 0.75fr);
+}
+
+.orchestration-zone__heading--embedded {
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.1);
+  background: rgb(var(--accent-rgb) / 0.01);
+}
+
+.orchestration-task-list--embedded {
+  height: auto;
+  min-height: 0;
+  padding: 0.72rem;
+  border: 0;
+  overflow: auto;
+}
+
+.orchestration-task-list--embedded .orchestration-task {
+  background: rgb(0 0 0 / 0.07);
+}
+
+.orchestration-inspector--embedded {
+  min-height: 0;
+  padding: 0.95rem 1rem 1.05rem;
+  overflow: auto;
+  background: transparent;
+}
+
+.orchestration-activity-inline {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.11);
+  background: rgb(0 0 0 / 0.025);
+}
+
+.orchestration-activity__feed--embedded {
+  height: auto;
+  min-height: 0;
+  padding: 0.65rem 0.8rem 0.9rem;
+  overflow: auto;
+}
+
+.orchestration-spatial-panel .orchestration-connection {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.48rem;
+}
+
+.orchestration-spatial-panel .orchestration-connection > span {
+  width: 0.38rem;
+  height: 0.38rem;
+}
+
+.orchestration-banner--spatial {
+  position: absolute;
+  z-index: 32;
+  top: 8.4rem;
+  left: 50%;
+  width: min(60vw, 900px);
+  transform: translateX(-50%);
+}
+
+/* Future scene controls stay in the same spatial layer as Brain controls, below overlays. */
+.orchestration-stage--spatial > .orchestration-view-controls {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: 3.25rem;
+  display: flex;
+  gap: 0.28rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.orchestration-view-controls button {
+  min-height: 26px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  padding: 0 0.65rem;
+  color: var(--text-faint);
+  background: rgb(var(--brain-hud-rgb) / 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font: inherit;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+}
+
+.orchestration-view-controls button:disabled {
+  opacity: 0.72;
+  cursor: default;
+}
+
+.orchestration-stage--spatial > .orchestration-scene-help {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: 1.35rem;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 1180px) {
+  .orchestration-spatial-panel-shell {
+    width: min(78vw, 980px);
+    min-width: 680px;
+  }
+
+  .orchestration-spatial-panel__body {
+    grid-template-columns: minmax(270px, 0.8fr) minmax(360px, 1.2fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .orchestration-spatial-panel-shell {
+    bottom: 6.4rem;
+    width: calc(100vw - 4rem);
+    min-width: 0;
+    height: calc(100% - 17.9rem);
+  }
+
+  .orchestration-spatial-panel-shell.is-collapsed {
+    height: 2.65rem;
+  }
+
+  .orchestration-spatial-panel__body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(14rem, 0.9fr) minmax(16rem, 1.1fr);
+  }
+
+  .orchestration-spatial-panel__work {
+    border-right: 0;
+    border-bottom: 1px solid rgb(var(--accent-rgb) / 0.11);
+  }
+
+  .orchestration-view-controls,
+  .orchestration-scene-help {
+    display: none;
+  }
+}

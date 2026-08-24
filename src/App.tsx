@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActivityPanel } from './components/ActivityPanel/ActivityPanel'
 import { BrainHudPanel } from './components/BrainHudPanel/BrainHudPanel'
 import { ChatPanel } from './components/ChatPanel/ChatPanel'
@@ -16,9 +16,12 @@ import { HouseholdProvider } from './context/HouseholdContext'
 import { InsightSelectionProvider } from './context/InsightSelectionContext'
 import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
 import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
+import { NewChatProfileDialog } from './features/chat/components/NewChatProfileDialog'
+import { OrchestrationWorkspace } from './features/orchestration/OrchestrationWorkspace'
 import './styles/layout.css'
 import './styles/chat.css'
 import './styles/chat-v2.css'
+import './styles/profile-chat.css'
 import './styles/workspace.css'
 import './styles/settings-v2.css'
 import './styles/telemetry.css'
@@ -30,13 +33,43 @@ import './styles/brain.css'
 import './styles/brain-phase2.css'
 import './styles/brain-final-polish.css'
 import './styles/typography-v2.css'
+import './styles/orchestration.css'
+import './styles/timeline-hud.css'
+import './styles/spatial-stage.css'
+import './styles/brain-wrap-polish.css'
+import './styles/orchestration-spatial.css'
+import './styles/orchestration-final-polish.css'
+import './styles/orchestration-kanban.css'
+
+const ACTIVE_VIEW_STORAGE_KEY = 'hermes-active-workspace:v1'
+
+function initialWorkspaceView(): WorkspaceView {
+  try {
+    const stored = window.localStorage.getItem(ACTIVE_VIEW_STORAGE_KEY)
+    if (stored === 'memory') return 'brain'
+    if (stored === 'brain' || stored === 'operations' || stored === 'chat' || stored === 'skills' || stored === 'system' || stored === 'settings') {
+      return stored
+    }
+  } catch {
+    // Storage is optional; Memory remains the safe default.
+  }
+  return 'brain'
+}
 
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [activeView, setActiveView] = useState<WorkspaceView>('brain')
+  const [activeView, setActiveView] = useState<WorkspaceView>(initialWorkspaceView)
   const { openTabIds, createSession } = useChatSessions()
   const { settings } = useAppearance()
   const computeAtTop = settings.computeHudPosition === 'top-right'
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ACTIVE_VIEW_STORAGE_KEY, activeView)
+    } catch {
+      // Do not let unavailable browser storage affect navigation.
+    }
+  }, [activeView])
 
   const activityHud = (
     <BrainHudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
@@ -55,7 +88,9 @@ function HermesHome() {
       />
 
       <TopBar />
-      <WorkspaceStage activeView={activeView} />
+      {activeView === 'operations'
+        ? <OrchestrationWorkspace />
+        : <WorkspaceStage activeView={activeView} />}
 
       {activeView === 'brain' && (
         <div className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}>
@@ -81,6 +116,8 @@ function HermesHome() {
           <ChatPanel />
         </FloatingPanel>
       )}
+
+      <NewChatProfileDialog />
     </main>
   )
 }

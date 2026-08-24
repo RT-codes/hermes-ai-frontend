@@ -1,0 +1,331 @@
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type WheelEvent } from 'react'
+
+type TimelineMarker = {
+  id: string
+  at: string
+  label: string
+  tone?: 'default' | 'accent' | 'warning' | 'danger' | 'success'
+  detail?: string
+  color?: string
+}
+
+type TimelineHudProps = {
+  className?: string
+  eyebrow?: string
+  title?: string
+  markers?: TimelineMarker[]
+  rangeMinutes?: number
+  onRangeMinutesChange?: (minutes: number) => void
+}
+
+const RANGE_OPTIONS = [30, 60, 120, 240] as const
+const MIN_RANGE_MINUTES = 1
+const MAX_RANGE_MINUTES = 7 * 24 * 60
+const TICK_STEPS_MINUTES = [1, 2, 5, 10, 15, 30, 60, 120, 240, 360, 720, 1440] as const
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function formatClock(date: Date) {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
+function formatTick(date: Date, rangeMinutes: number) {
+  if (rangeMinutes >= 24 * 60) {
+    return date.toLocaleDateString([], { weekday: 'short', day: '2-digit', month: 'short' })
+  }
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatWindow(minutes: number) {
+  if (minutes < 60) return `${Math.max(1, Math.round(minutes))} MIN`
+  if (minutes < 24 * 60) {
+    const hours = Math.floor(minutes / 60)
+    const remainder = Math.round(minutes % 60)
+    return remainder ? `${hours}H ${remainder}M` : `${hours}H`
+  }
+  const days = Math.floor(minutes / (24 * 60))
+  const hours = Math.round((minutes % (24 * 60)) / 60)
+  return hours ? `${days}D ${hours}H` : `${days}D`
+}
+
+function markerPosition(at: string, startMs: number, endMs: number) {
+  const value = new Date(at).getTime()
+  if (!Number.isFinite(value) || endMs <= startMs) return null
+  return ((value - startMs) / (endMs - startMs)) * 100
+}
+
+function nearestPreset(rangeMinutes: number) {
+  return RANGE_OPTIONS.reduce((best, option) => {
+    const bestDistance = Math.abs(Math.log(rangeMinutes / best))
+    const optionDistance = Math.abs(Math.log(rangeMinutes / option))
+    return optionDistance < bestDistance ? option : best
+  }, RANGE_OPTIONS[0])
+}
+
+function tickStepForRange(rangeMinutes: number) {
+  const target = rangeMinutes / 8
+  return TICK_STEPS_MINUTES.find((step) => step >= target) ?? TICK_STEPS_MINUTES[TICK_STEPS_MINUTES.length - 1]
+}
+
+export function TimelineHud({
+  className = '',
+  eyebrow = 'TEMPORAL TRACE',
+  title = 'LIVE TIMELINE',
+  markers = [],
+  rangeMinutes,
+  onRangeMinutesChange,
+}: TimelineHudProps) {
+  const [now, setNow] = useState(() => new Date())
+  const [internalRange, setInternalRange] = useState(60)
+  const [centerOffsetMs, setCenterOffsetMs] = useState<number | null>(null)
+  const [scrubAtMs, setScrubAtMs] = useState<number | null>(null)
+  const [isPanning, setIsPanning] = useState(false)
+  const railRef = useRef<HTMLDivElement | null>(null)
+  const draggingRef = useRef(false)
+  const panningRef = useRef(false)
+  const panStartXRef = useRef(0)
+  const panStartCenterOffsetRef = useRef(0)
+
+  const activeRange = clamp(rangeMinutes ?? internalRange, MIN_RANGE_MINUTES, MAX_RANGE_MINUTES)
+  const highlightedPreset = nearestPreset(activeRange)
+  const nowMs = now.getTime()
+  const windowMs = activeRange * 60_000
+  const halfWindowMs = windowMs / 2
+  const liveDefaultCenter = nowMs - halfWindowMs
+  const centerMs = centerOffsetMs == null ? liveDefaultCenter : nowMs + centerOffsetMs
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const clampCenterToHistory = (candidateCenterMs: number) => {
+    const newestCenter = liveDefaultCenter
+    const oldestCenter = nowMs - MAX_RANGE_MINUTES * 60_000 + halfWindowMs
+    return clamp(candidateCenterMs, oldestCenter, newestCenter)
+  }
+
+  const setRangeAroundCenter = (minutes: number) => {
+    const next = clamp(minutes, MIN_RANGE_MINUTES, MAX_RANGE_MINUTES)
+    setCenterOffsetMs(centerMs - nowMs)
+    if (onRangeMinutesChange) onRangeMinutesChange(next)
+    else setInternalRange(next)
+  }
+
+  const { startMs, endMs, ticks } = useMemo(() => {
+    const start = centerMs - halfWindowMs
+    const end = centerMs + halfWindowMs
+    const stepMinutes = tickStepForRange(activeRange)
+    const stepMs = stepMinutes * 60_000
+    const firstTick = Math.ceil(start / stepMs) * stepMs
+    const values: Array<{ ratio: number; at: Date }> = []
+
+    for (let value = firstTick; value <= end; value += stepMs) {
+      values.push({
+        ratio: (value - start) / (end - start),
+        at: new Date(value),
+      })
+    }
+
+    return { startMs: start, endMs: end, ticks: values }
+  }, [activeRange, centerMs, halfWindowMs])
+
+  useEffect(() => {
+    setScrubAtMs((current) => {
+      if (current == null) return null
+      return clamp(current, startMs, endMs)
+    })
+  }, [endMs, startMs])
+
+  const visibleMarkers = useMemo(
+    () => markers
+      .map((marker) => ({ marker, position: markerPosition(marker.at, startMs, endMs) }))
+      .filter((entry): entry is { marker: TimelineMarker; position: number } => entry.position != null && entry.position >= 0 && entry.position <= 100),
+    [endMs, markers, startMs],
+  )
+
+  const nowPosition = ((nowMs - startMs) / (endMs - startMs)) * 100
+  const nowVisible = nowPosition >= 0 && nowPosition <= 100
+  const playheadMs = scrubAtMs ?? nowMs
+  const playheadPosition = clamp(((playheadMs - startMs) / (endMs - startMs)) * 100, 0, 100)
+  const playheadAtNow = scrubAtMs == null || Math.abs(nowMs - playheadMs) < 1500
+
+  const setPlayheadFromClientX = (clientX: number) => {
+    const rail = railRef.current
+    if (!rail) return
+    const rect = rail.getBoundingClientRect()
+    if (rect.width <= 0) return
+    const ratio = clamp((clientX - rect.left) / rect.width, 0, 1)
+    const nextMs = startMs + ratio * (endMs - startMs)
+    if (Math.abs(nextMs - nowMs) < Math.max(1500, activeRange * 60_000 * 0.004)) {
+      setScrubAtMs(null)
+      return
+    }
+    setScrubAtMs(nextMs)
+  }
+
+  const handlePlayheadDown = (event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    draggingRef.current = true
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setPlayheadFromClientX(event.clientX)
+  }
+
+  const handlePlayheadMove = (event: PointerEvent<HTMLButtonElement>) => {
+    if (!draggingRef.current) return
+    setPlayheadFromClientX(event.clientX)
+  }
+
+  const handlePlayheadUp = (event: PointerEvent<HTMLButtonElement>) => {
+    draggingRef.current = false
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  const handleRailDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return
+    event.preventDefault()
+    panningRef.current = true
+    setIsPanning(true)
+    panStartXRef.current = event.clientX
+    panStartCenterOffsetRef.current = centerMs - nowMs
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handleRailMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!panningRef.current) return
+    const rail = railRef.current
+    if (!rail) return
+    const rect = rail.getBoundingClientRect()
+    if (rect.width <= 0) return
+
+    const deltaPx = event.clientX - panStartXRef.current
+    const deltaMs = (deltaPx / rect.width) * windowMs
+    const candidateCenter = nowMs + panStartCenterOffsetRef.current - deltaMs
+    const boundedCenter = clampCenterToHistory(candidateCenter)
+
+    if (Math.abs(boundedCenter - liveDefaultCenter) < Math.max(1000, windowMs * 0.001)) {
+      setCenterOffsetMs(null)
+    } else {
+      setCenterOffsetMs(boundedCenter - nowMs)
+    }
+  }
+
+  const handleRailUp = (event: PointerEvent<HTMLDivElement>) => {
+    panningRef.current = false
+    setIsPanning(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const factor = Math.exp(event.deltaY * 0.0014)
+    setRangeAroundCenter(Number((activeRange * factor).toFixed(2)))
+  }
+
+  return (
+    <div className={`timeline-hud ${className}`}>
+      <div className="timeline-hud__frame" aria-hidden="true" />
+      <header className="timeline-hud__header">
+        <div className="timeline-hud__identity">
+          <span className="timeline-hud__eyebrow">{eyebrow}</span>
+          <strong>{title}</strong>
+        </div>
+        <div className="timeline-hud__controls" aria-label="Timeline range presets">
+          {RANGE_OPTIONS.map((minutes) => (
+            <button
+              type="button"
+              key={minutes}
+              className={highlightedPreset === minutes ? 'is-active' : ''}
+              onClick={() => setRangeAroundCenter(minutes)}
+              title={`Snap timeline window to ${formatWindow(minutes)}`}
+            >
+              {minutes < 60 ? `${minutes}M` : `${minutes / 60}H`}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <div className="timeline-hud__rail-wrap">
+        <div
+          className={`timeline-hud__rail ${isPanning ? 'is-panning' : ''}`}
+          ref={railRef}
+          onWheel={handleWheel}
+          onPointerDown={handleRailDown}
+          onPointerMove={handleRailMove}
+          onPointerUp={handleRailUp}
+          onPointerCancel={handleRailUp}
+          title="Drag to pan through time · wheel to zoom"
+        >
+          <span className="timeline-hud__axis" aria-hidden="true" />
+
+          {ticks.map((tick) => (
+            <span
+              className="timeline-hud__tick"
+              key={tick.at.getTime()}
+              style={{ '--timeline-position': `${tick.ratio * 100}%` } as CSSProperties}
+            >
+              <i />
+              <small>{formatTick(tick.at, activeRange)}</small>
+            </span>
+          ))}
+
+          {visibleMarkers.map(({ marker, position }) => (
+            <span
+              key={marker.id}
+              className={`timeline-hud__marker timeline-hud__marker--${marker.tone ?? 'default'}`}
+              style={{
+                '--timeline-position': `${position}%`,
+                '--timeline-marker-color': marker.color ?? undefined,
+              } as CSSProperties}
+              title={marker.detail ? `${marker.label} — ${marker.detail}` : marker.label}
+            >
+              <i />
+              <small>{marker.label}</small>
+            </span>
+          ))}
+
+          {nowVisible && (
+            <span
+              className="timeline-hud__now-terminal"
+              style={{ '--timeline-position': `${nowPosition}%` } as CSSProperties}
+              aria-hidden="true"
+            >
+              <i />
+              <small>NOW</small>
+            </span>
+          )}
+
+          <button
+            type="button"
+            className={`timeline-hud__playhead ${playheadAtNow ? 'is-live' : ''}`}
+            style={{ '--timeline-position': `${playheadPosition}%` } as CSSProperties}
+            onPointerDown={handlePlayheadDown}
+            onPointerMove={handlePlayheadMove}
+            onPointerUp={handlePlayheadUp}
+            onPointerCancel={handlePlayheadUp}
+            aria-label="Timeline playhead. Drag to scrub through history."
+            title="Drag to scrub through time"
+          >
+            <i />
+            <span>{playheadAtNow ? 'LIVE' : 'TRACE'}</span>
+            <time>{formatClock(new Date(playheadMs))}</time>
+          </button>
+        </div>
+      </div>
+
+      <footer className="timeline-hud__footer">
+        <span>WINDOW {formatWindow(activeRange)} · DRAG TO PAN · WHEEL TO ZOOM</span>
+        <time>{playheadAtNow ? `NOW ${formatClock(now)}` : new Date(playheadMs).toLocaleString()}</time>
+      </footer>
+    </div>
+  )
+}
+
+export type { TimelineMarker }

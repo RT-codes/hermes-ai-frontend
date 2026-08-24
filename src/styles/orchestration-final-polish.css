@@ -1,0 +1,42 @@
+/* Final spatial-language alignment for Operations. */
+
+/* Match the accepted Brain/cluster HUD glass recipe rather than maintaining a special Operations surface. */
+.orchestration-spatial-panel > .brain-hud-panel__surface {
+  background: var(--glass-border);
+}
+
+.orchestration-spatial-panel > .brain-hud-panel__surface::after {
+  background:
+    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.035) 28%, rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity-soft))),
+    rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity));
+  backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+}
+
+.orchestration-spatial-panel > .brain-hud-panel__header {
+  min-height: 26px;
+  padding: 0.5rem 0.75rem 0.25rem;
+  background: transparent;
+}
+
+.orchestration-spatial-panel__work,
+.orchestration-spatial-panel__detail,
+.orchestration-zone__heading--embedded,
+.orchestration-activity-inline {
+  background: transparent;
+}
+
+/* Let the real Operations 3D canvas dissolve into the same dark spatial field as Memory/Brain. */
+.spatial-interaction-canvas {
+  -webkit-mask-image: radial-gradient(ellipse 78% 72% at 50% 50%, #000 0%, #000 52%, rgb(0 0 0 / 0.86) 66%, rgb(0 0 0 / 0.34) 82%, transparent 100%);
+  mask-image: radial-gradient(ellipse 78% 72% at 50% 50%, #000 0%, #000 52%, rgb(0 0 0 / 0.86) 66%, rgb(0 0 0 / 0.34) 82%, transparent 100%);
+}
+
+/* Keep the static spatial haze subordinate to the moving Three.js reference grid. */
+.orchestration-stage--spatial .spatial-stage-backdrop__grid {
+  opacity: 0.28;
+}
+
+.orchestration-stage--spatial .spatial-stage-backdrop__floor {
+  opacity: 0.11;
+}

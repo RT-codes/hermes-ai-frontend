@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { browserChatPersistence } from '../features/chat/persistence'
 import type { ChatActivityEvent, ChatActivityKind, ChatActivityState, ChatConversation, ChatMessage, StoredChatState } from '../features/chat/types'
 import { streamHermesChat, type HermesNativeEvent } from '../lib/hermes/client'
+import { DEFAULT_HERMES_PROFILE_ID } from '../lib/hermes/profiles'
 
 type ChatSessionsContextValue = {
   sessions: ChatConversation[]
@@ -13,6 +14,7 @@ type ChatSessionsContextValue = {
   activeActivity: ChatActivityEvent[]
   drafts: Record<string, string>
   createSession: () => string
+  createProfileSession: (profileId: string) => string
   openSession: (sessionId: string) => void
   selectSession: (sessionId: string) => void
   closeTab: (sessionId: string) => void
@@ -29,6 +31,7 @@ type ChatSessionsContextValue = {
 
 const ChatSessionsContext = createContext<ChatSessionsContextValue | null>(null)
 const MAX_ACTIVITY_EVENTS = 240
+export const NEW_CHAT_PROFILE_REQUEST_EVENT = 'hermes:new-chat-profile-request'
 
 function createMessage(conversationId: string, role: ChatMessage['role'], content: string, status: ChatMessage['status'] = 'completed'): ChatMessage {
   return {
@@ -43,29 +46,39 @@ function createMessage(conversationId: string, role: ChatMessage['role'], conten
   }
 }
 
-function createFreshSession(index = 1): ChatConversation {
+function createFreshSession(index = 1, profileId = DEFAULT_HERMES_PROFILE_ID): ChatConversation {
   const now = Date.now()
   const id = crypto.randomUUID()
   return {
     id,
     title: index === 1 ? 'New chat' : `New chat ${index}`,
+    profileId,
     messages: [],
     connectionState: 'idle',
     error: null,
     createdAt: now,
     updatedAt: now,
     hermesSessionId: id,
-    metadata: { nativeSession: true },
+    metadata: { nativeSession: profileId === DEFAULT_HERMES_PROFILE_ID },
   }
 }
 
 function normalizeStoredSession(session: ChatConversation): ChatConversation {
   const now = Date.now()
+  const storedProfileId = typeof session.profileId === 'string' && session.profileId.trim()
+    ? session.profileId.trim()
+    : DEFAULT_HERMES_PROFILE_ID
+
   return {
     ...session,
+    profileId: storedProfileId,
     connectionState: 'idle',
     error: null,
     hermesSessionId: session.hermesSessionId ?? session.id,
+    metadata: {
+      ...session.metadata,
+      nativeSession: storedProfileId === DEFAULT_HERMES_PROFILE_ID && session.metadata?.nativeSession !== false,
+    },
     messages: (session.messages ?? []).map((message) => ({
       ...message,
       conversationId: message.conversationId ?? session.id,
@@ -171,6 +184,11 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   function mapHermesEvent(sessionId: string, requestId: string, event: HermesNativeEvent) {
     const { type, payload } = event
 
+    if (type === 'transport.profile_route') {
+      appendActivity(sessionId, 'connection', 'info', 'Profile route selected', payloadString(payload, 'route') || payloadString(payload, 'profileId'), requestId)
+      return
+    }
+
     if (type === 'transport.fallback') {
       appendActivity(sessionId, 'connection', 'warning', 'Compatibility transport', 'Native Hermes session events are unavailable for this conversation; using Chat Completions.', requestId)
       return
@@ -237,11 +255,17 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
   }
 
   function createSession() {
-    const session = createFreshSession(sessionsRef.current.length + 1)
+    window.dispatchEvent(new CustomEvent(NEW_CHAT_PROFILE_REQUEST_EVENT))
+    return ''
+  }
+
+  function createProfileSession(profileId: string) {
+    const normalizedProfileId = profileId.trim() || DEFAULT_HERMES_PROFILE_ID
+    const session = createFreshSession(sessionsRef.current.length + 1, normalizedProfileId)
     setSessions((current) => [...current, session])
     setOpenTabIds((current) => [...current, session.id])
     setActiveSessionId(session.id)
-    appendActivity(session.id, 'session', 'success', 'Session ready', 'New Hermes-native conversation created.')
+    appendActivity(session.id, 'session', 'success', 'Session ready', `Bound to Hermes profile: ${normalizedProfileId}`)
     return session.id
   }
 
@@ -319,17 +343,28 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     assistantId: string,
     requestId: string,
     hermesSessionId: string,
+    profileId: string,
     preferNativeSession: boolean,
   ) {
     const controller = new AbortController()
     controllersRef.current.set(sessionId, controller)
     firstDeltaSeenRef.current.delete(requestId)
-    appendActivity(sessionId, 'connection', 'active', 'Connecting to Hermes', preferNativeSession ? 'Opening native session event stream.' : 'Opening compatibility response stream.', requestId)
+    appendActivity(
+      sessionId,
+      'connection',
+      'active',
+      'Connecting to Hermes',
+      profileId === DEFAULT_HERMES_PROFILE_ID
+        ? (preferNativeSession ? 'Opening native session event stream.' : 'Opening compatibility response stream.')
+        : `Routing to Hermes profile: ${profileId}`,
+      requestId,
+    )
 
     try {
       await streamHermesChat({
         messages: requestMessages,
         sessionId: hermesSessionId,
+        profileId,
         preferNativeSession,
         signal: controller.signal,
         onEvent: (event) => mapHermesEvent(sessionId, requestId, event),
@@ -398,9 +433,10 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     const requestMessages = [...session.messages, userMessage].filter((message) => !message.id.startsWith('welcome-'))
     const nextTitle = session.title.startsWith('New chat') ? deriveConversationTitle(trimmed) : session.title
     const hermesSessionId = session.hermesSessionId ?? session.id
-    const preferNativeSession = session.metadata?.nativeSession === true
+    const profileId = session.profileId || DEFAULT_HERMES_PROFILE_ID
+    const preferNativeSession = profileId === DEFAULT_HERMES_PROFILE_ID && session.metadata?.nativeSession === true
 
-    appendActivity(sessionId, 'generation', 'info', 'Request queued', preferNativeSession ? 'Message handed to Hermes native session transport.' : 'Message handed to compatibility transport.', requestId)
+    appendActivity(sessionId, 'generation', 'info', 'Request queued', `Hermes profile: ${profileId}`, requestId)
     patchSession(sessionId, (current) => ({
       ...current,
       title: nextTitle,
@@ -410,7 +446,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
       updatedAt: Date.now(),
     }))
 
-    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, hermesSessionId, preferNativeSession)
+    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, hermesSessionId, profileId, preferNativeSession)
   }
 
   async function regenerateFromUser(sessionId: string, userMessageId: string) {
@@ -431,8 +467,9 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
       requestId,
     }
     const requestMessages = history.filter((message) => !message.id.startsWith('welcome-'))
+    const profileId = session.profileId || DEFAULT_HERMES_PROFILE_ID
 
-    appendActivity(sessionId, 'session', 'info', 'Fresh compatibility session', 'Regeneration replays visible history so the rewritten answer keeps the expected context.', requestId)
+    appendActivity(sessionId, 'session', 'info', 'Fresh compatibility session', `Replaying visible history for profile: ${profileId}`, requestId)
     patchSession(sessionId, (current) => ({
       ...current,
       hermesSessionId: nextHermesSessionId,
@@ -443,7 +480,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
       updatedAt: Date.now(),
     }))
 
-    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, nextHermesSessionId, false)
+    await runAssistantGeneration(sessionId, requestMessages, assistantId, requestId, nextHermesSessionId, profileId, false)
   }
 
   async function retryResponse(sessionId: string, assistantMessageId: string) {
@@ -468,6 +505,7 @@ export function ChatSessionsProvider({ children }: { children: ReactNode }) {
     activeActivity,
     drafts,
     createSession,
+    createProfileSession,
     openSession,
     selectSession,
     closeTab,

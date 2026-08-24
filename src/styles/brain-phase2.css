@@ -17,11 +17,13 @@
 .brain-graph__controls {
   position: absolute;
   z-index: 9;
-  left: calc(var(--sidebar-width) + 2.2rem);
+  left: 50%;
   bottom: 3.25rem;
   display: flex;
   align-items: stretch;
-  gap: 0.42rem;
+  gap: 0.28rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .brain-graph__controls .brain-graph__phase-label,
@@ -428,7 +430,7 @@
   }
 
   .brain-graph__controls {
-    gap: 0.32rem;
+    gap: 0.24rem;
   }
 
   .brain-node-hover {

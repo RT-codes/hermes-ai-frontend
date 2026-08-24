@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { useAppearance } from '../../context/AppearanceContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
 import { useConnectionSettings } from '../../context/ConnectionSettingsContext'
@@ -45,6 +45,7 @@ const viewCopy: Record<Exclude<WorkspaceView, 'brain' | 'chat' | 'settings'>, { 
 
 function ChatsWorkspace() {
   const { sessions, openTabIds, createSession, openSession, closeTab, deleteSession } = useChatSessions()
+  const { getProfile, getProfileColor } = useHermesProfiles()
 
   return (
     <section className="workspace-stage workspace-stage--interactive" aria-label="Chats workspace">
@@ -53,9 +54,9 @@ function ChatsWorkspace() {
           <div>
             <span className="workspace-placeholder__eyebrow">Conversation workspace</span>
             <h2>Chats</h2>
-            <p>Persistent Hermes conversations. Open chats appear as tabs in the floating chat console.</p>
+            <p>Persistent profile-bound Hermes conversations. Open chats appear as tabs in the floating chat console.</p>
           </div>
-          <button className="workspace-action" type="button" onClick={createSession}>+ NEW CHAT</button>
+          <button className="workspace-action" type="button" onClick={() => createSession()}>+ NEW CHAT</button>
         </div>
 
         <div className="chat-session-list">
@@ -68,12 +69,20 @@ function ChatsWorkspace() {
           {sessions.map((session) => {
             const isOpen = openTabIds.includes(session.id)
             const isBusy = session.connectionState === 'connecting' || session.connectionState === 'streaming'
+            const profile = getProfile(session.profileId)
+            const profileName = profile?.displayName ?? session.profileId
+            const profileColor = getProfileColor(session.profileId)
 
             return (
-              <article className="chat-session-card" key={session.id}>
+              <article className="chat-session-card" key={session.id} style={{ '--profile-color': profileColor } as CSSProperties}>
                 <button className="chat-session-card__open" type="button" onClick={() => openSession(session.id)}>
                   <span className={`chat-session-card__state chat-session-card__state--${session.connectionState}`} />
                   <span className="chat-session-card__copy">
+                    <span className="chat-session-card__profile" title={`Hermes profile: ${session.profileId}`}>
+                      <span className="chat-profile-dot" aria-hidden="true" />
+                      <strong>{profileName}</strong>
+                      <code>{session.profileId}</code>
+                    </span>
                     <strong>{session.title}</strong>
                     <span>{session.messages.length > 1 ? `${session.messages.length - 1} messages` : 'No messages yet'}</span>
                   </span>
