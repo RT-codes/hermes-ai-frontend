@@ -1,0 +1,29 @@
+/*
+ * Ordered application stylesheet entrypoint. The sequence intentionally mirrors
+ * the previously tested App.tsx import order so consolidation does not silently
+ * change cascade precedence while feature CSS is migrated into clearer families.
+ */
+@import './layout.css';
+@import './chat.css';
+@import './chat-v2.css';
+@import './profile-chat.css';
+@import './workspace.css';
+@import './settings-v2.css';
+@import './telemetry.css';
+@import './activity-dock.css';
+@import './insight.css';
+@import './trace-selection.css';
+@import './system-flyout.css';
+@import './primitives.css';
+@import './brain.css';
+@import './brain-phase2.css';
+@import './brain-final-polish.css';
+@import './typography-v2.css';
+@import './orchestration.css';
+@import './timeline-hud.css';
+@import './spatial-stage.css';
+@import './brain-wrap-polish.css';
+@import './orchestration-spatial.css';
+@import './orchestration-final-polish.css';
+@import './orchestration-kanban.css';
+@import './dev-tools.css';
