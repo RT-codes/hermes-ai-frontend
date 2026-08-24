@@ -1,9 +1,10 @@
 /*
- * Full-workspace composition boundary for persistent spatial state. Intentionally
- * avoids introducing a new stacking context so existing Brain/Operations z-index
- * contracts keep their tested ordering while ownership moves upward.
+ * Full-workspace composition boundary for persistent spatial state. The base
+ * environment and persistent camera layer survive Memory <-> Operations swaps;
+ * workspace overlays sit above them and opt interactive regions back in explicitly.
  */
 .spatial-application-shell,
+.spatial-application-shell__persistent-layer,
 .spatial-application-shell__workspace {
   position: absolute;
   inset: 0;
@@ -13,4 +14,55 @@
 .spatial-application-shell__environment {
   position: absolute;
   inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.spatial-application-shell__persistent-layer {
+  z-index: 1;
+}
+
+.spatial-application-shell__workspace {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.spatial-memory-layer,
+.spatial-memory-layer__graph {
+  position: absolute;
+  inset: 0;
+}
+
+.spatial-memory-layer__graph {
+  pointer-events: auto;
+  transition:
+    opacity var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1),
+    transform var(--panel-transition-duration) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Operations reuses the Memory ForceGraph camera/control instance while suppressing
+ * Memory-specific graphics. The transparent graph surface still receives orbit/pan/
+ * zoom events in uncovered areas, so switching views does not rebuild the camera.
+ */
+.spatial-memory-layer.is-camera-only .spatial-memory-layer__graph {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.992);
+}
+
+.spatial-memory-layer.is-camera-only .brain-timeline-hud,
+.spatial-memory-layer.is-camera-only .brain-scene-help {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+
+.spatial-memory-layer.is-camera-only .brain-graph__controls,
+.spatial-memory-layer.is-camera-only .brain-memory-inspector,
+.spatial-memory-layer.is-camera-only .brain-cluster-info,
+.spatial-memory-layer.is-camera-only .brain-cluster-title,
+.spatial-memory-layer.is-camera-only .brain-node-hover,
+.spatial-memory-layer.is-camera-only .brain-selected-connector,
+.spatial-memory-layer.is-camera-only .brain-node-hover__connector {
+  pointer-events: none;
 }
