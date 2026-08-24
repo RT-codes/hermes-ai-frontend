@@ -7,6 +7,12 @@ export type LayoutZoneId =
   | 'bottom-band'
   | 'floating-layer'
 
+export type ManagedLayoutLaneId = 'left-nav' | 'left-hud' | 'center-stage' | 'right-hud'
+export type LayoutSlotName = 'top' | 'middle' | 'bottom'
+export type LayoutSlotId = `${ManagedLayoutLaneId}.${LayoutSlotName}`
+export type PanelFitPolicy = 'content-fit' | 'slot-fill' | 'elastic'
+export type PanelSlotSpan = 1 | 2 | 3
+
 export type LayoutZone = {
   id: LayoutZoneId
   label: string
@@ -24,6 +30,15 @@ const gutter = 'var(--layout-zone-page-gutter)'
 const workspaceTop = 'var(--layout-zone-workspace-top)'
 const workspaceBottom = 'var(--layout-zone-workspace-bottom)'
 const hudWidth = 'var(--layout-zone-hud-width)'
+
+export const managedLayoutLaneIds: readonly ManagedLayoutLaneId[] = [
+  'left-nav',
+  'left-hud',
+  'center-stage',
+  'right-hud',
+]
+
+export const layoutSlotNames: readonly LayoutSlotName[] = ['top', 'middle', 'bottom']
 
 /**
  * Shared application layout contracts. Developer tooling visualizes these same zones,
@@ -111,9 +126,33 @@ export const layoutZones: LayoutZone[] = [
   },
 ]
 
+export function isManagedLayoutLane(zone: LayoutZoneId): zone is ManagedLayoutLaneId {
+  return (managedLayoutLaneIds as readonly LayoutZoneId[]).includes(zone)
+}
+
 export function layoutZoneAttributes(zone: LayoutZoneId, owner: string) {
   return {
     'data-layout-zone': zone,
     'data-layout-owner': owner,
+  } as const
+}
+
+/**
+ * Semantic placement contract used by managed HUD surfaces. FCP.6A only records
+ * desired slot/fit/span; FCP.6B will become the single owner that resolves occupancy
+ * and fallback/reflow when multiple managed surfaces compete for the same slots.
+ */
+export function layoutSlotAttributes(
+  slot: LayoutSlotId,
+  owner: string,
+  fit: PanelFitPolicy,
+  span: PanelSlotSpan = 1,
+) {
+  const [zone] = slot.split('.') as [ManagedLayoutLaneId, LayoutSlotName]
+  return {
+    ...layoutZoneAttributes(zone, owner),
+    'data-layout-slot': slot,
+    'data-layout-fit': fit,
+    'data-layout-span': String(span),
   } as const
 }
