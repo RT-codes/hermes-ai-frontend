@@ -1,4 +1,4 @@
-/* Spatial Operations shell: a translucent HUD overlay on the shared interactive 3D stage. */
+/* Spatial Operations shell: HUD/data overlays above the persistent shared 3D camera. */
 
 .orchestration-stage--spatial {
   position: absolute;
@@ -7,59 +7,14 @@
   padding: 0;
   overflow: hidden;
   background: transparent;
-}
-
-.orchestration-spatial-environment {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
   pointer-events: none;
-}
-
-.orchestration-stage--spatial .orchestration-spatial-environment .spatial-stage-backdrop {
-  opacity: 1;
-}
-
-.orchestration-stage--spatial .spatial-stage-backdrop__haze {
-  background:
-    radial-gradient(circle at 50% 37%, rgb(var(--accent-rgb) / 0.18), transparent 30%),
-    radial-gradient(circle at 50% 72%, rgb(var(--accent-rgb) / 0.09), transparent 42%);
-}
-
-.orchestration-stage--spatial .spatial-stage-backdrop__grid {
-  opacity: 0.34;
-}
-
-.orchestration-stage--spatial .spatial-stage-backdrop__floor {
-  opacity: 0.16;
-}
-
-/* Real orbit/pan/zoom canvas. The visible Three.js grid is deliberately not a task graph. */
-.spatial-interaction-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  overflow: hidden;
-  pointer-events: auto;
-  touch-action: none;
-  -webkit-mask-image: radial-gradient(ellipse 82% 72% at 50% 72%, #000 0%, #000 46%, rgb(0 0 0 / 0.78) 61%, rgb(0 0 0 / 0.28) 76%, transparent 91%);
-  mask-image: radial-gradient(ellipse 82% 72% at 50% 72%, #000 0%, #000 46%, rgb(0 0 0 / 0.78) 61%, rgb(0 0 0 / 0.28) 76%, transparent 91%);
-}
-
-.spatial-interaction-canvas canvas {
-  display: block;
-  cursor: grab;
-}
-
-.spatial-interaction-canvas canvas:active {
-  cursor: grabbing;
 }
 
 /* Canonical Brain timeline geometry, with Operations-only footer noise removed. */
 .orchestration-stage--spatial > .orchestration-canonical-timeline {
   position: absolute;
   z-index: 18;
+  pointer-events: auto;
 }
 
 .orchestration-canonical-timeline .timeline-hud__footer {
@@ -239,6 +194,7 @@
   left: 50%;
   width: min(60vw, 900px);
   transform: translateX(-50%);
+  pointer-events: auto;
 }
 
 /* Future scene controls stay in the same spatial layer as Brain controls, below overlays. */
@@ -278,6 +234,7 @@
   left: 50%;
   bottom: 1.35rem;
   transform: translateX(-50%);
+  pointer-events: none;
 }
 
 @media (max-width: 1180px) {
