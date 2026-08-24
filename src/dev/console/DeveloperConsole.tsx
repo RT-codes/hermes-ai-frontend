@@ -11,6 +11,7 @@ import {
   executeDeveloperCommand,
   type DeveloperConsoleLine,
 } from '../commands/developerCommandRegistry'
+import { LayoutZoneOverlay } from '../zones/LayoutZoneOverlay'
 import { useDeveloperConsoleToggle } from './useDeveloperConsoleToggle'
 
 type DeveloperConsoleProps = {
@@ -35,6 +36,7 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
   const [input, setInput] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState<number | null>(null)
+  const [zonesVisible, setZonesVisible] = useState(false)
   const [transcript, setTranscript] = useState<TranscriptEntry[]>(() => (
     INITIAL_TRANSCRIPT.map((line, index) => ({ ...line, id: index + 1 }))
   ))
@@ -51,7 +53,9 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
       'hermes-insight',
       'developer-overlay',
     ],
-  }), [activeWorkspace])
+    zonesVisible,
+    setZonesVisible,
+  }), [activeWorkspace, zonesVisible])
 
   /** Opening the HUD always returns keyboard ownership to its command line. */
   useEffect(() => {
@@ -120,53 +124,56 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
   }
 
   return (
-    <aside
-      className={`developer-console ${open ? 'is-open' : ''}`}
-      aria-hidden={!open}
-      aria-label="Frontend developer console"
-    >
-      <HudSurface className="developer-console__surface" />
-      <header className="developer-console__header">
-        <div>
-          <span className="developer-console__eyebrow">DEVELOPER MODE</span>
-          <strong>FRONTEND CONSOLE</strong>
-        </div>
-        <div className="developer-console__meta">
-          <span>{activeWorkspace.toUpperCase()}</span>
-          <span>FCP.1</span>
-        </div>
-      </header>
-
-      <div ref={outputRef} className="developer-console__output" aria-live="polite">
-        {transcript.map((entry) => (
-          <div
-            key={entry.id}
-            className={`developer-console__line developer-console__line--${entry.tone ?? 'default'}`}
-          >
-            {entry.text}
+    <>
+      <LayoutZoneOverlay visible={zonesVisible} />
+      <aside
+        className={`developer-console ${open ? 'is-open' : ''}`}
+        aria-hidden={!open}
+        aria-label="Frontend developer console"
+      >
+        <HudSurface className="developer-console__surface" />
+        <header className="developer-console__header">
+          <div>
+            <span className="developer-console__eyebrow">DEVELOPER MODE</span>
+            <strong>FRONTEND CONSOLE</strong>
           </div>
-        ))}
-      </div>
+          <div className="developer-console__meta">
+            <span>{activeWorkspace.toUpperCase()}</span>
+            <span>FCP.2</span>
+          </div>
+        </header>
 
-      <form className="developer-console__command" onSubmit={submitCommand}>
-        <span aria-hidden="true">›</span>
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={handleInputKeyDown}
-          autoComplete="off"
-          spellCheck={false}
-          aria-label="Developer command"
-        />
-        <button type="submit">SEND</button>
-      </form>
+        <div ref={outputRef} className="developer-console__output" aria-live="polite">
+          {transcript.map((entry) => (
+            <div
+              key={entry.id}
+              className={`developer-console__line developer-console__line--${entry.tone ?? 'default'}`}
+            >
+              {entry.text}
+            </div>
+          ))}
+        </div>
 
-      <footer className="developer-console__footer">
-        <span>~ TOGGLE</span>
-        <span>↑↓ HISTORY</span>
-        <span>HELP COMMANDS</span>
-      </footer>
-    </aside>
+        <form className="developer-console__command" onSubmit={submitCommand}>
+          <span aria-hidden="true">›</span>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={handleInputKeyDown}
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Developer command"
+          />
+          <button type="submit">SEND</button>
+        </form>
+
+        <footer className="developer-console__footer">
+          <span>~ TOGGLE</span>
+          <span>↑↓ HISTORY</span>
+          <span>ZONES SHOW/HIDE</span>
+        </footer>
+      </aside>
+    </>
   )
 }
