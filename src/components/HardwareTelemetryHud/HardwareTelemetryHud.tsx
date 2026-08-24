@@ -1,5 +1,5 @@
 import { useSystemTelemetry } from '../../context/SystemTelemetryContext'
-import { BrainHudPanel } from '../BrainHudPanel/BrainHudPanel'
+import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
 
 function clamp(value: number) {
   return Math.min(100, Math.max(0, value))
@@ -35,6 +35,7 @@ function Sparkline({ values }: { values: number[] }) {
   )
 }
 
+/** Hardware telemetry is workspace-agnostic and therefore consumes the neutral HUD layer. */
 export function HardwareTelemetryHud() {
   const { snapshot, history, error } = useSystemTelemetry()
   const gpu = snapshot?.gpu
@@ -43,7 +44,7 @@ export function HardwareTelemetryHud() {
   const modelGpuPercent = model && model.size > 0 ? Math.round((model.sizeVram / model.size) * 100) : null
 
   return (
-    <BrainHudPanel
+    <HudPanel
       title="LOCAL COMPUTE"
       meta={error ? 'DEGRADED' : 'LIVE · 3S'}
       ariaLabel="Live hardware telemetry"
@@ -86,6 +87,6 @@ export function HardwareTelemetryHud() {
           {host.cpuName.replace(/\s+/g, ' ').trim()}
         </div>
       )}
-    </BrainHudPanel>
+    </HudPanel>
   )
 }
