@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import ForceGraph3D from 'react-force-graph-3d'
 import type { ForceGraphMethods } from 'react-force-graph-3d'
 import { DoubleSide, Mesh, PlaneGeometry, ShaderMaterial } from 'three'
+import { useSpatialApplicationShell } from '../../app/spatial/SpatialApplicationShell'
 
 type SpatialNode = { id: string }
 type SpatialLink = { source: string; target: string }
@@ -11,12 +12,22 @@ type Size = {
   height: number
 }
 
+type CameraLike = { position: { x: number; y: number; z: number } }
+type ControlsLike = { target?: { x: number; y: number; z: number }; enableDamping?: boolean; dampingFactor?: number; minDistance?: number; maxDistance?: number }
+
 const emptyGraph = { nodes: [] as SpatialNode[], links: [] as SpatialLink[] }
 
+/**
+ * Transitional Operations interaction layer. It still owns a temporary ForceGraph3D
+ * canvas, but camera pose and orientation are exported to the spatial application shell
+ * so switching workspaces preserves view state and the later single-camera migration can
+ * replace this canvas without changing the workspace contract.
+ */
 export function SpatialInteractionCanvas() {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const graphRef = useRef<ForceGraphMethods<SpatialNode, SpatialLink> | undefined>(undefined)
   const [size, setSize] = useState<Size>({ width: 1, height: 1 })
+  const { getCameraPose, saveCameraPose, reportViewRotation } = useSpatialApplicationShell()
 
   useEffect(() => {
     const host = hostRef.current
@@ -84,25 +95,49 @@ export function SpatialInteractionCanvas() {
     floor.position.y = -92
 
     scene.add(floor)
-    graph.cameraPosition({ x: 0, y: 195, z: 440 }, { x: 0, y: -48, z: 0 }, 0)
 
-    const controls = graph.controls() as {
-      enableDamping?: boolean
-      dampingFactor?: number
-      minDistance?: number
-      maxDistance?: number
-    }
+    const savedPose = getCameraPose('operations')
+    graph.cameraPosition(
+      savedPose?.position ?? { x: 0, y: 195, z: 440 },
+      savedPose?.target ?? { x: 0, y: -48, z: 0 },
+      0,
+    )
+
+    const controls = graph.controls() as ControlsLike
     controls.enableDamping = true
     controls.dampingFactor = 0.08
     controls.minDistance = 70
     controls.maxDistance = 1300
 
+    const publishCameraPose = () => {
+      const camera = graph.camera() as CameraLike
+      const target = controls.target ?? { x: 0, y: 0, z: 0 }
+      saveCameraPose('operations', {
+        position: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+        target: { x: target.x, y: target.y, z: target.z },
+      })
+
+      const dx = camera.position.x - target.x
+      const dy = camera.position.y - target.y
+      const dz = camera.position.z - target.z
+      const horizontal = Math.max(0.0001, Math.hypot(dx, dz))
+      reportViewRotation({
+        yaw: Math.atan2(dx, dz) * 180 / Math.PI,
+        pitch: Math.atan2(dy, horizontal) * 180 / Math.PI,
+      })
+    }
+
+    publishCameraPose()
+    const timer = window.setInterval(publishCameraPose, 80)
+
     return () => {
+      window.clearInterval(timer)
+      publishCameraPose()
       scene.remove(floor)
       geometry.dispose()
       material.dispose()
     }
-  }, [size.width, size.height])
+  }, [getCameraPose, reportViewRotation, saveCameraPose, size.width, size.height])
 
   return (
     <div className="spatial-interaction-canvas" ref={hostRef} aria-label="Interactive Operations 3D environment">
