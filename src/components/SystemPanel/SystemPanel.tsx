@@ -1,15 +1,9 @@
 import { useRuntimeStatus } from '../../context/RuntimeStatusContext'
 import { useSystemTelemetry } from '../../context/SystemTelemetryContext'
-
-function formatGb(bytes: number | null | undefined) {
-  if (bytes === null || bytes === undefined) return null
-  return `${(bytes / 1024 ** 3).toFixed(1)} GB`
-}
-
-function formatVram(mb: number | null | undefined) {
-  if (mb === null || mb === undefined) return null
-  return `${(mb / 1024).toFixed(1)} GB`
-}
+import {
+  formatGigabytesFromBytes,
+  formatGigabytesFromMegabytes,
+} from '../../lib/formatters/telemetry'
 
 export function SystemPanel() {
   const { hermesOnline, hindsightOnline, hermesVersion } = useRuntimeStatus()
@@ -35,11 +29,11 @@ export function SystemPanel() {
     },
     gpu ? {
       label: 'GPU',
-      value: `${gpu.name} · ${formatVram(gpu.memoryTotalMb) ?? '—'} total`,
+      value: `${gpu.name} · ${formatGigabytesFromMegabytes(gpu.memoryTotalMb) ?? '—'} total`,
     } : null,
     gpu ? {
       label: 'VRAM',
-      value: `${formatVram(gpu.memoryUsedMb) ?? '—'} / ${formatVram(gpu.memoryTotalMb) ?? '—'} · ${Math.round(gpu.memoryUsage ?? 0)}%`,
+      value: `${formatGigabytesFromMegabytes(gpu.memoryUsedMb) ?? '—'} / ${formatGigabytesFromMegabytes(gpu.memoryTotalMb) ?? '—'} · ${Math.round(gpu.memoryUsage ?? 0)}%`,
     } : null,
     host?.cpuName ? {
       label: 'CPU',
@@ -47,7 +41,7 @@ export function SystemPanel() {
     } : null,
     host ? {
       label: 'RAM',
-      value: `${formatGb(host.memoryUsedBytes) ?? '—'} / ${formatGb(host.memoryTotalBytes) ?? '—'}`,
+      value: `${formatGigabytesFromBytes(host.memoryUsedBytes) ?? '—'} / ${formatGigabytesFromBytes(host.memoryTotalBytes) ?? '—'}`,
     } : null,
     gpu ? {
       label: 'GPU temp',
