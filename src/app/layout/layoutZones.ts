@@ -25,13 +25,13 @@ export type LayoutZone = {
   }
 }
 
-const sidebar = 'var(--layout-zone-sidebar-width)'
+const navWidth = 'var(--layout-zone-nav-width)'
 const gutter = 'var(--layout-zone-page-gutter)'
 const innerGutter = 'var(--layout-zone-inner-gutter)'
 const workspaceTop = 'var(--layout-zone-workspace-top)'
 const workspaceBottom = 'var(--layout-zone-workspace-bottom)'
 const hudWidth = 'var(--layout-zone-hud-width)'
-const managedLeftEdge = `calc(${sidebar} + ${gutter} + ${innerGutter})`
+const managedLeftEdge = `calc(${navWidth} + ${gutter} + ${innerGutter})`
 
 export const managedLayoutLaneIds: readonly ManagedLayoutLaneId[] = [
   'left-nav',
@@ -66,7 +66,7 @@ export const layoutZones: LayoutZone[] = [
     description: 'Persistent primary navigation ownership.',
     style: {
       top: 'var(--layout-zone-top)',
-      right: `calc(100% - ${sidebar})`,
+      right: `calc(100% - ${navWidth})`,
       bottom: 'var(--layout-zone-bottom)',
       left: 'var(--layout-zone-top)',
     },
@@ -77,7 +77,7 @@ export const layoutZones: LayoutZone[] = [
     description: 'Contextual controls and secondary inspectors anchored left of stage.',
     style: {
       top: workspaceTop,
-      right: `calc(100% - ${sidebar} - ${gutter} - ${innerGutter} - ${hudWidth})`,
+      right: `calc(100% - ${navWidth} - ${gutter} - ${innerGutter} - ${hudWidth})`,
       bottom: workspaceBottom,
       left: managedLeftEdge,
     },
@@ -123,7 +123,7 @@ export const layoutZones: LayoutZone[] = [
       top: 'var(--layout-zone-floating-top)',
       right: 'var(--layout-zone-floating-inset-x)',
       bottom: 'var(--layout-zone-floating-bottom)',
-      left: `calc(${sidebar} + var(--layout-zone-floating-inset-x))`,
+      left: `calc(${navWidth} + var(--layout-zone-floating-inset-x))`,
     },
   },
 ]
