@@ -20,7 +20,7 @@
 .hermes-home[data-workspace-transition='exiting'] .workspace-transition-item {
   opacity: 0;
   transform: translateY(-12px) scale(0.985);
-  transition-delay: calc((3 - min(var(--workspace-transition-index), 3)) * var(--panel-transition-stagger));
+  transition-delay: calc(var(--workspace-transition-index) * var(--panel-transition-stagger));
 }
 
 .hermes-home[data-workspace-transition='entering'] .workspace-transition-item {
