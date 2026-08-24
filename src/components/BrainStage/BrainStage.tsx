@@ -1,45 +1,44 @@
 import type { CSSProperties } from 'react'
-import { BrainGraph } from '../BrainGraph/BrainGraph'
+import { SpatialGraphicsSlot, type SpatialGraphicsMode } from '../../app/spatial/SpatialGraphicsSlot'
 import { TimelineHud } from '../TimelineHud/TimelineHud'
-import { useSpatialApplicationShell } from '../../app/spatial/SpatialApplicationShell'
 
 type BrainStageProps = {
-  graphicsVisible?: boolean
+  graphicsMode?: SpatialGraphicsMode
 }
 
 const transitionIndex = (index: number) => ({ '--workspace-transition-index': index } as CSSProperties)
 
 /**
- * Persistent Memory graphics/camera layer. Graph, timeline and scene help remain
- * mounted across spatial workspace swaps so they can animate out without destroying
- * the ForceGraph camera/control instance. Camera-only mode disables Memory UI while
- * leaving the shared interaction surface alive for the next workspace.
+ * Persistent spatial stage for Memory and Operations. Camera/control ownership stays
+ * mounted through SpatialGraphicsSlot while workspace-specific graphics and HUD chrome
+ * can swap independently.
  */
-export function BrainStage({ graphicsVisible = true }: BrainStageProps) {
-  const { reportViewRotation } = useSpatialApplicationShell()
+export function BrainStage({ graphicsMode = 'memory' }: BrainStageProps) {
+  const memoryHudVisible = graphicsMode === 'memory'
 
   return (
     <section
-      className={`brain-stage brain-stage--3d spatial-memory-layer ${graphicsVisible ? 'is-visible' : 'is-camera-only'}`}
-      aria-label="Interactive 3D Hermes memory graph foundation"
-      aria-hidden={!graphicsVisible}
+      className={`brain-stage brain-stage--3d spatial-memory-layer is-${graphicsMode}`}
+      aria-label="Interactive 3D Hermes spatial workspace"
     >
-      <div className="spatial-memory-layer__graph">
-        <BrainGraph onViewRotationChange={reportViewRotation} />
-      </div>
+      <SpatialGraphicsSlot mode={graphicsMode} />
 
-      <TimelineHud
-        className="brain-timeline-hud workspace-transition-item"
-        eyebrow="TEMPORAL LAYER"
-        title="BRAIN TRACE · LIVE"
-      />
+      {memoryHudVisible && (
+        <>
+          <TimelineHud
+            className="brain-timeline-hud workspace-transition-item"
+            eyebrow="TEMPORAL LAYER"
+            title="BRAIN TRACE · LIVE"
+          />
 
-      <div className="brain-scene-help workspace-transition-item" style={transitionIndex(3)}>
-        <span>DRAG · ORBIT</span>
-        <span>RIGHT DRAG · PAN</span>
-        <span>WHEEL · ZOOM</span>
-        <span>CLICK NODE · HIGHLIGHT</span>
-      </div>
+          <div className="brain-scene-help workspace-transition-item" style={transitionIndex(3)}>
+            <span>DRAG · ORBIT</span>
+            <span>RIGHT DRAG · PAN</span>
+            <span>WHEEL · ZOOM</span>
+            <span>CLICK NODE · HIGHLIGHT</span>
+          </div>
+        </>
+      )}
     </section>
   )
 }
