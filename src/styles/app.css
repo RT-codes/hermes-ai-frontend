@@ -8,6 +8,7 @@
 @import './chat-v2.css';
 @import './profile-chat.css';
 @import './workspace.css';
+@import './workspace-transitions.css';
 @import './settings-v2.css';
 @import './telemetry.css';
 @import './activity-dock.css';
@@ -22,9 +23,9 @@
 @import './orchestration.css';
 @import './timeline-hud.css';
 @import './spatial-stage.css';
-@import './spatial-application-shell.css';
 @import './brain-wrap-polish.css';
 @import './orchestration-spatial.css';
 @import './orchestration-final-polish.css';
 @import './orchestration-kanban.css';
+@import './spatial-application-shell.css';
 @import './dev-tools.css';
