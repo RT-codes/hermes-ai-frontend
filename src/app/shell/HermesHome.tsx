@@ -1,58 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ActivityPanel } from '../../components/ActivityPanel/ActivityPanel'
 import { ChatPanel } from '../../components/ChatPanel/ChatPanel'
 import { FloatingPanel } from '../../components/FloatingPanel/FloatingPanel'
 import { HardwareTelemetryHud } from '../../components/HardwareTelemetryHud/HardwareTelemetryHud'
 import { Sidebar } from '../../components/Sidebar/Sidebar'
 import { TopBar } from '../../components/TopBar/TopBar'
-import { WorkspaceStage, type WorkspaceView } from '../../components/WorkspaceStage/WorkspaceStage'
+import { WorkspaceStage } from '../../components/WorkspaceStage/WorkspaceStage'
 import { useAppearance } from '../../context/AppearanceContext'
 import { useChatSessions } from '../../context/ChatSessionsContext'
 import { DeveloperConsole } from '../../dev/console/DeveloperConsole'
 import { NewChatProfileDialog } from '../../features/chat/components/NewChatProfileDialog'
 import { OrchestrationWorkspace } from '../../features/orchestration/OrchestrationWorkspace'
 import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
-
-const ACTIVE_VIEW_STORAGE_KEY = 'hermes-active-workspace:v1'
-
-/**
- * Reads the current compatibility workspace value. FCP.3 will replace the legacy
- * `brain` identity with canonical `memory` ownership; until then this preserves the
- * already-tested browser resume behavior exactly.
- */
-function initialWorkspaceView(): WorkspaceView {
-  try {
-    const stored = window.localStorage.getItem(ACTIVE_VIEW_STORAGE_KEY)
-    if (stored === 'memory') return 'brain'
-    if (stored === 'brain' || stored === 'operations' || stored === 'chat' || stored === 'skills' || stored === 'system' || stored === 'settings') {
-      return stored
-    }
-  } catch {
-    // Storage is optional; Memory remains the safe default.
-  }
-  return 'brain'
-}
+import { useWorkspace } from '../workspaces/WorkspaceProvider'
 
 /**
- * Current product shell and compatibility boundary. It coordinates global chrome,
- * workspace mounting and floating surfaces while FCP progressively extracts stable
- * workspace/navigation ownership from these legacy conditionals.
+ * Product shell for global chrome and cross-workspace floating surfaces. Workspace
+ * identity/persistence belongs to WorkspaceProvider, keeping this component focused
+ * on composition rather than navigation state management.
  */
 export function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [activeView, setActiveView] = useState<WorkspaceView>(initialWorkspaceView)
+  const { activeWorkspace, setActiveWorkspace } = useWorkspace()
   const { openTabIds, createSession } = useChatSessions()
   const { settings } = useAppearance()
   const computeAtTop = settings.computeHudPosition === 'top-right'
-  const developerWorkspace = activeView === 'brain' ? 'memory' : activeView
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(ACTIVE_VIEW_STORAGE_KEY, activeView)
-    } catch {
-      // Do not let unavailable browser storage affect navigation.
-    }
-  }, [activeView])
 
   const activityHud = (
     <HudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
@@ -64,18 +36,18 @@ export function HermesHome() {
     <main className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
       <Sidebar
         collapsed={sidebarCollapsed}
-        activeView={activeView}
+        activeView={activeWorkspace}
         onToggle={() => setSidebarCollapsed((value) => !value)}
-        onViewChange={setActiveView}
+        onViewChange={setActiveWorkspace}
         onNewChat={createSession}
       />
 
       <TopBar />
-      {activeView === 'operations'
+      {activeWorkspace === 'operations'
         ? <OrchestrationWorkspace />
-        : <WorkspaceStage activeView={activeView} />}
+        : <WorkspaceStage activeView={activeWorkspace === 'memory' ? 'brain' : activeWorkspace} />}
 
-      {activeView === 'brain' && (
+      {activeWorkspace === 'memory' && (
         <div className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}>
           <div className="brain-hud-lane__compute">
             <HardwareTelemetryHud />
@@ -91,7 +63,7 @@ export function HermesHome() {
           id="chat"
           title="CHAT"
           className="chat-panel"
-          sidecar={activeView === 'brain' ? undefined : activityHud}
+          sidecar={activeWorkspace === 'memory' ? undefined : activityHud}
           defaultRect={{ x: 280, y: 610, width: 560, height: 350 }}
           minWidth={380}
           minHeight={270}
@@ -101,7 +73,7 @@ export function HermesHome() {
       )}
 
       <NewChatProfileDialog />
-      <DeveloperConsole activeWorkspace={developerWorkspace} />
+      <DeveloperConsole activeWorkspace={activeWorkspace} />
     </main>
   )
 }
