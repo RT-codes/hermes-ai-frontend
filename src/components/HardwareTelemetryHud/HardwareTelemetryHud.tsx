@@ -1,18 +1,12 @@
 import { useSystemTelemetry } from '../../context/SystemTelemetryContext'
+import {
+  formatGigabytesFromBytes,
+  formatGigabytesFromMegabytes,
+} from '../../lib/formatters/telemetry'
 import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
 
 function clamp(value: number) {
   return Math.min(100, Math.max(0, value))
-}
-
-function formatGb(bytes: number | null | undefined) {
-  if (bytes === null || bytes === undefined) return '—'
-  return `${(bytes / 1024 ** 3).toFixed(1)} GB`
-}
-
-function formatVram(mb: number | null | undefined) {
-  if (mb === null || mb === undefined) return '—'
-  return `${(mb / 1024).toFixed(1)} GB`
 }
 
 function Sparkline({ values }: { values: number[] }) {
@@ -57,10 +51,10 @@ export function HardwareTelemetryHud() {
 
       <div className="hardware-hud__metrics">
         <div><span>GPU</span><strong>{gpu ? `${Math.round(gpu.utilization)}%` : '—'}</strong></div>
-        <div><span>VRAM</span><strong>{gpu ? `${formatVram(gpu.memoryUsedMb)} / ${formatVram(gpu.memoryTotalMb)}` : '—'}</strong></div>
+        <div><span>VRAM</span><strong>{gpu ? `${formatGigabytesFromMegabytes(gpu.memoryUsedMb) ?? '—'} / ${formatGigabytesFromMegabytes(gpu.memoryTotalMb) ?? '—'}` : '—'}</strong></div>
         <div><span>GPU TEMP</span><strong>{gpu ? `${Math.round(gpu.temperatureC)}°C` : '—'}</strong></div>
         <div><span>CPU</span><strong>{host?.cpuUsage !== null && host?.cpuUsage !== undefined ? `${Math.round(host.cpuUsage)}%` : '—'}</strong></div>
-        <div><span>RAM</span><strong>{host ? `${formatGb(host.memoryUsedBytes)} / ${formatGb(host.memoryTotalBytes)}` : '—'}</strong></div>
+        <div><span>RAM</span><strong>{host ? `${formatGigabytesFromBytes(host.memoryUsedBytes) ?? '—'} / ${formatGigabytesFromBytes(host.memoryTotalBytes) ?? '—'}` : '—'}</strong></div>
         <div><span>CPU TEMP</span><strong>{host?.cpuTempC !== null && host?.cpuTempC !== undefined ? `${Math.round(host.cpuTempC)}°C` : 'SENSOR N/A'}</strong></div>
       </div>
 
