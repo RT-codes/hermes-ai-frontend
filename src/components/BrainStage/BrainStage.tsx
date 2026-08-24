@@ -27,11 +27,12 @@ export function BrainStage({ graphicsMode = 'memory' }: BrainStageProps) {
 
       {memoryHudVisible && (
         <>
-          <div className="layout-zone-owner--contents" {...layoutZoneAttributes('top-band', 'memory-timeline')}>
+          <div className="layout-zone-owner--contents" {...layoutZoneAttributes('top-band', 'memory-timeline-trace')}>
             <TimelineHud
               className="brain-timeline-hud layout-zone-align--top-band workspace-transition-item"
-              eyebrow="TEMPORAL LAYER"
-              title="BRAIN TRACE · LIVE"
+              eyebrow="MEMORY TIMELINE"
+              title="TIMELINE · TRACE · LIVE"
+              collapsible
             />
           </div>
 
