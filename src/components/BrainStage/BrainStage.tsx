@@ -10,9 +10,10 @@ type BrainStageProps = {
 const transitionIndex = (index: number) => ({ '--workspace-transition-index': index } as CSSProperties)
 
 /**
- * Persistent Memory graphics/camera layer. The graph stays mounted while spatial
- * workspaces swap above it so its ForceGraph camera/control instance is not rebuilt.
- * Operations can hide the Memory graphics without destroying the spatial camera.
+ * Persistent Memory graphics/camera layer. Graph, timeline and scene help remain
+ * mounted across spatial workspace swaps so they can animate out without destroying
+ * the ForceGraph camera/control instance. Camera-only mode disables Memory UI while
+ * leaving the shared interaction surface alive for the next workspace.
  */
 export function BrainStage({ graphicsVisible = true }: BrainStageProps) {
   const { reportViewRotation } = useSpatialApplicationShell()
@@ -23,24 +24,22 @@ export function BrainStage({ graphicsVisible = true }: BrainStageProps) {
       aria-label="Interactive 3D Hermes memory graph foundation"
       aria-hidden={!graphicsVisible}
     >
-      <BrainGraph onViewRotationChange={reportViewRotation} />
+      <div className="spatial-memory-layer__graph workspace-transition-item" style={transitionIndex(0)}>
+        <BrainGraph onViewRotationChange={reportViewRotation} />
+      </div>
 
-      {graphicsVisible && (
-        <>
-          <TimelineHud
-            className="brain-timeline-hud workspace-transition-item"
-            eyebrow="TEMPORAL LAYER"
-            title="BRAIN TRACE · LIVE"
-          />
+      <TimelineHud
+        className="brain-timeline-hud workspace-transition-item"
+        eyebrow="TEMPORAL LAYER"
+        title="BRAIN TRACE · LIVE"
+      />
 
-          <div className="brain-scene-help workspace-transition-item" style={transitionIndex(3)}>
-            <span>DRAG · ORBIT</span>
-            <span>RIGHT DRAG · PAN</span>
-            <span>WHEEL · ZOOM</span>
-            <span>CLICK NODE · HIGHLIGHT</span>
-          </div>
-        </>
-      )}
+      <div className="brain-scene-help workspace-transition-item" style={transitionIndex(3)}>
+        <span>DRAG · ORBIT</span>
+        <span>RIGHT DRAG · PAN</span>
+        <span>WHEEL · ZOOM</span>
+        <span>CLICK NODE · HIGHLIGHT</span>
+      </div>
     </section>
   )
 }
