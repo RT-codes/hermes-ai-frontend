@@ -2,6 +2,17 @@
 
 This document records the dependency and ownership rules established during the Frontend Consolidation Pass (FCP). It is intentionally short: a contributor or coding agent should be able to understand the shape of the frontend before opening feature files.
 
+## Current consolidation sequence
+
+The accepted spatial shell and horizontal production-zone foundation are complete through FCP.6. The remaining consolidation gate before Hermes-facing browser control is:
+
+1. **FCP.6A** — subdivide managed HUD lanes into semantic vertical slots and normalize panel fit contracts.
+2. **FCP.6B** — add one managed HUD allocator with occupancy, collision/fallback policy and animated reflow.
+3. **FCP.7** — add the local **Stage Director** semantic presentation/action layer and run the final frontend regression gate.
+4. **Orchestration S2.6** may bind Hermes/browser transport only after FCP.7 is accepted.
+
+Do not skip the placement layer by wiring semantic actions directly to DOM selectors, CSS coordinates or incidental `App.tsx` composition.
+
 ## Layer direction
 
 Dependencies should normally flow downward through these layers:
@@ -24,6 +35,7 @@ A lower layer must not import a higher layer merely to access state or styling.
 - Historical `brain` workspace state is accepted only by the persistence normalizer and immediately converges to `memory`; live UI code must not use it as a workspace identity.
 - Workspace-local selection/filter state belongs to that workspace.
 - Shared spatial camera/environment state belongs to the spatial shell.
+- Managed HUD geometry belongs to the HUD placement/allocator layer once FCP.6A/FCP.6B are implemented; individual feature panels should describe placement intent rather than own global coordinates.
 - Temporary component interaction state stays local unless another surface genuinely needs it.
 - Do not duplicate authoritative state to make rendering easier; derive presentation state instead.
 
@@ -41,7 +53,7 @@ Memory and Operations are sibling payloads inside one persistent spatial world, 
 
 The invariant is continuity: switching workspace must not change camera position, target, FOV, orbit constraints, floor geometry/fade or perceived world scale unless a future explicit camera-pose transition requests it.
 
-## Layout zones
+## Layout zones and panel fit
 
 Named layout zones are application contracts rather than developer-only rectangles.
 
@@ -49,10 +61,59 @@ Named layout zones are application contracts rather than developer-only rectangl
 - Geometry tokens live in `src/styles/layout-zones.css`.
 - Developer zone tooling re-exports and visualizes those exact contracts from `src/dev/zones/`; it must not own a duplicate zone model.
 - Production surfaces declare ownership with `data-layout-zone` / `data-layout-owner` through `layoutZoneAttributes(...)`.
-- Zones define stable edges, gutters and semantic ownership, but do **not** force rigid tiling. Panels may remain resizable, floating or narrower than their zone.
-- Memory/Operations timelines own `top-band`; spatial interaction owns `center-stage`; Memory telemetry/Insight owns `right-hud`; scene controls/help own `bottom-band`; temporary chat/dialog surfaces own `floating-layer`; primary navigation owns `left-nav`.
+- The accepted horizontal lanes are `left-nav`, `left-hud`, `center-stage`, `right-hud`, with `top-band`, `bottom-band` and `floating-layer` as cross-workspace/global contracts.
+- Zones define HUD/layout ownership; they do **not** clip the persistent WebGL world. Nodes, links, floor/grid/fade and scene connectors may render behind or across HUD zone boundaries.
+- FCP.6A extends the managed lanes with semantic vertical slots such as `left-hud.top`, `left-hud.middle`, `left-hud.bottom` and equivalent center/right slots, separated by explicit gaps.
+- Managed panels should declare fit intent such as content-fit, slot-fill, elastic, min/max height or preferred slot span. Lane-managed HUDs normally fill the lane width while height follows their fit contract rather than arbitrary full-lane geometry.
+- User-floating/resizable surfaces remain valid where their contract says they are floating; the slot model is not a desktop-wide rigid tiling system.
 
-FCP.7 semantic actions may rely on these stable ownership targets, but must not manipulate incidental CSS coordinates directly.
+The developer overlay must visualize the same application contracts used by production layout so debug geometry cannot silently diverge from real placement.
+
+## Managed HUD allocation
+
+FCP.6B introduces one semantic placement owner for registered HUD surfaces. Its job is to decide **where** managed panels fit; feature code and later semantic actions describe intent.
+
+A managed HUD registration should be able to express:
+
+- stable panel ID;
+- preferred zone/slot and allowed fallbacks;
+- priority or pinned status;
+- fit/min/max/span policy;
+- preferred ordering relative to known panels;
+- whether the panel may move during reflow;
+- lifetime such as workspace, selection-context or transient.
+
+The allocator should:
+
+- track live occupancy of semantic slots;
+- use preferred free placement when possible;
+- choose allowed fallbacks or reflow lower-priority movable panels when required;
+- preserve lane/slot gaps and avoid managed-panel overlap;
+- animate coherent repositioning rather than teleporting panels;
+- restore a stable arrangement when transient panels close;
+- reject arbitrary screen coordinates as the placement contract for managed semantic HUDs.
+
+Floating/dragged user surfaces are a separate escape hatch and should not be silently snapped unless they explicitly opt into managed placement.
+
+## Stage Director
+
+**Stage Director** is the frontend's local semantic presentation/action boundary. It coordinates **what should be shown** while workspace state, runtime/data owners and the HUD allocator retain their own responsibilities.
+
+Initial action families are expected to include:
+
+- `openWorkspace(...)`
+- `openTask(...)`
+- `selectMemory(...)`
+- `openChat(...)`
+- `presentPanel(...)`
+- `dismissPanel(...)`
+- a memory-trace presentation primitive such as `focusMemoryTrace(...)`
+
+Stage Director must not become a second Hermes execution/control plane. Hermes tasks, sessions, memory and runtime state remain authoritative in their existing backend/data layers. Stage Director only coordinates frontend presentation of stable IDs and bounded user-facing content.
+
+Callers may express semantic placement preference for a managed panel, but the HUD allocator decides final zone/slot and any animated reflow. Public Stage Director inputs must not depend on DOM selectors, React refs, incidental component hierarchy or x/y coordinates.
+
+Orchestration S2.6 may expose Hermes → browser transport only after this local action boundary and its regression gate are accepted.
 
 ## Comments
 
@@ -106,4 +167,4 @@ The Quake-style console separates:
 - executable command registry: `src/dev/commands/developerCommandRegistry.ts`
 - zone visualization/commands: `src/dev/zones/`
 
-The zone definitions themselves are application contracts under `src/app/layout/`; developer tooling only visualizes them. Future zone/debug commands should extend the registry rather than adding command-specific conditionals to the console organism.
+The zone definitions themselves are application contracts under `src/app/layout/`; developer tooling only visualizes them. Future zone/slot/debug commands should extend the registry rather than adding command-specific conditionals to the console organism.
