@@ -8,6 +8,8 @@ export type DeveloperConsoleLine = {
 export type DeveloperCommandContext = {
   activeWorkspace: string
   registeredLayers: string[]
+  zonesVisible: boolean
+  setZonesVisible: (visible: boolean) => void
 }
 
 export type DeveloperCommandResult = {
@@ -36,7 +38,7 @@ const commands: DeveloperCommand[] = [
     description: 'List the developer commands registered in this frontend build.',
     run: () => ({
       lines: commands.map((command) => ({
-        text: `${command.usage.padEnd(18)} ${command.description}`,
+        text: `${command.usage.padEnd(22)} ${command.description}`,
         tone: command.name === 'help' ? 'accent' : 'default',
       })),
     }),
@@ -63,6 +65,32 @@ const commands: DeveloperCommand[] = [
     run: (_args, context) => ({
       lines: context.registeredLayers.map((layer) => ({ text: layer, tone: 'muted' })),
     }),
+  },
+  {
+    name: 'zones',
+    usage: 'zones <show|hide|toggle|status>',
+    description: 'Inspect or toggle the FCP diagnostic layout-zone overlay.',
+    run: (args, context) => {
+      const action = (args[0] ?? 'status').toLowerCase()
+      let nextVisible = context.zonesVisible
+
+      if (action === 'show') nextVisible = true
+      else if (action === 'hide') nextVisible = false
+      else if (action === 'toggle') nextVisible = !context.zonesVisible
+      else if (action !== 'status') {
+        return {
+          lines: [
+            { text: `UNKNOWN ZONES ACTION  ${action}`, tone: 'warning' },
+            { text: 'Usage: zones <show|hide|toggle|status>', tone: 'muted' },
+          ],
+        }
+      }
+
+      if (nextVisible !== context.zonesVisible) context.setZonesVisible(nextVisible)
+      return {
+        lines: [{ text: `LAYOUT ZONES  ${nextVisible ? 'VISIBLE' : 'HIDDEN'}`, tone: 'accent' }],
+      }
+    },
   },
   {
     name: 'echo',
