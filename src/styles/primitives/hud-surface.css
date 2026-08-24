@@ -1,0 +1,33 @@
+/*
+ * Shared visual primitive for translucent cut-corner HUD surfaces.
+ * Components may tune the cut size or fill through custom properties without
+ * copying the border/glass construction into feature-specific stylesheets.
+ */
+.hud-surface {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  --hud-cut: 10px;
+  --hud-surface-fill:
+    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.035) 28%, rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity-soft))),
+    rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity));
+  background: var(--glass-border);
+  clip-path: polygon(
+    var(--hud-cut) 0,
+    100% 0,
+    100% calc(100% - var(--hud-cut)),
+    calc(100% - var(--hud-cut)) 100%,
+    0 100%,
+    0 var(--hud-cut)
+  );
+}
+
+.hud-surface::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  clip-path: inherit;
+  background: var(--hud-surface-fill);
+  backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
+}
