@@ -12,6 +12,7 @@ import {
   type DeveloperConsoleLine,
 } from '../commands/developerCommandRegistry'
 import { LayoutZoneOverlay } from '../zones/LayoutZoneOverlay'
+import { layoutZones, type LayoutZoneId } from '../zones/layoutZones'
 import { useDeveloperConsoleToggle } from './useDeveloperConsoleToggle'
 
 type DeveloperConsoleProps = {
@@ -36,7 +37,7 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
   const [input, setInput] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState<number | null>(null)
-  const [zonesVisible, setZonesVisible] = useState(false)
+  const [activeZoneIds, setActiveZoneIds] = useState<Set<LayoutZoneId>>(() => new Set())
   const [transcript, setTranscript] = useState<TranscriptEntry[]>(() => (
     INITIAL_TRANSCRIPT.map((line, index) => ({ ...line, id: index + 1 }))
   ))
@@ -53,9 +54,9 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
       'hermes-insight',
       'developer-overlay',
     ],
-    zonesVisible,
-    setZonesVisible,
-  }), [activeWorkspace, zonesVisible])
+    activeZoneIds,
+    setActiveZoneIds,
+  }), [activeWorkspace, activeZoneIds])
 
   /** Opening the HUD always returns keyboard ownership to its command line. */
   useEffect(() => {
@@ -125,7 +126,7 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
 
   return (
     <>
-      <LayoutZoneOverlay visible={zonesVisible} />
+      <LayoutZoneOverlay activeZoneIds={activeZoneIds} />
       <aside
         className={`developer-console ${open ? 'is-open' : ''}`}
         aria-hidden={!open}
@@ -139,7 +140,7 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
           </div>
           <div className="developer-console__meta">
             <span>{activeWorkspace.toUpperCase()}</span>
-            <span>FCP.2</span>
+            <span>{activeZoneIds.size}/{layoutZones.length} ZONES</span>
           </div>
         </header>
 
@@ -171,7 +172,7 @@ export function DeveloperConsole({ activeWorkspace }: DeveloperConsoleProps) {
         <footer className="developer-console__footer">
           <span>~ TOGGLE</span>
           <span>↑↓ HISTORY</span>
-          <span>ZONES SHOW/HIDE</span>
+          <span>ZONES STATUS</span>
         </footer>
       </aside>
     </>
