@@ -27,6 +27,7 @@ export type LayoutZone = {
 
 const sidebar = 'var(--layout-zone-sidebar-width)'
 const gutter = 'var(--layout-zone-page-gutter)'
+const innerGutter = 'var(--layout-zone-inner-gutter)'
 const workspaceTop = 'var(--layout-zone-workspace-top)'
 const workspaceBottom = 'var(--layout-zone-workspace-bottom)'
 const hudWidth = 'var(--layout-zone-hud-width)'
@@ -75,9 +76,9 @@ export const layoutZones: LayoutZone[] = [
     description: 'Contextual controls and secondary inspectors anchored left of stage.',
     style: {
       top: workspaceTop,
-      right: `calc(100% - ${sidebar} - ${gutter} - ${hudWidth})`,
+      right: `calc(100% - ${sidebar} - ${gutter} - ${innerGutter} - ${hudWidth})`,
       bottom: workspaceBottom,
-      left: `calc(${sidebar} + ${gutter})`,
+      left: `calc(${sidebar} + ${gutter} + ${innerGutter})`,
     },
   },
   {
