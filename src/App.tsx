@@ -16,6 +16,7 @@ import { HouseholdProvider } from './context/HouseholdContext'
 import { InsightSelectionProvider } from './context/InsightSelectionContext'
 import { RuntimeStatusProvider } from './context/RuntimeStatusContext'
 import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
+import { DeveloperConsole } from './dev/console/DeveloperConsole'
 import { NewChatProfileDialog } from './features/chat/components/NewChatProfileDialog'
 import { OrchestrationWorkspace } from './features/orchestration/OrchestrationWorkspace'
 import './styles/layout.css'
@@ -40,6 +41,7 @@ import './styles/brain-wrap-polish.css'
 import './styles/orchestration-spatial.css'
 import './styles/orchestration-final-polish.css'
 import './styles/orchestration-kanban.css'
+import './styles/developer-console.css'
 
 const ACTIVE_VIEW_STORAGE_KEY = 'hermes-active-workspace:v1'
 
@@ -56,12 +58,17 @@ function initialWorkspaceView(): WorkspaceView {
   return 'brain'
 }
 
+/**
+ * The current app shell remains the compatibility owner until FCP.3 moves
+ * workspace identity/navigation into its dedicated controller.
+ */
 function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeView, setActiveView] = useState<WorkspaceView>(initialWorkspaceView)
   const { openTabIds, createSession } = useChatSessions()
   const { settings } = useAppearance()
   const computeAtTop = settings.computeHudPosition === 'top-right'
+  const developerWorkspace = activeView === 'brain' ? 'memory' : activeView
 
   useEffect(() => {
     try {
@@ -118,10 +125,12 @@ function HermesHome() {
       )}
 
       <NewChatProfileDialog />
+      <DeveloperConsole activeWorkspace={developerWorkspace} />
     </main>
   )
 }
 
+/** Root provider composition stays intentionally boring while FCP extracts shell ownership. */
 function App() {
   return (
     <HouseholdProvider>
