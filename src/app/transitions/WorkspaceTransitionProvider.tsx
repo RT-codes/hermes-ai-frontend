@@ -27,14 +27,17 @@ export function WorkspaceTransitionProvider({ children }: { children: ReactNode 
   const timersRef = useRef<number[]>([])
 
   useEffect(() => {
-    if (activeWorkspace === displayWorkspaceRef.current) return
-
     timersRef.current.forEach((timer) => window.clearTimeout(timer))
     timersRef.current = []
 
+    if (activeWorkspace === displayWorkspaceRef.current) {
+      setPhase('idle')
+      return
+    }
+
     const targetWorkspace = activeWorkspace
-    const total = Math.max(160, settings.viewTransitionDurationMs)
-    const exitDuration = Math.max(80, Math.round(total * 0.42))
+    const total = Math.max(360, settings.viewTransitionDurationMs)
+    const exitDuration = Math.max(160, Math.floor(total / 2))
 
     setPhase('exiting')
     timersRef.current.push(window.setTimeout(() => {
