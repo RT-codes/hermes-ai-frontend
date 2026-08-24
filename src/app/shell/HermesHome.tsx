@@ -30,6 +30,7 @@ const transitionIndex = (index: number) => ({ '--workspace-transition-index': in
  */
 export function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [insightExpanded, setInsightExpanded] = useState(true)
   const { activeWorkspace, setActiveWorkspace } = useWorkspace()
   const { displayWorkspace, phase } = useWorkspaceTransition()
   const { openTabIds, createSession } = useChatSessions()
@@ -39,7 +40,20 @@ export function HermesHome() {
   const spatialGraphicsMode: SpatialGraphicsMode = displayWorkspace === 'operations' ? 'operations' : 'memory'
 
   const activityHud = (
-    <HudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
+    <HudPanel
+      title="HERMES INSIGHT"
+      className={`hermes-activity-panel ${insightExpanded ? 'is-expanded' : 'is-collapsed'}`}
+      meta={(
+        <button
+          className="hermes-activity-panel__toggle"
+          type="button"
+          aria-expanded={insightExpanded}
+          onClick={() => setInsightExpanded((value) => !value)}
+        >
+          {insightExpanded ? 'COLLAPSE' : 'OPEN'}
+        </button>
+      )}
+    >
       <ActivityPanel />
     </HudPanel>
   )
@@ -110,13 +124,15 @@ export function HermesHome() {
             <HardwareTelemetryHud />
           </div>
           <div
-            className="brain-hud-lane__insight workspace-transition-item"
+            className={`brain-hud-lane__insight workspace-transition-item ${insightExpanded ? 'is-expanded' : 'is-collapsed'}`}
             style={transitionIndex(2)}
             {...layoutSlotAttributes(
-              computeAtTop ? 'right-hud.middle' : 'right-hud.top',
+              insightExpanded
+                ? computeAtTop ? 'right-hud.middle' : 'right-hud.top'
+                : 'right-hud.middle',
               'memory-hermes-insight',
-              'elastic',
-              2,
+              insightExpanded ? 'elastic' : 'content-fit',
+              insightExpanded ? 2 : 1,
             )}
           >
             {activityHud}
