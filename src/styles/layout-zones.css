@@ -1,0 +1,42 @@
+/*
+ * Named workspace layout contracts shared by production HUDs and the developer
+ * overlay. Zones provide alignment anchors/gutters, not rigid panel dimensions.
+ */
+.hermes-home {
+  --layout-zone-sidebar-width: var(--sidebar-width);
+  --layout-zone-page-gutter: 1rem;
+  --layout-zone-top: 0.75rem;
+  --layout-zone-top-band-bottom: calc(100% - 6.25rem);
+  --layout-zone-workspace-top: 6.75rem;
+  --layout-zone-workspace-bottom: 6.5rem;
+  --layout-zone-hud-width: 20rem;
+  --layout-zone-bottom-top: calc(100% - 5.75rem);
+  --layout-zone-bottom: 0.75rem;
+  --layout-zone-floating-inset-x: 4rem;
+  --layout-zone-floating-top: 5.75rem;
+  --layout-zone-floating-bottom: 4.75rem;
+}
+
+.hermes-home.sidebar-is-collapsed {
+  --layout-zone-sidebar-width: var(--sidebar-width-collapsed);
+}
+
+/* Semantic-only owners must not add a box or change accepted component geometry. */
+.layout-zone-owner--contents {
+  display: contents;
+}
+
+/* Production surfaces can opt into exact zone edge alignment without knowing numbers. */
+.layout-zone-align--right-hud {
+  top: var(--layout-zone-workspace-top);
+  right: var(--layout-zone-page-gutter);
+  bottom: var(--layout-zone-workspace-bottom);
+}
+
+.layout-zone-align--top-band {
+  top: var(--layout-zone-top);
+}
+
+.layout-zone-align--bottom-band {
+  bottom: var(--layout-zone-bottom);
+}
