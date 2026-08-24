@@ -104,7 +104,7 @@ export function HermesHome() {
             {...layoutSlotAttributes(
               computeAtTop ? 'right-hud.top' : 'right-hud.bottom',
               'memory-local-compute',
-              'content-fit',
+              'slot-fill',
             )}
           >
             <HardwareTelemetryHud />
