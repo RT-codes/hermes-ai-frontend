@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { BrainHudPanel } from '../../components/BrainHudPanel/BrainHudPanel'
 import { SpatialInteractionCanvas } from '../../components/SpatialInteractionCanvas/SpatialInteractionCanvas'
 import { SpatialStageEnvironment } from '../../components/SpatialStageEnvironment/SpatialStageEnvironment'
 import { TimelineHud, type TimelineMarker } from '../../components/TimelineHud/TimelineHud'
+import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
 import type { ConnectionState, Task } from './types'
 
 type OperationsSpatialShellProps = {
@@ -16,6 +16,11 @@ type OperationsSpatialShellProps = {
   children: ReactNode
 }
 
+/**
+ * Operations composes spatial interaction and its contextual HUD without owning
+ * the shared HUD implementation. FCP.5 will later move the remaining scene pieces
+ * onto the persistent application shell.
+ */
 export function OperationsSpatialShell({
   selectedTask,
   timelineMarkers,
@@ -58,9 +63,9 @@ export function OperationsSpatialShell({
       {error && <div className="orchestration-banner orchestration-banner--spatial">{error}</div>}
 
       <div className={`orchestration-spatial-panel-shell ${panelCollapsed ? 'is-collapsed' : ''}`}>
-        <BrainHudPanel title="OPERATIONS" meta={panelMeta} className="orchestration-spatial-panel">
+        <HudPanel title="OPERATIONS" meta={panelMeta} className="orchestration-spatial-panel">
           {children}
-        </BrainHudPanel>
+        </HudPanel>
       </div>
 
       <div className="orchestration-view-controls" aria-label="Future Operations 3D view controls">
