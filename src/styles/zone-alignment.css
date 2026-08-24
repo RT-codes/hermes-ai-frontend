@@ -1,5 +1,5 @@
 /*
- * FCP.6B production alignment layer.
+ * Production alignment layer for accepted horizontal lanes plus FCP.6A vertical fit.
  *
  * The persistent WebGL world intentionally spans behind HUD zones. These rules
  * align actual UI surfaces to the named contracts without clipping the spatial scene
@@ -15,7 +15,7 @@
 }
 
 @media (min-width: 901px) {
-  /* Normal Memory telemetry/Insight occupies RIGHT HUD. */
+  /* Normal Memory telemetry/Insight occupies RIGHT HUD and fills its lane width. */
   .brain-hud-lane {
     top: var(--layout-zone-workspace-top);
     right: var(--layout-zone-page-gutter);
@@ -25,22 +25,33 @@
   }
 
   /*
-   * Inspecting mode moves that same lane into LEFT HUD by changing its anchor,
-   * rather than translating a right-anchored panel across the viewport.
+   * Inspecting mode moves the managed lane into LEFT HUD by changing its semantic
+   * anchor, rather than translating a right-anchored panel across the viewport.
    */
   .brain-is-inspecting .brain-hud-lane,
   .sidebar-is-collapsed.brain-is-inspecting .brain-hud-lane {
-    left: calc(var(--layout-zone-sidebar-width) + var(--layout-zone-page-gutter));
+    left: calc(var(--layout-zone-sidebar-width) + var(--layout-zone-page-gutter) + var(--layout-zone-inner-gutter));
     right: auto;
     transform: none;
   }
 
-  /* Memory detail inspection is the primary RIGHT HUD inspector. */
+  /*
+   * Memory detail inspection occupies RIGHT HUD from the top slot. Its height follows
+   * content up to the available lane rather than being forced to full-lane height;
+   * long memories expand toward the bottom slot and then scroll internally.
+   */
   .brain-memory-inspector {
     top: var(--layout-zone-workspace-top);
     right: var(--layout-zone-page-gutter);
-    bottom: var(--layout-zone-workspace-bottom);
+    bottom: auto;
     width: min(390px, var(--layout-zone-hud-width));
     max-width: var(--layout-zone-hud-width);
+    height: auto;
+    max-height: calc(100% - var(--layout-zone-workspace-top) - var(--layout-zone-workspace-bottom));
+  }
+
+  .brain-memory-inspector__content {
+    max-height: calc(100vh - var(--layout-zone-workspace-top) - var(--layout-zone-workspace-bottom) - 4.5rem);
+    overflow-y: auto;
   }
 }
