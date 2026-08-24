@@ -203,26 +203,6 @@
   isolation: isolate;
 }
 
-.brain-hud-panel__surface {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: var(--glass-border);
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-}
-
-.brain-hud-panel__surface::after {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  clip-path: inherit;
-  background:
-    linear-gradient(110deg, transparent, rgb(var(--accent-rgb) / 0.035) 28%, rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity-soft))),
-    rgb(var(--brain-hud-rgb) / var(--brain-hud-opacity));
-  backdrop-filter: blur(var(--blur-panel)) saturate(128%);
-  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(128%);
-}
-
 .brain-hud-panel__header {
   position: relative;
   z-index: 1;
