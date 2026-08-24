@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { ActivityPanel } from '../../components/ActivityPanel/ActivityPanel'
 import { ChatPanel } from '../../components/ChatPanel/ChatPanel'
 import { FloatingPanel } from '../../components/FloatingPanel/FloatingPanel'
@@ -13,20 +13,24 @@ import { NewChatProfileDialog } from '../../features/chat/components/NewChatProf
 import { OrchestrationWorkspace } from '../../features/orchestration/OrchestrationWorkspace'
 import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
 import { SpatialApplicationShell } from '../spatial/SpatialApplicationShell'
+import { useWorkspaceTransition } from '../transitions/WorkspaceTransitionProvider'
 import { useWorkspace } from '../workspaces/WorkspaceProvider'
 
+const transitionIndex = (index: number) => ({ '--workspace-transition-index': index } as CSSProperties)
+
 /**
- * Product shell for global chrome and cross-workspace floating surfaces. Workspace
- * identity/persistence belongs to WorkspaceProvider; spatial workspaces additionally
- * share one persistent application environment instead of recreating it per view.
+ * Product shell for global chrome and cross-workspace floating surfaces. Requested
+ * navigation belongs to WorkspaceProvider; the transition controller separately owns
+ * what is currently rendered so outgoing HUDs can animate before the workspace swap.
  */
 export function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const { activeWorkspace, setActiveWorkspace } = useWorkspace()
+  const { displayWorkspace, phase } = useWorkspaceTransition()
   const { openTabIds, createSession } = useChatSessions()
   const { settings } = useAppearance()
   const computeAtTop = settings.computeHudPosition === 'top-right'
-  const spatialWorkspace = activeWorkspace === 'memory' || activeWorkspace === 'operations'
+  const spatialWorkspace = displayWorkspace === 'memory' || displayWorkspace === 'operations'
 
   const activityHud = (
     <HudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
@@ -34,12 +38,23 @@ export function HermesHome() {
     </HudPanel>
   )
 
-  const workspaceContent = activeWorkspace === 'operations'
+  const workspaceContent = displayWorkspace === 'operations'
     ? <OrchestrationWorkspace />
-    : <WorkspaceStage activeView={activeWorkspace} />
+    : <WorkspaceStage activeView={displayWorkspace} />
+
+  const transitioningWorkspace = (
+    <div className="workspace-transition-frame workspace-transition-item" style={transitionIndex(0)}>
+      {workspaceContent}
+    </div>
+  )
 
   return (
-    <main className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
+    <main
+      className={`hermes-home ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}
+      data-workspace-transition={phase}
+      data-active-workspace={activeWorkspace}
+      data-display-workspace={displayWorkspace}
+    >
       <Sidebar
         collapsed={sidebarCollapsed}
         activeView={activeWorkspace}
@@ -50,15 +65,15 @@ export function HermesHome() {
 
       <TopBar />
       {spatialWorkspace
-        ? <SpatialApplicationShell>{workspaceContent}</SpatialApplicationShell>
-        : workspaceContent}
+        ? <SpatialApplicationShell>{transitioningWorkspace}</SpatialApplicationShell>
+        : transitioningWorkspace}
 
-      {activeWorkspace === 'memory' && (
+      {displayWorkspace === 'memory' && (
         <div className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}>
-          <div className="brain-hud-lane__compute">
+          <div className="brain-hud-lane__compute workspace-transition-item" style={transitionIndex(1)}>
             <HardwareTelemetryHud />
           </div>
-          <div className="brain-hud-lane__insight">
+          <div className="brain-hud-lane__insight workspace-transition-item" style={transitionIndex(2)}>
             {activityHud}
           </div>
         </div>
@@ -69,7 +84,7 @@ export function HermesHome() {
           id="chat"
           title="CHAT"
           className="chat-panel"
-          sidecar={activeWorkspace === 'memory' ? undefined : activityHud}
+          sidecar={displayWorkspace === 'memory' ? undefined : activityHud}
           defaultRect={{ x: 280, y: 610, width: 560, height: 350 }}
           minWidth={380}
           minHeight={270}
