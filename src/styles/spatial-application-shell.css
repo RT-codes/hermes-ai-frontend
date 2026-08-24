@@ -50,11 +50,13 @@
   transform: translateY(-8px) scale(0.992);
 }
 
-.spatial-memory-layer.is-camera-only .brain-timeline-hud,
-.spatial-memory-layer.is-camera-only .brain-scene-help {
-  opacity: 0;
-  transform: translateY(-10px);
+/* Keep hidden Memory overlays out of the generic incoming Operations animation. */
+.spatial-memory-layer.is-camera-only .brain-timeline-hud.workspace-transition-item,
+.spatial-memory-layer.is-camera-only .brain-scene-help.workspace-transition-item {
+  opacity: 0 !important;
+  transform: translateY(-10px) !important;
   pointer-events: none;
+  animation: none !important;
 }
 
 .spatial-memory-layer.is-camera-only .brain-graph__controls,
