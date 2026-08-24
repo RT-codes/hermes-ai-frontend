@@ -23,20 +23,23 @@ export function WorkspaceTransitionProvider({ children }: { children: ReactNode 
   const { settings } = useAppearance()
   const [displayWorkspace, setDisplayWorkspace] = useState<WorkspaceId>(activeWorkspace)
   const [phase, setPhase] = useState<WorkspaceTransitionPhase>('idle')
+  const displayWorkspaceRef = useRef<WorkspaceId>(activeWorkspace)
   const timersRef = useRef<number[]>([])
 
   useEffect(() => {
-    if (activeWorkspace === displayWorkspace && phase === 'idle') return
+    if (activeWorkspace === displayWorkspaceRef.current) return
 
     timersRef.current.forEach((timer) => window.clearTimeout(timer))
     timersRef.current = []
 
+    const targetWorkspace = activeWorkspace
     const total = Math.max(160, settings.viewTransitionDurationMs)
     const exitDuration = Math.max(80, Math.round(total * 0.42))
 
     setPhase('exiting')
     timersRef.current.push(window.setTimeout(() => {
-      setDisplayWorkspace(activeWorkspace)
+      displayWorkspaceRef.current = targetWorkspace
+      setDisplayWorkspace(targetWorkspace)
       setPhase('entering')
     }, exitDuration))
     timersRef.current.push(window.setTimeout(() => {
@@ -47,7 +50,7 @@ export function WorkspaceTransitionProvider({ children }: { children: ReactNode 
       timersRef.current.forEach((timer) => window.clearTimeout(timer))
       timersRef.current = []
     }
-  }, [activeWorkspace, displayWorkspace, phase, settings.viewTransitionDurationMs])
+  }, [activeWorkspace, settings.viewTransitionDurationMs])
 
   const value = useMemo(() => ({
     requestedWorkspace: activeWorkspace,
