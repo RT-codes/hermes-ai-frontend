@@ -48,7 +48,10 @@ export function HermesHome() {
       : <WorkspaceStage activeView={displayWorkspace} />
 
   const transitioningWorkspace = (
-    <div className="workspace-transition-frame workspace-transition-item" style={transitionIndex(0)}>
+    <div
+      className={`workspace-transition-frame ${spatialWorkspace ? '' : 'workspace-transition-item'}`.trim()}
+      style={spatialWorkspace ? undefined : transitionIndex(0)}
+    >
       {workspaceContent}
     </div>
   )
