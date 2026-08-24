@@ -19,7 +19,9 @@ A lower layer must not import a higher layer merely to access state or styling.
 ## State ownership
 
 - Backend/runtime truth belongs in dedicated hooks/providers/adapters.
-- Workspace navigation belongs to one workspace controller (FCP.3 target).
+- Workspace navigation/persistence belongs to `src/app/workspaces/WorkspaceProvider.tsx`.
+- Canonical workspace IDs live in `src/app/workspaces/workspaceModel.ts`: `memory`, `operations`, `chat`, `skills`, `system`, `settings`.
+- Historical `brain` workspace state is accepted only by the persistence normalizer and immediately converges to `memory`; live UI code must not use it as a workspace identity.
 - Workspace-local selection/filter state belongs to that workspace.
 - Shared spatial camera/environment state belongs to the spatial shell (FCP.4 target).
 - Temporary component interaction state stays local unless another surface genuinely needs it.
@@ -41,12 +43,25 @@ Avoid comments that merely translate syntax into English.
 
 Shared appearance belongs under `src/styles/primitives/` or later shared style layers. Feature styles should describe feature layout/variants, not reimplement shared glass, border, cut-corner or typography recipes.
 
-The first extracted primitive is:
+Current shared HUD primitives:
 
 - `src/ui/cells/HudSurface/HudSurface.tsx`
+- `src/ui/components/HudPanel/HudPanel.tsx`
 - `src/styles/primitives/hud-surface.css`
+- `src/styles/primitives/hud-panel.css`
 
-Both `BrainHudPanel` and the FCP developer console consume that primitive. This is the migration pattern for repeated visual recipes during FCP.6.
+Legacy Brain-specific wrappers/classes may remain temporarily as compatibility hooks while callers migrate. New workspace-agnostic code should depend on neutral UI primitives instead.
+
+Application stylesheet ordering is centralized through `src/styles/app.css`; new style families should be grouped behind explicit entrypoints rather than imported ad hoc from `App.tsx`.
+
+## Application composition
+
+- `src/App.tsx` composes only `AppProviders`, `HermesHome`, and the application stylesheet entrypoint.
+- `src/app/providers/AppProviders.tsx` owns cross-application provider wiring.
+- `src/app/shell/HermesHome.tsx` owns global chrome and cross-workspace floating surfaces.
+- `src/app/workspaces/WorkspaceProvider.tsx` owns active workspace state and browser resume behavior.
+
+Shells may decide *where* a workspace is mounted, but they should not invent or persist workspace identity themselves.
 
 ## Developer tooling
 
@@ -56,5 +71,6 @@ The Quake-style console separates:
 - UI/transcript/history: `src/dev/console/DeveloperConsole.tsx`
 - global shortcut policy: `src/dev/console/useDeveloperConsoleToggle.ts`
 - executable command registry: `src/dev/commands/developerCommandRegistry.ts`
+- zone contracts/overlay: `src/dev/zones/`
 
 Future zone/debug commands should extend the registry rather than adding command-specific conditionals to the console organism.
