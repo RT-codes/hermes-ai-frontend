@@ -22,6 +22,7 @@
 @import './orchestration.css';
 @import './timeline-hud.css';
 @import './spatial-stage.css';
+@import './spatial-application-shell.css';
 @import './brain-wrap-polish.css';
 @import './orchestration-spatial.css';
 @import './orchestration-final-polish.css';
