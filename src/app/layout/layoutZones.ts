@@ -60,7 +60,7 @@ export const layoutZones: LayoutZone[] = [
     description: 'Contextual controls and secondary inspectors anchored left of stage.',
     style: {
       top: workspaceTop,
-      right: `calc(100% - ${sidebar} - ${hudWidth})`,
+      right: `calc(100% - ${sidebar} - ${gutter} - ${hudWidth})`,
       bottom: workspaceBottom,
       left: `calc(${sidebar} + ${gutter})`,
     },
@@ -71,9 +71,9 @@ export const layoutZones: LayoutZone[] = [
     description: 'Primary persistent spatial interaction surface.',
     style: {
       top: workspaceTop,
-      right: `calc(${hudWidth} + ${gutter})`,
+      right: 'var(--layout-zone-center-right)',
       bottom: workspaceBottom,
-      left: `calc(${sidebar} + ${hudWidth} + ${gutter})`,
+      left: 'var(--layout-zone-center-left)',
     },
   },
   {
@@ -84,7 +84,7 @@ export const layoutZones: LayoutZone[] = [
       top: workspaceTop,
       right: gutter,
       bottom: workspaceBottom,
-      left: `calc(100% - ${hudWidth})`,
+      left: `calc(100% - ${gutter} - ${hudWidth})`,
     },
   },
   {
