@@ -16,12 +16,8 @@
   transition: left 180ms cubic-bezier(0.22, 0.78, 0.25, 1), right 180ms cubic-bezier(0.22, 0.78, 0.25, 1), width 180ms ease;
 }
 
-/*
- * Memory's current registrations consume the semantic grid literally: Hermes Insight
- * owns two slots and Local Compute owns one. FCP.6B may later move them between allowed
- * slots, but no feature surface owns arbitrary vertical pixels anymore.
- */
-.brain-hud-lane--compute-bottom .brain-hud-lane__insight {
+/* Expanded Insight owns two slots; collapsed Insight becomes a compact bar at the bottom of the middle slot. */
+.brain-hud-lane--compute-bottom .brain-hud-lane__insight.is-expanded {
   grid-row: 1 / span 2;
 }
 
@@ -33,8 +29,14 @@
   grid-row: 1;
 }
 
-.brain-hud-lane--compute-top .brain-hud-lane__insight {
+.brain-hud-lane--compute-top .brain-hud-lane__insight.is-expanded {
   grid-row: 2 / span 2;
+}
+
+.brain-hud-lane .brain-hud-lane__insight.is-collapsed {
+  grid-row: 2;
+  align-self: end;
+  height: auto;
 }
 
 .brain-hud-lane__compute,
@@ -59,7 +61,7 @@
   overflow: hidden;
 }
 
-.brain-hud-lane__insight > .brain-hud-panel {
+.brain-hud-lane__insight.is-expanded > .brain-hud-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   width: 100%;
@@ -67,14 +69,42 @@
   min-height: 0;
 }
 
+.brain-hud-lane__insight.is-collapsed > .brain-hud-panel {
+  width: 100%;
+  height: auto;
+}
+
 .brain-hud-lane__insight .brain-hud-panel__content {
   min-height: 0;
   overflow: hidden;
 }
 
+.hermes-activity-panel.is-collapsed .hud-panel__content,
+.hermes-activity-panel.is-collapsed .brain-hud-panel__content {
+  display: none;
+}
+
+.hermes-activity-panel__toggle {
+  padding: 0.15rem 0.34rem;
+  border: 1px solid rgb(var(--accent-rgb) / 0.16);
+  color: var(--cyan-soft);
+  background: rgb(var(--accent-rgb) / 0.035);
+  font: inherit;
+  font-size: 0.45rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.hermes-activity-panel__toggle:hover,
+.hermes-activity-panel__toggle:focus-visible {
+  outline: none;
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  background: rgb(var(--accent-rgb) / 0.09);
+}
+
 /* Inspection remaps the managed Memory lane to LEFT HUD without translating from a right-anchored pixel position. */
 .brain-is-inspecting .brain-hud-lane {
-  left: calc(var(--layout-zone-sidebar-width) + var(--layout-zone-page-gutter) + var(--layout-zone-inner-gutter));
+  left: calc(var(--layout-zone-nav-width) + var(--layout-zone-page-gutter) + var(--layout-zone-inner-gutter));
   right: auto;
   transform: none;
 }
@@ -107,6 +137,10 @@
 
 .floating-panel__sidecar .hermes-insight {
   height: 100%;
+}
+
+.floating-panel__sidecar .hermes-activity-panel.is-collapsed {
+  height: auto;
 }
 
 .hermes-activity-panel {
