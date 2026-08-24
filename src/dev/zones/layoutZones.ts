@@ -1,6 +1,15 @@
 export {
+  isManagedLayoutLane,
+  layoutSlotAttributes,
+  layoutSlotNames,
   layoutZoneAttributes,
   layoutZones,
+  managedLayoutLaneIds,
+  type LayoutSlotId,
+  type LayoutSlotName,
   type LayoutZone,
   type LayoutZoneId,
+  type ManagedLayoutLaneId,
+  type PanelFitPolicy,
+  type PanelSlotSpan,
 } from '../../app/layout/layoutZones'
