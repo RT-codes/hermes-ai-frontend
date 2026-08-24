@@ -4,6 +4,8 @@
  */
 .hermes-home {
   --layout-zone-sidebar-width: var(--sidebar-width);
+  /* LEFT NAV owns the physical sidebar plus a small right-side safety buffer. */
+  --layout-zone-nav-width: calc(var(--layout-zone-sidebar-width) + 20px);
   --layout-zone-page-gutter: 1rem;
   --layout-zone-inner-gutter: 1rem;
   --layout-zone-slot-gap: 0.85rem;
@@ -23,9 +25,9 @@
    * All centered workspace HUDs use the content center, not viewport center.
    * The persistent sidebar makes those two points intentionally different.
    */
-  --layout-zone-content-center-x: calc((100% + var(--layout-zone-sidebar-width)) / 2);
+  --layout-zone-content-center-x: calc((100% + var(--layout-zone-nav-width)) / 2);
   --layout-zone-center-left: calc(
-    var(--layout-zone-sidebar-width) +
+    var(--layout-zone-nav-width) +
     var(--layout-zone-hud-width) +
     var(--layout-zone-page-gutter) +
     var(--layout-zone-inner-gutter) +
@@ -106,7 +108,7 @@
   .hermes-home {
     --layout-zone-hud-width: 0rem;
     --layout-zone-inner-gutter: 0rem;
-    --layout-zone-center-left: calc(var(--layout-zone-sidebar-width) + var(--layout-zone-page-gutter));
+    --layout-zone-center-left: calc(var(--layout-zone-nav-width) + var(--layout-zone-page-gutter));
     --layout-zone-center-right: var(--layout-zone-page-gutter);
   }
 }
