@@ -13,7 +13,7 @@ import { DeveloperConsole } from '../../dev/console/DeveloperConsole'
 import { NewChatProfileDialog } from '../../features/chat/components/NewChatProfileDialog'
 import { OrchestrationWorkspace } from '../../features/orchestration/OrchestrationWorkspace'
 import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
-import { layoutZoneAttributes } from '../layout/layoutZones'
+import { layoutSlotAttributes, layoutZoneAttributes } from '../layout/layoutZones'
 import { SpatialApplicationShell } from '../spatial/SpatialApplicationShell'
 import type { SpatialGraphicsMode } from '../spatial/SpatialGraphicsSlot'
 import { useWorkspaceTransition } from '../transitions/WorkspaceTransitionProvider'
@@ -96,12 +96,29 @@ export function HermesHome() {
       {displayWorkspace === 'memory' && (
         <div
           className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}
-          {...layoutZoneAttributes('right-hud', 'memory-telemetry-and-insight')}
+          {...layoutZoneAttributes('right-hud', 'memory-managed-hud-lane')}
         >
-          <div className="brain-hud-lane__compute workspace-transition-item" style={transitionIndex(1)}>
+          <div
+            className="brain-hud-lane__compute workspace-transition-item"
+            style={transitionIndex(1)}
+            {...layoutSlotAttributes(
+              computeAtTop ? 'right-hud.top' : 'right-hud.bottom',
+              'memory-local-compute',
+              'content-fit',
+            )}
+          >
             <HardwareTelemetryHud />
           </div>
-          <div className="brain-hud-lane__insight workspace-transition-item" style={transitionIndex(2)}>
+          <div
+            className="brain-hud-lane__insight workspace-transition-item"
+            style={transitionIndex(2)}
+            {...layoutSlotAttributes(
+              computeAtTop ? 'right-hud.middle' : 'right-hud.top',
+              'memory-hermes-insight',
+              'elastic',
+              2,
+            )}
+          >
             {activityHud}
           </div>
         </div>
