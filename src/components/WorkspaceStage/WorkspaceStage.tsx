@@ -185,6 +185,21 @@ function AppearanceSettings() {
         </select>
         <output>{settings.computeHudPosition === 'top-right' ? 'TOP' : 'BOTTOM'}</output>
       </label>
+      <label className="appearance-control">
+        <span>View change speed</span>
+        <input type="range" min="180" max="1400" step="20" value={settings.viewTransitionDurationMs} onChange={(event) => updateSetting('viewTransitionDurationMs', Number(event.target.value))} />
+        <output>{settings.viewTransitionDurationMs}ms</output>
+      </label>
+      <label className="appearance-control">
+        <span>Panel animation speed</span>
+        <input type="range" min="100" max="900" step="20" value={settings.panelTransitionDurationMs} onChange={(event) => updateSetting('panelTransitionDurationMs', Number(event.target.value))} />
+        <output>{settings.panelTransitionDurationMs}ms</output>
+      </label>
+      <label className="appearance-control">
+        <span>Panel stagger</span>
+        <input type="range" min="0" max="160" step="5" value={settings.panelTransitionStaggerMs} onChange={(event) => updateSetting('panelTransitionStaggerMs', Number(event.target.value))} />
+        <output>{settings.panelTransitionStaggerMs}ms</output>
+      </label>
     </div>
   )
 }
