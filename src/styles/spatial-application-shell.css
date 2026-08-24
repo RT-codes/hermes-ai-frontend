@@ -31,21 +31,11 @@
   pointer-events: none;
 }
 
-/* Operations keeps the same shared stage backdrop but with slightly stronger depth cues. */
-.hermes-home[data-display-workspace='operations'] .spatial-application-shell__environment .spatial-stage-backdrop__haze {
-  background:
-    radial-gradient(circle at 50% 38%, rgb(var(--accent-rgb) / 0.17), transparent 30%),
-    radial-gradient(circle at 50% 74%, rgb(var(--accent-rgb) / 0.085), transparent 40%);
-}
-
-.hermes-home[data-display-workspace='operations'] .spatial-application-shell__environment .spatial-stage-backdrop__grid {
-  opacity: 0.46;
-}
-
-.hermes-home[data-display-workspace='operations'] .spatial-application-shell__environment .spatial-stage-backdrop__floor {
-  opacity: 0.34;
-}
-
+/*
+ * Memory and Operations deliberately share the exact same environment styling.
+ * Workspace identity may swap 3D payloads and HUDs, but never changes the floor,
+ * haze, fade, scale or perceived camera space.
+ */
 .spatial-memory-layer,
 .spatial-graphics-slot,
 .spatial-graphics-slot__memory,
@@ -66,8 +56,9 @@
 
 /*
  * Memory's ForceGraph stays mounted because it is currently the canonical orbit/pan/
- * zoom control owner. In Operations it becomes a transparent interaction surface while
- * the Operations-owned WebGL payload is painted above it.
+ * zoom control owner. In Operations it becomes a transparent interaction surface.
+ * Operations intentionally owns no second renderer/camera until the shared scene
+ * authority is extracted from BrainGraph.
  */
 .spatial-graphics-slot__memory {
   z-index: 1;
@@ -97,8 +88,7 @@
   visibility: visible;
 }
 
-.operations-spatial-graphics,
-.operations-spatial-graphics canvas {
+.operations-spatial-graphics {
   width: 100%;
   height: 100%;
 }
