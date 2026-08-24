@@ -14,6 +14,7 @@ import { NewChatProfileDialog } from '../../features/chat/components/NewChatProf
 import { OrchestrationWorkspace } from '../../features/orchestration/OrchestrationWorkspace'
 import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
 import { SpatialApplicationShell } from '../spatial/SpatialApplicationShell'
+import type { SpatialGraphicsMode } from '../spatial/SpatialGraphicsSlot'
 import { useWorkspaceTransition } from '../transitions/WorkspaceTransitionProvider'
 import { useWorkspace } from '../workspaces/WorkspaceProvider'
 
@@ -33,7 +34,7 @@ export function HermesHome() {
   const { settings } = useAppearance()
   const computeAtTop = settings.computeHudPosition === 'top-right'
   const spatialWorkspace = displayWorkspace === 'memory' || displayWorkspace === 'operations'
-  const memoryGraphicsVisible = displayWorkspace === 'memory' && phase !== 'exiting'
+  const spatialGraphicsMode: SpatialGraphicsMode = displayWorkspace === 'operations' ? 'operations' : 'memory'
 
   const activityHud = (
     <HudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
@@ -62,6 +63,7 @@ export function HermesHome() {
       data-workspace-transition={phase}
       data-active-workspace={activeWorkspace}
       data-display-workspace={displayWorkspace}
+      data-spatial-graphics={spatialWorkspace ? spatialGraphicsMode : undefined}
     >
       <Sidebar
         collapsed={sidebarCollapsed}
@@ -75,7 +77,7 @@ export function HermesHome() {
       {spatialWorkspace
         ? (
           <SpatialApplicationShell
-            persistentLayer={<BrainStage graphicsVisible={memoryGraphicsVisible} />}
+            persistentLayer={<BrainStage graphicsMode={spatialGraphicsMode} />}
           >
             {transitioningWorkspace}
           </SpatialApplicationShell>
