@@ -13,6 +13,7 @@ import { DeveloperConsole } from '../../dev/console/DeveloperConsole'
 import { NewChatProfileDialog } from '../../features/chat/components/NewChatProfileDialog'
 import { OrchestrationWorkspace } from '../../features/orchestration/OrchestrationWorkspace'
 import { HudPanel } from '../../ui/components/HudPanel/HudPanel'
+import { layoutZoneAttributes } from '../layout/layoutZones'
 import { SpatialApplicationShell } from '../spatial/SpatialApplicationShell'
 import type { SpatialGraphicsMode } from '../spatial/SpatialGraphicsSlot'
 import { useWorkspaceTransition } from '../transitions/WorkspaceTransitionProvider'
@@ -24,7 +25,8 @@ const transitionIndex = (index: number) => ({ '--workspace-transition-index': in
  * Product shell for global chrome and cross-workspace floating surfaces. Requested
  * navigation belongs to WorkspaceProvider; rendered workspace handoff and the
  * persistent spatial camera layer are separate concerns so switching views does not
- * destroy the 3D world underneath the HUDs.
+ * destroy the 3D world underneath the HUDs. Named layout zones declare ownership
+ * without turning the HUD into a rigid tiling system.
  */
 export function HermesHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -65,27 +67,37 @@ export function HermesHome() {
       data-display-workspace={displayWorkspace}
       data-spatial-graphics={spatialWorkspace ? spatialGraphicsMode : undefined}
     >
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        activeView={activeWorkspace}
-        onToggle={() => setSidebarCollapsed((value) => !value)}
-        onViewChange={setActiveWorkspace}
-        onNewChat={createSession}
-      />
+      <div className="layout-zone-owner--contents" {...layoutZoneAttributes('left-nav', 'primary-navigation')}>
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          activeView={activeWorkspace}
+          onToggle={() => setSidebarCollapsed((value) => !value)}
+          onViewChange={setActiveWorkspace}
+          onNewChat={createSession}
+        />
+      </div>
 
-      <TopBar />
-      {spatialWorkspace
-        ? (
-          <SpatialApplicationShell
-            persistentLayer={<BrainStage graphicsMode={spatialGraphicsMode} />}
-          >
-            {transitioningWorkspace}
-          </SpatialApplicationShell>
-        )
-        : transitioningWorkspace}
+      <div className="layout-zone-owner--contents" {...layoutZoneAttributes('top-band', 'global-topbar')}>
+        <TopBar />
+      </div>
+
+      <div className="layout-zone-owner--contents" {...layoutZoneAttributes('center-stage', spatialWorkspace ? 'spatial-workspace' : 'workspace-stage')}>
+        {spatialWorkspace
+          ? (
+            <SpatialApplicationShell
+              persistentLayer={<BrainStage graphicsMode={spatialGraphicsMode} />}
+            >
+              {transitioningWorkspace}
+            </SpatialApplicationShell>
+          )
+          : transitioningWorkspace}
+      </div>
 
       {displayWorkspace === 'memory' && (
-        <div className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}>
+        <div
+          className={`brain-hud-lane ${computeAtTop ? 'brain-hud-lane--compute-top' : 'brain-hud-lane--compute-bottom'}`}
+          {...layoutZoneAttributes('right-hud', 'memory-telemetry-and-insight')}
+        >
           <div className="brain-hud-lane__compute workspace-transition-item" style={transitionIndex(1)}>
             <HardwareTelemetryHud />
           </div>
@@ -96,20 +108,24 @@ export function HermesHome() {
       )}
 
       {openTabIds.length > 0 && (
-        <FloatingPanel
-          id="chat"
-          title="CHAT"
-          className="chat-panel"
-          sidecar={displayWorkspace === 'memory' ? undefined : activityHud}
-          defaultRect={{ x: 280, y: 610, width: 560, height: 350 }}
-          minWidth={380}
-          minHeight={270}
-        >
-          <ChatPanel />
-        </FloatingPanel>
+        <div className="layout-zone-owner--contents" {...layoutZoneAttributes('floating-layer', 'floating-chat')}>
+          <FloatingPanel
+            id="chat"
+            title="CHAT"
+            className="chat-panel"
+            sidecar={displayWorkspace === 'memory' ? undefined : activityHud}
+            defaultRect={{ x: 280, y: 610, width: 560, height: 350 }}
+            minWidth={380}
+            minHeight={270}
+          >
+            <ChatPanel />
+          </FloatingPanel>
+        </div>
       )}
 
-      <NewChatProfileDialog />
+      <div className="layout-zone-owner--contents" {...layoutZoneAttributes('floating-layer', 'new-chat-profile-dialog')}>
+        <NewChatProfileDialog />
+      </div>
       <DeveloperConsole activeWorkspace={activeWorkspace} />
     </main>
   )
