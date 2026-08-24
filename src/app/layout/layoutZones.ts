@@ -31,6 +31,7 @@ const innerGutter = 'var(--layout-zone-inner-gutter)'
 const workspaceTop = 'var(--layout-zone-workspace-top)'
 const workspaceBottom = 'var(--layout-zone-workspace-bottom)'
 const hudWidth = 'var(--layout-zone-hud-width)'
+const managedLeftEdge = `calc(${sidebar} + ${gutter} + ${innerGutter})`
 
 export const managedLayoutLaneIds: readonly ManagedLayoutLaneId[] = [
   'left-nav',
@@ -56,7 +57,7 @@ export const layoutZones: LayoutZone[] = [
       top: 'var(--layout-zone-top)',
       right: gutter,
       bottom: 'var(--layout-zone-top-band-bottom)',
-      left: `calc(${sidebar} + ${gutter})`,
+      left: managedLeftEdge,
     },
   },
   {
@@ -78,7 +79,7 @@ export const layoutZones: LayoutZone[] = [
       top: workspaceTop,
       right: `calc(100% - ${sidebar} - ${gutter} - ${innerGutter} - ${hudWidth})`,
       bottom: workspaceBottom,
-      left: `calc(${sidebar} + ${gutter} + ${innerGutter})`,
+      left: managedLeftEdge,
     },
   },
   {
@@ -111,7 +112,7 @@ export const layoutZones: LayoutZone[] = [
       top: 'var(--layout-zone-bottom-top)',
       right: gutter,
       bottom: 'var(--layout-zone-bottom)',
-      left: `calc(${sidebar} + ${gutter})`,
+      left: managedLeftEdge,
     },
   },
   {
