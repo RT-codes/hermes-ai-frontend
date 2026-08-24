@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { ActivityPanel } from './components/ActivityPanel/ActivityPanel'
-import { BrainHudPanel } from './components/BrainHudPanel/BrainHudPanel'
 import { ChatPanel } from './components/ChatPanel/ChatPanel'
 import { FloatingPanel } from './components/FloatingPanel/FloatingPanel'
 import { HardwareTelemetryHud } from './components/HardwareTelemetryHud/HardwareTelemetryHud'
@@ -19,6 +18,7 @@ import { SystemTelemetryProvider } from './context/SystemTelemetryContext'
 import { DeveloperConsole } from './dev/console/DeveloperConsole'
 import { NewChatProfileDialog } from './features/chat/components/NewChatProfileDialog'
 import { OrchestrationWorkspace } from './features/orchestration/OrchestrationWorkspace'
+import { HudPanel } from './ui/components/HudPanel/HudPanel'
 import './styles/layout.css'
 import './styles/chat.css'
 import './styles/chat-v2.css'
@@ -80,9 +80,9 @@ function HermesHome() {
   }, [activeView])
 
   const activityHud = (
-    <BrainHudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
+    <HudPanel title="HERMES INSIGHT" className="hermes-activity-panel">
       <ActivityPanel />
-    </BrainHudPanel>
+    </HudPanel>
   )
 
   return (
